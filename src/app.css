@@ -1,1 +1,47 @@
 @import "tailwindcss";
+
+@theme {
+  --color-psan-green: #00CC99;
+  --color-psan-pink: #EB2D8C;
+  --color-psan-dark: #1A1A1A;
+}
+
+@layer base {
+  :root {
+    color-scheme: light;
+    --bg-main: #ffffff;
+    --text-main: #1a1a1a;
+    --card-bg: #f8fafc;
+  }
+
+  :root.dark {
+    color-scheme: dark;
+    --bg-main: #0f172a;
+    --text-main: #f8fafc;
+    --card-bg: #1e293b;
+  }
+
+  body {
+    @apply bg-[--bg-main] text-[--text-main] transition-colors duration-300 min-h-screen font-sans;
+  }
+
+  /* リンクの視認性確保 */
+  a { @apply text-psan-green hover:opacity-80 transition-opacity; }
+}
+
+/* Editor.js のインラインスタイル（文字色・マーカー）を許可するためのスタイル */
+.prose span[style*="color"] { color: inherit; }
+.prose mark { @apply bg-yellow-200 dark:bg-yellow-900/50 p-0.5 rounded; }
+
+@utility card-psan {
+  @apply bg-[--card-bg] border border-slate-200 dark:border-slate-800 rounded-[32px] shadow-sm overflow-hidden;
+}
+
+@utility btn-psan-primary {
+  @apply px-8 py-3 rounded-2xl bg-psan-green text-white font-black hover:scale-[1.02] active:scale-[0.98] transition-all shadow-lg shadow-psan-green/20 flex items-center justify-center gap-2;
+}
+
+/* 脆弱性対策: 外部埋め込みのサンドボックス化 */
+iframe {
+  @apply max-w-full rounded-2xl;
+}

@@ -1,0 +1,35 @@
+import { fail, redirect } from "@sveltejs/kit";
+import db from "$lib/server/db";
+import { generateIdFromEntropySize } from "lucia";
+import { editorJsToHtml } from "$lib/server/editor";
+import type { Actions } from "./$types";
+
+export const actions: Actions = {
+	default: async ({ request, locals }) => {
+		if (!locals.user || (locals.user.role !== "admin" && locals.user.role !== "editor")) {
+			throw redirect(302, "/dashboard");
+		}
+
+		const formData = await request.formData();
+		const title = formData.get("title") as string;
+		const summary = formData.get("summary") as string;
+		const visibility = formData.get("visibility") as string;
+		const editorDataRaw = formData.get("editorData") as string;
+
+		if (!title || !editorDataRaw) {
+			return fail(400, { message: "Title and content are required" });
+		}
+
+		const editorData = JSON.parse(editorDataRaw);
+		const htmlContent = editorJsToHtml(editorData.blocks);
+		const postId = generateIdFromEntropySize(10);
+		const now = Date.now();
+
+		db.prepare(`
+			INSERT INTO post (id, title, summary, content, author_id, visibility, created_at, updated_at) 
+			VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+		`).run(postId, title, summary, htmlContent, locals.user.id, visibility || 'public', now, now);
+
+		throw redirect(302, "/dashboard/posts");
+	}
+};

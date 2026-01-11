@@ -1,0 +1,24 @@
+@theme {
+  --color-psan-green: #00CC99;
+  --color-psan-pink: #EB2D8C;
+  --color-psan-dark: #1A1A1A;
+  
+  --font-sans: 'Inter', 'Noto Sans JP', sans-serif;
+}
+
+/* カスタムユーティリティ */
+@layer components {
+  .btn-psan {
+    @apply px-6 py-2.5 rounded-full font-bold transition-all duration-300 transform hover:-translate-y-0.5 active:scale-95 shadow-lg;
+  }
+  .btn-psan-primary {
+    @apply btn-psan bg-psan-green text-white hover:shadow-psan-green/30;
+  }
+  .btn-psan-secondary {
+    @apply btn-psan bg-psan-pink text-white hover:shadow-psan-pink/30;
+  }
+  
+  .glass-card {
+    @apply bg-white/70 backdrop-blur-lg border border-white/20 shadow-xl;
+  }
+}

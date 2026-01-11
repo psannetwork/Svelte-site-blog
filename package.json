@@ -21,6 +21,7 @@
 		"@sveltejs/adapter-auto": "^7.0.0",
 		"@sveltejs/kit": "^2.49.1",
 		"@sveltejs/vite-plugin-svelte": "^6.2.1",
+		"@tailwindcss/vite": "^4.1.18",
 		"@types/better-sqlite3": "^7.6.13",
 		"@types/node": "^24",
 		"autoprefixer": "^10.4.23",
@@ -39,9 +40,20 @@
 		"vite": "^7.2.6"
 	},
 	"dependencies": {
+		"@editorjs/code": "^2.9.4",
+		"@editorjs/editorjs": "^2.31.1",
+		"@editorjs/embed": "^2.8.0",
+		"@editorjs/header": "^2.8.8",
+		"@editorjs/image": "^2.10.3",
+		"@editorjs/inline-code": "^1.5.2",
+		"@editorjs/list": "^2.0.9",
+		"@editorjs/marker": "^1.4.0",
+		"@editorjs/quote": "^2.7.6",
+		"@editorjs/table": "^2.4.5",
 		"@lucia-auth/adapter-sqlite": "^3.0.2",
-		"@tailwindcss/vite": "^4.1.18",
+		"@node-rs/argon2": "^2.0.2",
 		"better-sqlite3": "^12.6.0",
+		"editorjs-text-color-plugin": "^2.0.4",
 		"lucia": "^3.2.2"
 	}
 }

@@ -1,0 +1,28 @@
+<script lang="ts">
+	let { form } = $props();
+</script>
+
+<div class="min-h-screen flex items-center justify-center bg-psan-dark px-4">
+	<div class="max-w-md w-full bg-white dark:bg-slate-900 rounded-[40px] p-10 shadow-2xl">
+		<div class="text-center mb-10">
+			<div class="w-16 h-16 bg-psan-green rounded-2xl mx-auto mb-6 flex items-center justify-center font-black text-white text-3xl italic rotate-12">P.</div>
+			<h1 class="text-3xl font-black tracking-tighter">WELCOME</h1>
+			<p class="text-slate-500 font-medium mt-2 text-sm">最初の管理者アカウントを作成して、サイトを開始しましょう。</p>
+		</div>
+
+		<form method="POST" class="space-y-6">
+			<div class="space-y-2">
+				<label for="username" class="text-[10px] font-black tracking-widest text-slate-400 uppercase">Admin Username</label>
+				<input id="username" name="username" required class="w-full bg-slate-50 dark:bg-slate-800 border-none rounded-2xl p-4 font-bold" placeholder="admin" />
+			</div>
+			<div class="space-y-2">
+				<label for="password" class="text-[10px] font-black tracking-widest text-slate-400 uppercase">Password (min 8 characters)</label>
+				<input id="password" name="password" type="password" required class="w-full bg-slate-50 dark:bg-slate-800 border-none rounded-2xl p-4 font-bold" placeholder="••••••••" />
+			</div>
+
+			{#if form?.message}<p class="text-psan-pink text-xs font-bold text-center">{form.message}</p>{/if}
+
+			<button class="btn-psan-primary w-full py-4 text-lg">START PSANBLOG</button>
+		</form>
+	</div>
+</div>
