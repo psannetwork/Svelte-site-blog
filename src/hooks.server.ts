@@ -1,4 +1,5 @@
 import { lucia } from "$lib/server/auth";
+import db from "$lib/server/db";
 import { getSetting } from "$lib/server/settings";
 import { redirect, type Handle } from "@sveltejs/kit";
 
@@ -29,6 +30,28 @@ export const handle: Handle = async ({ event, resolve }) => {
 
 	event.locals.user = user;
 	event.locals.session = session;
+
+	// アクセスカウントの記録
+	if (!event.url.pathname.startsWith("/api") && !event.url.pathname.startsWith("/dashboard")) {
+		const today = new Date().toISOString().split('T')[0];
+		const isNewVisit = !event.cookies.get('visited_today');
+		
+		try {
+			db.prepare(`
+				INSERT INTO analytics (date, hits, unique_visitors) 
+				VALUES (?, 1, ?) 
+				ON CONFLICT(date) DO UPDATE SET 
+					hits = hits + 1,
+					unique_visitors = unique_visitors + ?
+			`).run(today, isNewVisit ? 1 : 0, isNewVisit ? 1 : 0);
+
+			if (isNewVisit) {
+				event.cookies.set('visited_today', 'true', { path: '/', maxAge: 60 * 60 * 24 });
+			}
+		} catch (e) {
+			console.error('Analytics error:', e);
+		}
+	}
 
 	// サイト公開設定のチェック
 	const isSitePublic = getSetting("is_site_public", "true") === "true";

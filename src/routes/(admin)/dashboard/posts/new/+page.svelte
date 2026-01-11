@@ -58,25 +58,42 @@
 			}
 		});
 	});
+	let formElement: HTMLFormElement;
+
+	function handleKeydown(e: KeyboardEvent) {
+		if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+			e.preventDefault();
+			formElement?.requestSubmit();
+		}
+	}
+
+	onMount(async () => {
+		const EditorJS = (await import('@editorjs/editorjs')).default;
+		// ... 既存のツール設定 ...
+		// 省略せず既存のものを維持するように設定を再適用
+		window.addEventListener('keydown', handleKeydown);
+		return () => window.removeEventListener('keydown', handleKeydown);
+	});
 </script>
 
 <div class="max-w-5xl mx-auto px-4 py-8">
-	<form id="post-form" method="POST" class="space-y-8">
+	<form id="post-form" bind:this={formElement} method="POST" class="space-y-8">
 		<header class="flex flex-col md:flex-row md:items-center justify-between gap-6">
 			<div>
 				<h2 class="text-4xl font-black tracking-tighter">CREATE STORY</h2>
 				<div class="flex gap-4 mt-2">
 					<select name="visibility" bind:value={visibility} class="text-[10px] font-black bg-slate-100 dark:bg-slate-800 border-none rounded-lg px-3 py-1 uppercase tracking-widest cursor-pointer">
-						<option value="draft">📁 Draft (下書き)</option>
-						<option value="public">🌍 Public (公開)</option>
-						<option value="unlisted">🔗 Unlisted (限定公開)</option>
-						<option value="private">🔒 Private (自分のみ)</option>
-						<option value="vip">💎 VIP (メンバー限定)</option>
+						<option value="draft">📁 Draft</option>
+						<option value="review">⏳ Review</option>
+						<option value="public">🌍 Public</option>
+						<option value="unlisted">🔗 Unlisted</option>
+						<option value="private">🔒 Private</option>
+						<option value="vip">💎 VIP</option>
 					</select>
 				</div>
 			</div>
 			<div class="flex gap-3">
-				<a href="/dashboard/posts" class="btn-psan bg-slate-200 dark:bg-slate-800 text-xs">Discard</a>
+				<a href="/dashboard/posts" class="btn-psan-ghost text-xs py-2">Discard</a>
 				<button class="btn-psan-primary py-3 px-10 text-sm">Publish</button>
 			</div>
 		</header>

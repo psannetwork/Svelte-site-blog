@@ -29,6 +29,7 @@
 								<input type="hidden" name="userId" value={user.id} />
 								<select name="role" onchange={(e) => e.currentTarget.form?.requestSubmit()} class="bg-slate-50 dark:bg-slate-800 border-none rounded-xl text-xs font-bold p-2">
 									<option value="user" selected={user.role === 'user'}>USER</option>
+									<option value="vip" selected={user.role === 'vip'}>VIP</option>
 									<option value="editor" selected={user.role === 'editor'}>EDITOR</option>
 									<option value="admin" selected={user.role === 'admin'}>ADMIN</option>
 								</select>
@@ -53,6 +54,10 @@
 				<div>
 					<div class="font-black text-psan-pink text-sm">EDITOR</div>
 					<p class="text-xs font-medium opacity-60">記事の作成、編集、削除が可能です。サイト設定は操作できません。</p>
+				</div>
+				<div>
+					<div class="font-black text-psan-green text-sm italic">VIP</div>
+					<p class="text-xs font-medium opacity-60">一般ユーザーの全機能に加え、VIP限定投稿の閲覧が可能です。</p>
 				</div>
 				<div>
 					<div class="font-black text-slate-400 text-sm">USER</div>

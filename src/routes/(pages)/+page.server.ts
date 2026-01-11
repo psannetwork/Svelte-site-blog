@@ -15,10 +15,10 @@ export const load: PageServerLoad = async ({ locals }) => {
 			SELECT post.*, COALESCE(user.nickname, user.username) as author_name 
 			FROM post 
 			JOIN user ON post.author_id = user.id 
-			WHERE post.visibility IN ('public', 'vip') OR post.author_id = ?
+			WHERE post.visibility IN ('public', 'vip', 'unlisted') OR post.author_id = ?
 			ORDER BY created_at DESC
 		`).all(user.id) as any[];
-	} else if (user) {
+	} else if (user?.role === 'vip') {
 		posts = db.prepare(`
 			SELECT post.*, COALESCE(user.nickname, user.username) as author_name 
 			FROM post 
@@ -27,6 +27,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 			ORDER BY created_at DESC
 		`).all() as any[];
 	} else {
+		// 一般ユーザーや未ログインはPublicのみ
 		posts = db.prepare(`
 			SELECT post.*, COALESCE(user.nickname, user.username) as author_name 
 			FROM post 

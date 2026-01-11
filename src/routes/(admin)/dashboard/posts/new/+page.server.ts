@@ -26,9 +26,9 @@ export const actions: Actions = {
 		const now = Date.now();
 
 		db.prepare(`
-			INSERT INTO post (id, title, summary, content, author_id, visibility, created_at, updated_at) 
-			VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-		`).run(postId, title, summary, htmlContent, locals.user.id, visibility || 'public', now, now);
+			INSERT INTO post (id, title, summary, content, raw_json, author_id, visibility, created_at, updated_at) 
+			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+		`).run(postId, title, summary, htmlContent, editorDataRaw, locals.user.id, visibility || 'public', now, now);
 
 		throw redirect(302, "/dashboard/posts");
 	}

@@ -9,9 +9,12 @@
 @layer base {
   :root {
     color-scheme: light;
-    --bg-main: #ffffff;
-    --text-main: #1a1a1a;
-    --card-bg: #f8fafc;
+    --bg-main: #ffffff; /* 純白に変更 */
+    --text-main: #0f172a;
+    --card-bg: #ffffff;
+    --border-main: #f1f5f9; /* より薄いボーダー */
+    --border-strong: #e2e8f0;
+    --text-secondary: #64748b;
   }
 
   :root.dark {
@@ -19,29 +22,48 @@
     --bg-main: #0f172a;
     --text-main: #f8fafc;
     --card-bg: #1e293b;
+    --border-main: #334155;
+    --border-strong: #475569;
+    --text-secondary: #94a3b8;
   }
 
   body {
-    @apply bg-[--bg-main] text-[--text-main] transition-colors duration-300 min-h-screen font-sans;
+    @apply bg-[--bg-main] text-[--text-main] transition-colors duration-300 min-h-screen font-sans selection:bg-psan-green selection:text-white;
   }
 
   /* リンクの視認性確保 */
-  a { @apply text-psan-green hover:opacity-80 transition-opacity; }
+  a { @apply text-psan-green hover:opacity-80 transition-opacity font-medium; }
+
+  /* 見出しの色調整 */
+  h1, h2, h3, h4, h5, h6 {
+    @apply text-[--text-main] tracking-tighter;
+  }
+
+  .prose {
+    @apply text-[--text-main] max-w-none;
+  }
 }
 
-/* Editor.js のインラインスタイル（文字色・マーカー）を許可するためのスタイル */
+/* Editor.js インラインスタイル */
 .prose span[style*="color"] { color: inherit; }
 .prose mark { @apply bg-yellow-200 dark:bg-yellow-900/50 p-0.5 rounded; }
 
 @utility card-psan {
-  @apply bg-[--card-bg] border border-slate-200 dark:border-slate-800 rounded-[32px] shadow-sm overflow-hidden;
+  @apply bg-[--card-bg] border border-[--border-strong] rounded-[32px] shadow-sm overflow-hidden transition-all;
 }
 
 @utility btn-psan-primary {
   @apply px-8 py-3 rounded-2xl bg-psan-green text-white font-black hover:scale-[1.02] active:scale-[0.98] transition-all shadow-lg shadow-psan-green/20 flex items-center justify-center gap-2;
 }
 
-/* 脆弱性対策: 外部埋め込みのサンドボックス化 */
+@utility btn-psan-ghost {
+  @apply px-8 py-3 rounded-2xl bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold hover:bg-slate-100 dark:hover:bg-slate-700 transition-all flex items-center justify-center gap-2;
+}
+
+@utility btn-psan-danger {
+  @apply px-8 py-3 rounded-2xl bg-red-50 text-red-500 font-bold hover:bg-red-500 hover:text-white transition-all flex items-center justify-center gap-2 border border-red-100 dark:border-red-900/30;
+}
+
 iframe {
   @apply max-w-full rounded-2xl;
 }

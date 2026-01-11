@@ -48,11 +48,12 @@ export const actions: Actions = {
 		const userId = generateIdFromEntropySize(10);
 
 		try {
-			db.prepare("INSERT INTO user (id, username, nickname, password_hash) VALUES (?, ?, ?, ?)").run(
+			db.prepare("INSERT INTO user (id, username, nickname, password_hash, role) VALUES (?, ?, ?, ?, ?)").run(
 				userId,
 				username,
 				null,
-				passwordHash
+				passwordHash,
+				"user"
 			);
 
 			const session = await lucia.createSession(userId, {});

@@ -1,4 +1,5 @@
 import db from "$lib/server/db";
+import { cleanupUserFiles } from "$lib/server/files";
 import { error, redirect, fail } from "@sveltejs/kit";
 import type { Actions, PageServerLoad } from "./$types";
 
@@ -28,6 +29,9 @@ export const actions: Actions = {
 
 		const target = db.prepare("SELECT is_protected FROM user WHERE id = ?").get(userId) as any;
 		if (target?.is_protected) return fail(400, { message: "このユーザーは削除できません。" });
+
+		// ファイル削除
+		cleanupUserFiles(userId);
 
 		db.prepare("DELETE FROM user WHERE id = ?").run(userId);
 		return { success: true };

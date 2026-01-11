@@ -9,27 +9,30 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 
 	if (!post) throw error(404, "Post not found");
 
-	// 閲覧制限チェック
 	const user = locals.user;
-	
 	if (post.visibility === 'draft' && user?.id !== post.author_id && user?.role !== 'admin') {
 		throw error(403, "この投稿は下書き状態です。");
 	}
 	if (post.visibility === 'private' && user?.id !== post.author_id && user?.role !== 'admin') {
 		throw error(403, "この投稿は非公開です。");
 	}
-	if (post.visibility === 'vip' && !user) {
-		throw error(403, "この投稿はVIP限定です。ログインしてください。");
+	if (post.visibility === 'vip' && (!user || (user.role !== 'vip' && user.role !== 'editor' && user.role !== 'admin'))) {
+		throw error(403, "この投稿はVIPメンバー限定です。");
 	}
-	// UnlistedはURLを知っていればOKなので、ここではチェック不要（一覧に出ないだけ）
+
+	const anonymousName = getSetting("anonymous_name", "Anonymous");
 
 	const comments = db.prepare(`
-		SELECT comment.*, COALESCE(user.nickname, user.username) as author_name, user.role as author_role
+		SELECT 
+			comment.*, 
+			COALESCE(user.nickname, user.username, ?) as author_name, 
+			user.role as author_role,
+			user.avatar_url
 		FROM comment
-		JOIN user ON comment.author_id = user.id
+		LEFT JOIN user ON comment.author_id = user.id
 		WHERE post_id = ?
 		ORDER BY created_at ASC
-	`).all(params.slug) as any[];
+	`).all(anonymousName, params.slug) as any[];
 
 	return {
 		post,
@@ -37,6 +40,8 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		user: locals.user,
 		settings: {
 			allow_comments: getSetting("allow_comments", "true") === "true",
+			allow_anonymous_comments: getSetting("allow_anonymous_comments", "false") === "true",
+			anonymous_name: anonymousName,
 			enable_turnstile: getSetting("enable_turnstile") === "true",
 			turnstile_site_key: getSetting("turnstile_site_key")
 		}
@@ -45,7 +50,8 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 
 export const actions: Actions = {
 	addComment: async ({ request, params, locals }) => {
-		if (!locals.user) return fail(401, { message: "ログインが必要です。" });
+		const isAnonymousAllowed = getSetting("allow_anonymous_comments", "false") === "true";
+		if (!locals.user && !isAnonymousAllowed) return fail(401, { message: "ログインが必要です。" });
 		if (getSetting("allow_comments", "true") !== "true") return fail(403, { message: "コメントは現在無効です。" });
 
 		const formData = await request.formData();
@@ -60,17 +66,19 @@ export const actions: Actions = {
 		if (!content || content.length < 1) return fail(400, { message: "内容を入力してください。" });
 
 		const commentId = generateIdFromEntropySize(10);
+		
+		// 明示的に null を渡す
+		const authorId = locals.user?.id || null;
+
 		db.prepare("INSERT INTO comment (id, post_id, author_id, content, created_at) VALUES (?, ?, ?, ?, ?)")
-			.run(commentId, params.slug, locals.user.id, content, Date.now());
+			.run(commentId, params.slug, authorId, content, Date.now());
 
 		return { success: true };
 	},
 	deleteComment: async ({ request, locals }) => {
 		if (!locals.user || (locals.user.role !== "admin" && locals.user.role !== "editor")) return fail(403, { message: "権限がありません。" });
-
 		const formData = await request.formData();
 		const id = formData.get("id") as string;
-
 		db.prepare("DELETE FROM comment WHERE id = ?").run(id);
 		return { success: true };
 	}
