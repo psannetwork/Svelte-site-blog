@@ -20,7 +20,7 @@
 <div class="max-w-7xl mx-auto space-y-8 md:space-y-12">
 	<header>
 		<h2 class="text-3xl md:text-4xl font-black tracking-tighter uppercase">Overview</h2>
-		<p class="text-sm md:text-slate-500 font-medium">サイトのパフォーマンスをリアルタイムで分析します。</p>
+		<p class="text-sm md:text-slate-500 dark:text-slate-400 font-medium">サイトのパフォーマンスをリアルタイムで分析します。</p>
 	</header>
 
 	<!-- アクセス統計サマリー -->
@@ -46,7 +46,7 @@
 
 	<!-- 折れ線グラフ -->
 	<div class="space-y-4">
-		<h3 class="font-black text-xs tracking-widest text-slate-400 uppercase px-2">Access Analytics</h3>
+		<h3 class="font-black text-xs tracking-widest text-slate-400 dark:text-slate-500 uppercase px-2">Access Analytics</h3>
 		<div class="card-psan p-4 md:p-12">
 			<div class="relative w-full h-[150px] md:h-[200px]">
 				<svg viewBox="0 0 {chartWidth} {chartHeight}" class="w-full h-full overflow-visible" preserveAspectRatio="none">
@@ -64,7 +64,7 @@
 				</svg>
 				<div class="flex justify-between mt-6">
 					{#each weekly as day}
-						<span class="text-[8px] md:text-[9px] font-black opacity-30 uppercase tracking-tighter">{day.date.split('-').slice(1).join('/')}</span>
+						<span class="text-[8px] md:text-[9px] font-black opacity-30 dark:opacity-40 uppercase tracking-tighter">{day.date.split('-').slice(1).join('/')}</span>
 					{/each}
 				</div>
 			</div>
@@ -74,12 +74,12 @@
 	<!-- 最近のコンテンツ -->
 	<div class="grid grid-cols-1 lg:grid-cols-2 gap-8 pb-20">
 		<section class="space-y-4">
-			<h3 class="font-black text-xs tracking-widest text-slate-400 uppercase px-2">Recent Posts</h3>
+			<h3 class="font-black text-xs tracking-widest text-slate-400 dark:text-slate-500 uppercase px-2">Recent Posts</h3>
 			<div class="card-psan divide-y dark:divide-slate-800">
 				{#each data.posts.slice(0, 3) as post}
 					<a href="/dashboard/posts" class="flex items-center justify-between p-5 md:p-6 hover:bg-slate-100/50 dark:hover:bg-slate-800/50 transition">
 						<span class="font-bold text-sm truncate pr-4">{post.title}</span>
-						<span class="text-[9px] font-black opacity-30 uppercase shrink-0">{new Date(post.created_at).toLocaleDateString()}</span>
+						<span class="text-[9px] font-black opacity-30 dark:opacity-40 uppercase shrink-0">{new Date(post.created_at).toLocaleDateString()}</span>
 					</a>
 				{/each}
 			</div>
@@ -92,9 +92,9 @@
 					<div class="p-5 md:p-6">
 						<div class="flex justify-between items-center mb-1">
 							<span class="text-xs font-black text-psan-green uppercase">{comment.username}</span>
-							<span class="text-[9px] font-bold opacity-20">{new Date(comment.created_at).toLocaleDateString()}</span>
+							<span class="text-[9px] font-bold opacity-20 dark:opacity-30">{new Date(comment.created_at).toLocaleDateString()}</span>
 						</div>
-						<p class="text-xs font-medium opacity-60 line-clamp-1">{comment.content}</p>
+						<p class="text-xs font-medium opacity-60 dark:opacity-70 line-clamp-1">{comment.content}</p>
 					</div>
 				{/each}
 			</div>

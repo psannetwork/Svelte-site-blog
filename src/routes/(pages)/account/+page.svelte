@@ -1,8 +1,19 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import { invalidateAll } from '$app/navigation';
 	let { data, form } = $props();
-	let avatarUrl = $state(data.user?.avatar_url || '');
+	
+	let avatarUrl = $state('');
+	let nickname = $state('');
+	let notificationEnabled = $state(false);
 	let isUploading = $state(false);
+
+	// サーバーからのデータが更新されたらローカルステートに同期
+	$effect(() => {
+		avatarUrl = data.user?.avatar_url || '';
+		nickname = data.user?.nickname || '';
+		notificationEnabled = data.notification_enabled;
+	});
 
 	async function handleAvatarUpload(e: Event) {
 		const file = (e.target as HTMLInputElement).files?.[0];
@@ -39,17 +50,27 @@
 							</div>
 						{/if}
 					</div>
-					<label class="absolute inset-0 flex items-center justify-center bg-black/50 text-white text-[10px] font-black opacity-0 group-hover:opacity-100 cursor-pointer transition-opacity rounded-[40px] uppercase tracking-widest">
+					<label class="absolute inset-0 flex items-center justify-center bg-black/50 text-white text-[10px] font-black opacity-0 group-hover:opacity-100 cursor-pointer transition-opacity rounded-[40px] uppercase tracking-widest text-center px-4">
 						{isUploading ? 'Uploading...' : 'Change Icon'}
 						<input type="file" accept="image/*" class="hidden" onchange={handleAvatarUpload} disabled={isUploading} />
 					</label>
 				</div>
-				<form method="POST" action="?/updateNickname" use:enhance class="flex-1 space-y-4">
+				<form method="POST" action="?/updateNickname" use:enhance={() => {
+					return async ({ result }) => {
+						if (result.type === 'success') await invalidateAll();
+					};
+				}} class="flex-1 space-y-4">
 					<input type="hidden" name="avatar_url" value={avatarUrl} />
 					<div class="space-y-2">
 						<label for="nickname" class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Nickname</label>
-						<input id="nickname" name="nickname" value={data.user?.nickname || ''} placeholder="未設定（IDが表示されます）" class="w-full bg-slate-50 dark:bg-slate-800 border-none rounded-xl p-4 font-bold" />
+						<input id="nickname" name="nickname" bind:value={nickname} placeholder="未設定（IDが表示されます）" class="w-full bg-slate-50 dark:bg-slate-800 border-none rounded-xl p-4 font-bold" />
 					</div>
+					
+					<label class="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800 rounded-xl cursor-pointer">
+						<span class="text-[10px] font-black uppercase tracking-widest text-slate-400">Notifications (Replies)</span>
+						<input type="checkbox" name="notification_enabled" checked={notificationEnabled} class="w-5 h-5 accent-psan-green" />
+					</label>
+
 					<button class="btn-psan-primary w-full">Save Profile</button>
 				</form>
 			</div>
@@ -78,7 +99,7 @@
 			<section class="pt-12 border-t border-slate-100 dark:border-slate-800">
 				<div class="p-8 bg-red-50 dark:bg-red-950/20 rounded-[32px] border border-red-100 dark:border-red-900/30">
 					<h3 class="text-red-600 font-black tracking-tighter text-xl mb-2 uppercase">Danger Zone</h3>
-					<p class="text-red-500/70 text-sm font-medium mb-6">アカウントを削除すると、これまでの投稿やコメント、画像などはすべて完全に削除され、復元することはできません。</p>
+					<p class="text-red-500/70 text-sm font-medium mb-6">アカウントを削除すると、これまでの投稿やコメント、画像などはすべて完全に削除されます。</p>
 					<form method="POST" action="?/deleteAccount" use:enhance={() => {
 						return ({ confirm }) => {
 							if (!confirm("本当にアカウントを削除しますか？ この操作は取り消せません。")) return;
@@ -90,7 +111,7 @@
 			</section>
 		{/if}
 
-		{#if form?.success}<p class="text-center font-black text-psan-green animate-pulse">SAVED SUCCESSFULLY!</p>{/if}
-		{#if form?.message}<p class="text-center font-black text-psan-pink">{form.message}</p>{/if}
+		{#if form?.success}<p class="text-center font-black text-psan-green animate-pulse uppercase tracking-widest text-xs">Settings Updated!</p>{/if}
+		{#if form?.message}<p class="text-center font-black text-psan-pink text-xs">{form.message}</p>{/if}
 	</div>
 </div>

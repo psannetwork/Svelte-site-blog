@@ -6,22 +6,15 @@ import type { PageServerLoad, Actions } from "./$types";
 
 export const load: PageServerLoad = async ({ params, locals }) => {
 	const post = db.prepare("SELECT * FROM post WHERE id = ?").get(params.slug) as any;
-
 	if (!post) throw error(404, "Post not found");
 
 	const user = locals.user;
-	if (post.visibility === 'draft' && user?.id !== post.author_id && user?.role !== 'admin') {
-		throw error(403, "この投稿は下書き状態です。");
-	}
-	if (post.visibility === 'private' && user?.id !== post.author_id && user?.role !== 'admin') {
-		throw error(403, "この投稿は非公開です。");
-	}
-	if (post.visibility === 'vip' && (!user || (user.role !== 'vip' && user.role !== 'editor' && user.role !== 'admin'))) {
-		throw error(403, "この投稿はVIPメンバー限定です。");
-	}
+	if (post.visibility === 'draft' && user?.id !== post.author_id && user?.role !== 'admin') throw error(403, "Forbidden");
+	if (post.visibility === 'vip' && (!user || !['vip', 'editor', 'admin'].includes(user.role))) throw error(403, "VIP required");
 
 	const anonymousName = getSetting("anonymous_name", "Anonymous");
 
+	// 全コメントを取得 (リプライ含む)
 	const comments = db.prepare(`
 		SELECT 
 			comment.*, 
@@ -40,10 +33,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		user: locals.user,
 		settings: {
 			allow_comments: getSetting("allow_comments", "true") === "true",
-			allow_anonymous_comments: getSetting("allow_anonymous_comments", "false") === "true",
-			anonymous_name: anonymousName,
-			enable_turnstile: getSetting("enable_turnstile") === "true",
-			turnstile_site_key: getSetting("turnstile_site_key")
+			allow_anonymous_comments: getSetting("allow_anonymous_comments", "false") === "true"
 		}
 	};
 };
@@ -51,32 +41,34 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 export const actions: Actions = {
 	addComment: async ({ request, params, locals }) => {
 		const isAnonymousAllowed = getSetting("allow_anonymous_comments", "false") === "true";
-		if (!locals.user && !isAnonymousAllowed) return fail(401, { message: "ログインが必要です。" });
-		if (getSetting("allow_comments", "true") !== "true") return fail(403, { message: "コメントは現在無効です。" });
-
+		if (!locals.user && !isAnonymousAllowed) return fail(401);
+		
 		const formData = await request.formData();
 		const content = formData.get("content") as string;
-		const turnstileToken = formData.get("cf-turnstile-response") as string;
+		const parentId = formData.get("parentId") as string | null;
 
-		if (getSetting("enable_turnstile") === "true") {
-			const valid = await verifyTurnstile(turnstileToken);
-			if (!valid) return fail(400, { message: "認証に失敗しました。" });
-		}
-
-		if (!content || content.length < 1) return fail(400, { message: "内容を入力してください。" });
+		if (!content || content.length < 1) return fail(400);
 
 		const commentId = generateIdFromEntropySize(10);
-		
-		// 明示的に null を渡す
-		const authorId = locals.user?.id || null;
+		db.prepare("INSERT INTO comment (id, post_id, author_id, parent_id, content, created_at) VALUES (?, ?, ?, ?, ?, ?)")
+			.run(commentId, params.slug, locals.user?.id || null, parentId || null, content, Date.now());
 
-		db.prepare("INSERT INTO comment (id, post_id, author_id, content, created_at) VALUES (?, ?, ?, ?, ?)")
-			.run(commentId, params.slug, authorId, content, Date.now());
+		// リプライ通知の作成
+		if (parentId) {
+			const parentComment = db.prepare("SELECT author_id FROM comment WHERE id = ?").get(parentId) as any;
+			if (parentComment?.author_id && parentComment.author_id !== locals.user?.id) {
+				const user = db.prepare("SELECT notification_enabled FROM user WHERE id = ?").get(parentComment.author_id) as any;
+				if (user?.notification_enabled) {
+					db.prepare("INSERT INTO notification (id, user_id, type, content, link, created_at) VALUES (?, ?, ?, ?, ?, ?)")
+						.run(generateIdFromEntropySize(10), parentComment.author_id, 'reply', 'あなたのコメントにリプライが届きました。', `/pages/${params.slug}#comments`, Date.now());
+				}
+			}
+		}
 
 		return { success: true };
 	},
 	deleteComment: async ({ request, locals }) => {
-		if (!locals.user || (locals.user.role !== "admin" && locals.user.role !== "editor")) return fail(403, { message: "権限がありません。" });
+		if (!locals.user || !['admin', 'editor'].includes(locals.user.role)) return fail(403);
 		const formData = await request.formData();
 		const id = formData.get("id") as string;
 		db.prepare("DELETE FROM comment WHERE id = ?").run(id);

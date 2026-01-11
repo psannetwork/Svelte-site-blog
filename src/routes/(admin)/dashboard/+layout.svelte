@@ -20,7 +20,7 @@
 	});
 </script>
 
-<div class="flex h-screen bg-slate-50 dark:bg-slate-950 transition-colors overflow-hidden">
+<div class="flex h-screen bg-[--bg-main] transition-colors overflow-hidden">
 	<!-- モバイル用オーバーレイ -->
 	{#if isSidebarOpen}
 		<button 
@@ -32,7 +32,7 @@
 
 	<!-- サイドバー (レスポンシブ) -->
 	<aside class="
-		fixed lg:static inset-y-0 left-0 w-72 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 
+		fixed lg:static inset-y-0 left-0 w-72 bg-[--card-bg] border-r border-[--border-main]
 		z-[101] lg:z-0 transform transition-transform duration-300 ease-in-out shrink-0 flex flex-col
 		{isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
 	">
@@ -65,7 +65,7 @@
 
 	<div class="flex-1 flex flex-col min-w-0 overflow-hidden">
 		<!-- ダッシュボード用ヘッダー -->
-		<header class="h-20 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-b border-slate-200 dark:border-slate-800 px-4 md:px-8 flex items-center justify-between shrink-0">
+		<header class="h-20 bg-[--card-bg]/80 backdrop-blur-xl border-b border-[--border-main] px-4 md:px-8 flex items-center justify-between shrink-0">
 			<div class="flex items-center gap-4">
 				<button onclick={() => isSidebarOpen = true} class="lg:hidden p-2 bg-slate-100 dark:bg-slate-800 rounded-xl" aria-label="メニュー">
 					<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"/></svg>

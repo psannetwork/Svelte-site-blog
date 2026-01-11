@@ -15,6 +15,6 @@
 	});
 </script>
 
-<div class="min-h-screen flex flex-col bg-[--bg-main] text-[--text-main] transition-colors duration-300">
+<div class="min-h-screen flex flex-col transition-colors duration-300">
 	{@render children()}
 </div>

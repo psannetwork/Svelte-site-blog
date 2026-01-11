@@ -1,57 +1,76 @@
 <script lang="ts">
-	import type { ActionData } from "./$types";
-	let { form } = $props<{ form: ActionData }>();
+	import type { ActionData, PageData } from "./$types";
+	import { enhance } from '$app/forms';
+	let { form, data } = $props<{ form: ActionData, data: PageData }>();
 </script>
 
-<div class="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-slate-900 py-12 px-4 sm:px-6 lg:px-8">
-	<div class="max-w-md w-full space-y-8 bg-white dark:bg-slate-800 p-10 rounded-2xl shadow-lg border border-gray-200 dark:border-slate-700">
-		<div>
-			<h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900 dark:text-white">アカウント作成</h2>
-			<p class="mt-2 text-center text-sm text-gray-500 dark:text-gray-400">
-				または
-				<a href="/auth/login" class="font-medium text-psan-green hover:text-psan-pink"> ログインする </a>
-			</p>
+<svelte:head>
+	{#if data.settings.enable_turnstile}
+		<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+	{/if}
+</svelte:head>
+
+<div class="w-full max-w-md px-4 py-20">
+	<div class="card-psan p-8 md:p-12 shadow-2xl shadow-psan-green/5 relative overflow-hidden group">
+		<div class="absolute -top-20 -left-20 w-40 h-40 bg-psan-pink/10 rounded-full blur-3xl"></div>
+		
+		<div class="relative z-10 text-center mb-10">
+			<div class="w-16 h-16 bg-psan-pink rounded-2xl mx-auto mb-6 flex items-center justify-center font-black text-white text-3xl italic rotate-12 shadow-lg shadow-psan-pink/20">P.</div>
+			<h2 class="text-3xl font-black tracking-tighter uppercase dark:text-white">Join Us</h2>
+			<p class="mt-2 text-sm font-medium text-slate-400">新しいアカウントを作成</p>
 		</div>
-		<form class="mt-8 space-y-6" method="POST">
-			<div class="space-y-4">
-				<div>
-					<label for="username" class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1">ユーザー名</label>
-					<input
-						id="username"
-						name="username"
-						type="text"
-						required
-						class="appearance-none relative block w-full px-4 py-3 border border-gray-300 dark:border-slate-600 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white rounded-xl focus:outline-none focus:ring-2 focus:ring-psan-green focus:border-psan-green sm:text-sm bg-white dark:bg-slate-700"
-						placeholder="ユーザー名"
-					/>
-				</div>
-				<div>
-					<label for="password" class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1">パスワード</label>
-					<input
-						id="password"
-						name="password"
-						type="password"
-						required
-						class="appearance-none relative block w-full px-4 py-3 border border-gray-300 dark:border-slate-600 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white rounded-xl focus:outline-none focus:ring-2 focus:ring-psan-green focus:border-psan-green sm:text-sm bg-white dark:bg-slate-700"
-						placeholder="パスワード"
-					/>
-				</div>
-			</div>
 
-			{#if form?.message}
-				<div class="bg-red-50 dark:bg-red-900/20 p-3 rounded-lg border border-red-200 dark:border-red-800">
-					<p class="text-red-700 dark:text-red-300 text-sm text-center">{form.message}</p>
+		{#if data.settings?.allow_signup === 'true'}
+			<form method="POST" use:enhance class="space-y-6 relative z-10">
+				<div class="space-y-4">
+					<div class="space-y-2">
+						<label for="username" class="text-[10px] font-black tracking-widest text-slate-400 uppercase">User ID</label>
+						<input
+							id="username"
+							name="username"
+							type="text"
+							required
+							class="w-full bg-slate-50 dark:bg-slate-800 border-none rounded-2xl p-4 font-bold focus:ring-2 ring-psan-pink transition-all dark:text-white"
+							placeholder="Pick a unique ID"
+						/>
+					</div>
+					<div class="space-y-2">
+						<label for="password" class="text-[10px] font-black tracking-widest text-slate-400 uppercase">Password</label>
+						<input
+							id="password"
+							name="password"
+							type="password"
+							required
+							class="w-full bg-slate-50 dark:bg-slate-800 border-none rounded-2xl p-4 font-bold focus:ring-2 ring-psan-pink transition-all dark:text-white"
+							placeholder="••••••••"
+						/>
+					</div>
 				</div>
-			{/if}
 
-			<div>
-				<button
-					type="submit"
-					class="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-bold rounded-xl text-white bg-psan-green hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-psan-green transition-all duration-300"
-				>
-					登録する
+				{#if data.settings.enable_turnstile}
+					<div class="cf-turnstile flex justify-center" data-sitekey={data.settings.turnstile_site_key}></div>
+				{/if}
+
+				{#if form?.message}
+					<p class="text-psan-pink text-xs font-bold text-center">{form.message}</p>
+				{/if}
+
+				<button type="submit" class="btn-psan bg-psan-pink text-white w-full py-4 text-lg font-black rounded-2xl shadow-lg shadow-psan-pink/20 hover:scale-[1.02] active:scale-[0.98] transition-all">
+					Register
 				</button>
+			</form>
+		{:else}
+			<div class="text-center py-10">
+				<p class="text-sm font-bold text-slate-400">現在、新規登録は受け付けておりません。</p>
 			</div>
-		</form>
+		{/if}
+
+		<div class="mt-10 pt-8 border-t border-slate-100 dark:border-slate-800 text-center space-y-4 relative z-10">
+			<p class="text-xs font-bold text-slate-400">
+				既にアカウントをお持ちですか？
+				<a href="/auth/login" class="text-psan-pink hover:underline ml-1">ログイン</a>
+			</p>
+			<a href="/" class="block text-[10px] font-black tracking-widest text-slate-300 hover:text-slate-500 transition-colors uppercase">Back to Home</a>
+		</div>
 	</div>
 </div>

@@ -8,8 +8,10 @@ import type { Actions, PageServerLoad } from "./$types";
 
 export const load: PageServerLoad = async ({ locals }) => {
 	if (!locals.user) throw redirect(302, "/auth/login");
+	const user = db.prepare("SELECT notification_enabled FROM user WHERE id = ?").get(locals.user.id) as any;
 	return {
-		allow_deletion: getSetting("allow_account_deletion", "true") === "true"
+		allow_deletion: getSetting("allow_account_deletion", "true") === "true",
+		notification_enabled: user?.notification_enabled === 1
 	};
 };
 
@@ -18,8 +20,11 @@ export const actions: Actions = {
 		const formData = await request.formData();
 		const nickname = formData.get("nickname") as string;
 		const avatar_url = formData.get("avatar_url") as string;
+		const notification_enabled = formData.get("notification_enabled") === "on" ? 1 : 0;
+		
 		const valueToSave = nickname && nickname.trim().length > 0 ? nickname : null;
-		db.prepare("UPDATE user SET nickname = ?, avatar_url = ? WHERE id = ?").run(valueToSave, avatar_url, locals.user!.id);
+		db.prepare("UPDATE user SET nickname = ?, avatar_url = ?, notification_enabled = ? WHERE id = ?")
+			.run(valueToSave, avatar_url, notification_enabled, locals.user!.id);
 		return { success: true };
 	},
 	updatePassword: async ({ request, locals }) => {

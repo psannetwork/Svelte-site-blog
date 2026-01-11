@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { ActionData, PageData } from "./$types";
+	import { enhance } from '$app/forms';
 	let { form, data } = $props<{ form: ActionData, data: PageData }>();
 </script>
 
@@ -9,39 +10,39 @@
 	{/if}
 </svelte:head>
 
-<div class="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-slate-900 py-12 px-4 sm:px-6 lg:px-8">
-	<div class="max-w-md w-full space-y-8 bg-white dark:bg-slate-800 p-10 rounded-2xl shadow-lg border border-gray-200 dark:border-slate-700">
-		<div>
-			<h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900 dark:text-white">ログイン</h2>
-			<p class="mt-2 text-center text-sm text-gray-500 dark:text-gray-400">
-				または
-				<a href="/auth/register" class="font-medium text-psan-green hover:text-psan-pink">
-					新規登録する
-				</a>
-			</p>
+<div class="w-full max-w-md px-4 py-20">
+	<div class="card-psan p-8 md:p-12 shadow-2xl shadow-psan-green/5 relative overflow-hidden group">
+		<!-- 装飾的な背景要素 -->
+		<div class="absolute -top-20 -right-20 w-40 h-40 bg-psan-green/10 rounded-full blur-3xl group-hover:bg-psan-green/20 transition-colors duration-700"></div>
+		
+		<div class="relative z-10 text-center mb-10">
+			<div class="w-16 h-16 bg-psan-green rounded-2xl mx-auto mb-6 flex items-center justify-center font-black text-white text-3xl italic rotate-12 shadow-lg shadow-psan-green/20">P.</div>
+			<h2 class="text-3xl font-black tracking-tighter uppercase dark:text-white">Welcome Back</h2>
+			<p class="mt-2 text-sm font-medium text-slate-400">ログインしてダッシュボードにアクセス</p>
 		</div>
-		<form class="mt-8 space-y-6" method="POST">
+
+		<form method="POST" use:enhance class="space-y-6 relative z-10">
 			<div class="space-y-4">
-				<div>
-					<label for="username" class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1">ユーザー名</label>
+				<div class="space-y-2">
+					<label for="username" class="text-[10px] font-black tracking-widest text-slate-400 uppercase">User ID</label>
 					<input
 						id="username"
 						name="username"
 						type="text"
 						required
-						class="appearance-none relative block w-full px-4 py-3 border border-gray-300 dark:border-slate-600 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white rounded-xl focus:outline-none focus:ring-2 focus:ring-psan-green focus:border-psan-green sm:text-sm bg-white dark:bg-slate-700"
-						placeholder="ユーザー名"
+						class="w-full bg-slate-50 dark:bg-slate-800 border-none rounded-2xl p-4 font-bold focus:ring-2 ring-psan-green transition-all dark:text-white"
+						placeholder="Username"
 					/>
 				</div>
-				<div>
-					<label for="password" class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1">パスワード</label>
+				<div class="space-y-2">
+					<label for="password" class="text-[10px] font-black tracking-widest text-slate-400 uppercase">Password</label>
 					<input
 						id="password"
 						name="password"
 						type="password"
 						required
-						class="appearance-none relative block w-full px-4 py-3 border border-gray-300 dark:border-slate-600 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white rounded-xl focus:outline-none focus:ring-2 focus:ring-psan-green focus:border-psan-green sm:text-sm bg-white dark:bg-slate-700"
-						placeholder="パスワード"
+						class="w-full bg-slate-50 dark:bg-slate-800 border-none rounded-2xl p-4 font-bold focus:ring-2 ring-psan-green transition-all dark:text-white"
+						placeholder="••••••••"
 					/>
 				</div>
 			</div>
@@ -51,19 +52,22 @@
 			{/if}
 
 			{#if form?.message}
-				<div class="bg-red-50 dark:bg-red-900/20 p-3 rounded-lg border border-red-200 dark:border-red-800">
-					<p class="text-red-700 dark:text-red-300 text-sm text-center">{form.message}</p>
-				</div>
+				<p class="text-psan-pink text-xs font-bold text-center animate-bounce">{form.message}</p>
 			{/if}
 
-			<div>
-				<button
-					type="submit"
-					class="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-bold rounded-xl text-white bg-psan-green hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-psan-green transition-all duration-300"
-				>
-					ログイン
-				</button>
-			</div>
+			<button type="submit" class="btn-psan-primary w-full py-4 text-lg">
+				Login
+			</button>
 		</form>
+
+		<div class="mt-10 pt-8 border-t border-slate-100 dark:border-slate-800 text-center space-y-4 relative z-10">
+			{#if data.settings?.allow_signup === 'true'}
+				<p class="text-xs font-bold text-slate-400">
+					アカウントをお持ちでないですか？
+					<a href="/auth/register" class="text-psan-green hover:underline ml-1">新規登録</a>
+				</p>
+			{/if}
+			<a href="/" class="block text-[10px] font-black tracking-widest text-slate-300 hover:text-slate-500 transition-colors uppercase">Back to Home</a>
+		</div>
 	</div>
 </div>
