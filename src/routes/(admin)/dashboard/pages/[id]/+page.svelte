@@ -10,6 +10,12 @@
 	let editorData = $state(data.page.content || '');
 	let isSaving = $state(false);
 
+	function addWidget(name: string) {
+		if (editor) {
+			editor.blocks.insert('widget', { name });
+		}
+	}
+
 	onMount(async () => {
 		const EditorJS = (await import('@editorjs/editorjs')).default;
 		const Header = (await import('@editorjs/header')).default;
@@ -68,6 +74,11 @@
 				<p class="text-xs text-muted font-bold mt-1">ID: {data.page.id}</p>
 			</div>
 			<div class="flex gap-3">
+				<div class="flex items-center gap-2 mr-4 px-4 border-r border-slate-100 dark:border-slate-800">
+					<span class="text-[10px] font-black text-muted uppercase">Insert:</span>
+					<button type="button" onclick={() => addWidget('latest-posts')} class="text-[10px] font-black px-3 py-1 bg-psan-green/10 text-psan-green rounded-full hover:bg-psan-green hover:text-white transition-all">Latest Posts</button>
+					<button type="button" onclick={() => addWidget('comments')} class="text-[10px] font-black px-3 py-1 bg-psan-pink/10 text-psan-pink rounded-full hover:bg-psan-pink hover:text-white transition-all">Comments</button>
+				</div>
 				<a href="/dashboard/pages" class="btn-psan-ghost text-xs py-2 dark:bg-slate-700 dark:text-white dark:border-slate-500">Back</a>
 				<button type="submit" class="btn-psan-primary py-3 px-10 text-sm" disabled={isSaving}>
 					{isSaving ? 'Saving...' : 'Save Changes'}

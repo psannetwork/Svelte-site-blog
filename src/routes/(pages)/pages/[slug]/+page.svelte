@@ -5,6 +5,9 @@
 	let { data, form } = $props<{ data: PageData, form: ActionData }>();
 	let replyingTo = $state<string | null>(null);
 
+	// ウィジェットマーカーでコンテンツを分割
+	const contentParts = $derived(data.post.content.split(/<!-- WIDGET:([a-z-]+) -->/));
+
 	// コメントをツリー構造に変換
 	const commentTree = $derived.by(() => {
 		const map = new Map();
@@ -101,16 +104,8 @@
 	</div>
 {/snippet}
 
-<article class="max-w-4xl mx-auto px-4 py-20">
-	<header class="mb-12">
-		<h1 class="text-4xl md:text-6xl font-black tracking-tighter dark:text-white leading-[1.1]">{data.post.title}</h1>
-	</header>
-
-	<div class="prose prose-slate dark:prose-invert max-w-none mb-20 border-b border-slate-100 dark:border-slate-800 pb-20">
-		{@html data.post.content}
-	</div>
-
-	<section id="comments" class="max-w-3xl mx-auto">
+{#snippet commentsSection()}
+	<section id="comments" class="max-w-3xl mx-auto my-20">
 		<h2 class="text-2xl font-black tracking-tighter mb-10 uppercase">Feedback ({data.comments.length})</h2>
 
 		<div class="space-y-4 mb-16">
@@ -144,4 +139,27 @@
 			{/if}
 		{/if}
 	</section>
+{/snippet}
+
+<article class="max-w-4xl mx-auto px-4 py-20">
+	<header class="mb-12">
+		<h1 class="text-4xl md:text-6xl font-black tracking-tighter dark:text-white leading-[1.1]">{data.post.title}</h1>
+	</header>
+
+	<div class="prose prose-slate prose-xl dark:prose-invert max-w-none mb-20 border-b border-slate-100 dark:border-slate-800 pb-20 prose-img:rounded-[40px] prose-img:shadow-2xl">
+		{#each contentParts as part, i}
+			{#if i % 2 === 0}
+				{@html part}
+			{:else if part === 'comments'}
+				{@render commentsSection()}
+			{:else if part === 'latest-posts'}
+				<!-- 記事詳細でも最新記事を埋め込めるようにする場合はここにレンダリングを追加できます（今回は割愛） -->
+			{/if}
+		{/each}
+
+		<!-- ウィジェットが配置されていない場合のフォールバック -->
+		{#if !data.post.content.includes('<!-- WIDGET:comments -->')}
+			{@render commentsSection()}
+		{/if}
+	</div>
 </article>
