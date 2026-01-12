@@ -2,7 +2,6 @@
 	import { enhance } from '$app/forms';
 	import { onMount } from 'svelte';
 	import { invalidateAll } from '$app/navigation';
-	import { WidgetTool } from '$lib/editor/WidgetTool';
 	
 	let { data, form } = $props();
 	let formElement: HTMLFormElement;

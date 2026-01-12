@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { enhance } from '$app/forms';
+	import { editorJsToHtml } from '$lib/utils/editor';
 	import type { ActionData, PageData } from './$types';
 
 	let { data, form } = $props<{ data: PageData, form: ActionData }>();
@@ -11,6 +12,22 @@
 	let visibility = $state(data.post.visibility);
 	let editorData = $state(data.post.raw_json || data.post.content || '');
 	let isSaving = $state(false);
+	let isPreview = $state(false);
+	let previewHtml = $state('');
+
+	async function togglePreview() {
+		if (!isPreview) {
+			// プレビューモードへ移行
+			if (editor) {
+				const saved = await editor.save();
+				previewHtml = editorJsToHtml(saved.blocks);
+			}
+			isPreview = true;
+		} else {
+			// エディタモードへ復帰
+			isPreview = false;
+		}
+	}
 
 	async function handleKeydown(e: KeyboardEvent) {
 		if ((e.ctrlKey || e.metaKey) && e.key === 's') {
@@ -140,6 +157,9 @@
 			</div>
 			<div class="flex gap-3">
 				<a href="/dashboard/posts" class="btn-psan-ghost text-xs py-2 dark:bg-slate-700 dark:text-white dark:border-slate-500">Cancel</a>
+				<button type="button" onclick={togglePreview} class="btn-psan-ghost text-xs py-2 border-psan-green text-psan-green hover:bg-psan-green hover:text-white transition-all min-w-[100px]">
+					{isPreview ? 'Edit' : 'Preview'}
+				</button>
 				<button type="button" onclick={submitForm} class="btn-psan-primary py-3 px-10 text-sm" disabled={isSaving}>
 					{isSaving ? 'Saving...' : 'Save Changes'}
 				</button>
@@ -166,7 +186,12 @@
 			></textarea>
 
 			<div class="prose dark:prose-invert max-w-none min-h-[500px]">
-				<div id="editorjs" class="text-main"></div>
+				<div id="editorjs" class="text-main {isPreview ? 'hidden' : 'block'}"></div>
+				{#if isPreview}
+					<div class="preview-content animate-in fade-in duration-300">
+						{@html previewHtml}
+					</div>
+				{/if}
 			</div>
 		</div>
 
