@@ -37,7 +37,7 @@ COPY --from=builder /app/package.json ./package.json
 COPY --from=builder /app/pnpm-lock.yaml ./pnpm-lock.yaml
 
 # 本番依存関係のみインストール（実行環境に合わせてビルドを確実に行う）
-RUN pnpm install --prod --frozen-lockfile
+RUN pnpm install --prod --frozen-lockfile && pnpm rebuild better-sqlite3
 
 # 環境変数の設定
 ENV NODE_ENV=production
