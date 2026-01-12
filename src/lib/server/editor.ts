@@ -34,6 +34,50 @@ export function editorJsToHtml(blocks: any[]) {
 				const caption = block.data.caption ? `<figcaption class="text-center text-xs mt-6 font-black opacity-30 uppercase tracking-widest">${block.data.caption}</figcaption>` : '';
 				html += `<figure class="my-20 overflow-hidden"><img src="${block.data.file.url}" alt="${block.data.caption || ''}" class="${classes}">${caption}</figure>`;
 				break;
+			case 'table':
+				let tableHtml = '<div class="overflow-x-auto my-10"><table class="w-full border-collapse border border-slate-200 dark:border-slate-700">';
+				block.data.content.forEach((row: string[], i: number) => {
+					tableHtml += `<tr class="${i === 0 && block.data.withHeadings ? 'bg-slate-50 dark:bg-slate-800/50' : ''}">`;
+					row.forEach((cell) => {
+						const tag = i === 0 && block.data.withHeadings ? 'th' : 'td';
+						tableHtml += `<${tag} class="border border-slate-200 dark:border-slate-700 p-4 text-left">${cell}</${tag}>`;
+					});
+					tableHtml += '</tr>';
+				});
+				tableHtml += '</table></div>';
+				html += tableHtml;
+				break;
+			case 'checklist':
+				let checklistHtml = '<ul class="space-y-3 my-8">';
+				block.data.items.forEach((item: any) => {
+					checklistHtml += `
+						<li class="flex items-start gap-3">
+							<div class="mt-1 w-5 h-5 rounded border-2 ${item.checked ? 'bg-psan-green border-psan-green' : 'border-slate-300 dark:border-slate-600'} flex items-center justify-center shrink-0">
+								${item.checked ? '<svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="4" d="M5 13l4 4L19 7"/></svg>' : ''}
+							</div>
+							<span class="${item.checked ? 'opacity-50 line-through' : ''}">${item.text}</span>
+						</li>`;
+				});
+				checklistHtml += '</ul>';
+				html += checklistHtml;
+				break;
+			case 'delimiter':
+				html += '<div class="flex justify-center my-16 gap-4"><span class="w-2 h-2 rounded-full bg-slate-200 dark:bg-slate-700"></span><span class="w-2 h-2 rounded-full bg-psan-green"></span><span class="w-2 h-2 rounded-full bg-slate-200 dark:bg-slate-700"></span></div>';
+				break;
+			case 'warning':
+				html += `
+					<div class="bg-amber-50 dark:bg-amber-900/20 border-l-8 border-amber-400 p-8 my-10 rounded-r-3xl">
+						<div class="flex gap-4">
+							<div class="text-amber-400 shrink-0">
+								<svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+							</div>
+							<div>
+								<div class="font-black uppercase tracking-widest text-amber-600 dark:text-amber-400 mb-1 text-sm">${block.data.title || 'Attention'}</div>
+								<div class="font-medium opacity-80">${block.data.message}</div>
+							</div>
+						</div>
+					</div>`;
+				break;
 			case 'embed':
 				html += `
 					<figure class="my-20 flex flex-col items-center">

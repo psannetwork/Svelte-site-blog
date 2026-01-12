@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { enhance } from '$app/forms';
-	import { WidgetTool } from '$lib/editor/WidgetTool';
 	import type { ActionData } from './$types';
 
 	let { form } = $props<{ form: ActionData }>();
@@ -11,12 +10,6 @@
 	let visibility = $state('public');
 	let editorData = $state('');
 	let isSaving = $state(false);
-
-	function addWidget(name: string) {
-		if (editor) {
-			editor.blocks.insert('widget', { name });
-		}
-	}
 
 	async function handleKeydown(e: KeyboardEvent) {
 		if ((e.ctrlKey || e.metaKey) && e.key === 's') {
@@ -51,6 +44,12 @@
 		const Image = (await import('@editorjs/image')).default;
 		const Embed = (await import('@editorjs/embed')).default;
 		const Marker = (await import('@editorjs/marker')).default;
+		const Table = (await import('@editorjs/table')).default;
+		const Checklist = (await import('@editorjs/checklist')).default;
+		const Warning = (await import('@editorjs/warning')).default;
+		const Delimiter = (await import('@editorjs/delimiter')).default;
+		const InlineCode = (await import('@editorjs/inline-code')).default;
+		const Underline = (await import('@editorjs/underline')).default;
 		const ColorPlugin = (await import('editorjs-text-color-plugin')).default;
 				
 		editor = new EditorJS({
@@ -61,6 +60,12 @@
 				quote: Quote,
 				code: Code,
 				marker: Marker,
+				table: Table,
+				checklist: Checklist,
+				warning: Warning,
+				delimiter: Delimiter,
+				inlineCode: InlineCode,
+				underline: Underline,
 				color: {
 					class: ColorPlugin,
 					config: {
@@ -103,6 +108,7 @@
 			}
 		};
 	});
+	let formElement: HTMLFormElement;
 </script>
 
 <div class="max-w-5xl mx-auto px-4 py-8">

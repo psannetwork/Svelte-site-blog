@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { enhance } from '$app/forms';
-	import { WidgetTool } from '$lib/editor/WidgetTool';
 	import type { ActionData, PageData } from './$types';
 
 	let { data, form } = $props<{ data: PageData, form: ActionData }>();
@@ -12,14 +11,6 @@
 	let visibility = $state(data.post.visibility);
 	let editorData = $state(data.post.raw_json || data.post.content || '');
 	let isSaving = $state(false);
-
-	// サーバーからのデータが更新されたときのみ同期（エディタ実行中は無視）
-	$effect(() => {
-		if (!isSaving && data.post.raw_json !== editorData) {
-			// ただし、エディタが既にある場合は、外部からの変更（他ブラウザ等）がない限り同期しない
-			// ここでは初期読み込み時のみを想定
-		}
-	});
 
 	async function handleKeydown(e: KeyboardEvent) {
 		if ((e.ctrlKey || e.metaKey) && e.key === 's') {
@@ -34,9 +25,8 @@
 		try {
 			const saved = await editor.save();
 			const json = JSON.stringify(saved);
-			editorData = json; // ローカルステートを更新
+			editorData = json; 
 			
-			// 隠しフィールドの値を確実に更新するために少し待機
 			setTimeout(() => {
 				formElement?.requestSubmit();
 			}, 20);
@@ -50,11 +40,23 @@
 		if (editor) return; 
 
 		const EditorJS = (await import('@editorjs/editorjs')).default;
-		// ... 省略 ...
+		const Header = (await import('@editorjs/header')).default;
+		const List = (await import('@editorjs/list')).default;
+		const Quote = (await import('@editorjs/quote')).default;
+		const Code = (await import('@editorjs/code')).default;
+		const Image = (await import('@editorjs/image')).default;
+		const Embed = (await import('@editorjs/embed')).default;
+		const Marker = (await import('@editorjs/marker')).default;
+		const Table = (await import('@editorjs/table')).default;
+		const Checklist = (await import('@editorjs/checklist')).default;
+		const Warning = (await import('@editorjs/warning')).default;
+		const Delimiter = (await import('@editorjs/delimiter')).default;
+		const InlineCode = (await import('@editorjs/inline-code')).default;
+		const Underline = (await import('@editorjs/underline')).default;
+		const ColorPlugin = (await import('editorjs-text-color-plugin')).default;
 		
 		let parsedData = { blocks: [] };
 		try {
-			// 現在の editorData (保存直後の値を含む) を優先して使用
 			if (editorData) {
 				const data = JSON.parse(editorData);
 				if (data && data.blocks) parsedData = data;
@@ -67,11 +69,42 @@
 
 		editor = new EditorJS({
 			holder: 'editorjs',
-			// ... ツール設定 ...
+			tools: {
+				header: Header,
+				list: List,
+				quote: Quote,
+				code: Code,
+				marker: Marker,
+				table: Table,
+				checklist: Checklist,
+				warning: Warning,
+				delimiter: Delimiter,
+				inlineCode: InlineCode,
+				underline: Underline,
+				color: {
+					class: ColorPlugin,
+					config: {
+						colorCollections: ['#00CC99', '#EB2D8C', '#1A1A1A', '#FF1313', '#2388FF', '#FFD300'],
+						type: 'text',
+						customPicker: true
+					}
+				},
+				image: { class: Image, config: { endpoints: { byFile: '/api/upload' } } },
+				embed: { class: Embed, config: { services: { youtube: true, vimeo: true, twitter: true } } }
+			},
 			data: parsedData,
-			// ...
+			placeholder: 'Start writing...',
+			defaultBlock: 'paragraph'
 		});
-		// ...
+
+		window.addEventListener('keydown', handleKeydown);
+		return () => {
+			window.removeEventListener('keydown', handleKeydown);
+			if (editor && typeof editor.destroy === 'function') {
+				editor.destroy();
+				editor = null;
+			}
+		};
 	});
 </script>
 
@@ -82,11 +115,8 @@
 <div class="max-w-5xl mx-auto px-4 py-8">
 	<form bind:this={formElement} method="POST" class="space-y-8" use:enhance={() => {
 		return async ({ result, update }) => {
-			// ページ全体の更新(update())を呼ぶと、エディタが再マウントされて消える場合がある
-			// 成功時は update({ reset: false }) を使うか、手動で必要な処理を行う
 			if (result.type === 'success') {
 				isSaving = false;
-				// フォームの値をリセットさせない
 				await update({ reset: false });
 			} else {
 				await update();

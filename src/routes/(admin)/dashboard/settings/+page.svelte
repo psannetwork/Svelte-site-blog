@@ -54,6 +54,12 @@
 		const Marker = (await import('@editorjs/marker')).default;
 		const Quote = (await import('@editorjs/quote')).default;
 		const Code = (await import('@editorjs/code')).default;
+		const Table = (await import('@editorjs/table')).default;
+		const Checklist = (await import('@editorjs/checklist')).default;
+		const Warning = (await import('@editorjs/warning')).default;
+		const Delimiter = (await import('@editorjs/delimiter')).default;
+		const InlineCode = (await import('@editorjs/inline-code')).default;
+		const Underline = (await import('@editorjs/underline')).default;
 		const ColorPlugin = (await import('editorjs-text-color-plugin')).default;
 
 		let parsedData = { blocks: [] };
@@ -78,6 +84,12 @@
 				marker: Marker,
 				quote: Quote,
 				code: Code,
+				table: Table,
+				checklist: Checklist,
+				warning: Warning,
+				delimiter: Delimiter,
+				inlineCode: InlineCode,
+				underline: Underline,
 				color: { 
 					class: ColorPlugin, 
 					config: { 
