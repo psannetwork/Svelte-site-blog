@@ -38,7 +38,7 @@ COPY --from=builder /app/package.json ./package.json
 COPY --from=builder /app/pnpm-lock.yaml ./pnpm-lock.yaml
 
 # 本番依存関係のみインストールし、better-sqlite3を明示的にリビルド
-RUN pnpm config set side-effects-cache false && \
+RUN pnpm config set only-allow-built-dependencies better-sqlite3 && \
     pnpm install --prod --frozen-lockfile && \
     pnpm rebuild better-sqlite3
 
