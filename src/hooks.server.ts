@@ -3,6 +3,26 @@ import db from "$lib/server/db";
 import { getSetting } from "$lib/server/settings";
 import { performBackup } from "$lib/server/backup";
 import { redirect, type Handle } from "@sveltejs/kit";
+import { existsSync, writeFileSync } from 'fs';
+import { join } from 'path';
+
+// .envが存在しない場合に自動作成（開発環境や初回セットアップの利便性のため）
+try {
+	const envPath = join(process.cwd(), '.env');
+	if (!existsSync(envPath)) {
+		const defaultEnv = `DB_PATH=blog.db
+# Security (Cloudflare Turnstile) - Optional
+# TURNSTILE_SITE_KEY=
+# TURNSTILE_SECRET_KEY=
+# Created automatically by Svelte Site Blog
+`;
+		writeFileSync(envPath, defaultEnv);
+		console.log('✅ Created .env file with default settings.');
+	}
+} catch (e) {
+	// 書き込み権限がない場合などは無視（Docker環境などでは環境変数で制御するため）
+	console.warn('⚠️ Could not create .env file automatically (using defaults/environment variables).');
+}
 
 export const handle: Handle = async ({ event, resolve }) => {
 	// 自動バックアップチェック
