@@ -2,6 +2,8 @@ import { getSettings } from "$lib/server/settings";
 import { editorJsToHtml } from "$lib/server/editor";
 import type { LayoutServerLoad } from "./$types";
 
+export const prerender = false;
+
 export const load: LayoutServerLoad = async ({ locals }) => {
 	const settings = getSettings();
 	
