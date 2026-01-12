@@ -78,7 +78,6 @@
 				marker: Marker,
 				quote: Quote,
 				code: Code,
-				widget: WidgetTool,
 				color: { 
 					class: ColorPlugin, 
 					config: { 

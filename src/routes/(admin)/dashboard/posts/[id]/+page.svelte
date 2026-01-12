@@ -10,7 +10,7 @@
 	let title = $state(data.post.title);
 	let summary = $state(data.post.summary || '');
 	let visibility = $state(data.post.visibility);
-	let editorData = $state(data.post.raw_json || '');
+	let editorData = $state(data.post.raw_json || data.post.content || '');
 	let isSaving = $state(false);
 
 	// サーバーからのデータが更新されたときのみ同期（エディタ実行中は無視）
@@ -109,11 +109,6 @@
 				</div>
 			</div>
 			<div class="flex gap-3">
-				<div class="flex items-center gap-2 mr-4 px-4 border-r border-slate-100 dark:border-slate-800">
-					<span class="text-[10px] font-black text-muted uppercase">Insert:</span>
-					<button type="button" onclick={() => addWidget('latest-posts')} class="text-[10px] font-black px-3 py-1 bg-psan-green/10 text-psan-green rounded-full hover:bg-psan-green hover:text-white transition-all">Latest Posts</button>
-					<button type="button" onclick={() => addWidget('comments')} class="text-[10px] font-black px-3 py-1 bg-psan-pink/10 text-psan-pink rounded-full hover:bg-psan-pink hover:text-white transition-all">Comments</button>
-				</div>
 				<a href="/dashboard/posts" class="btn-psan-ghost text-xs py-2 dark:bg-slate-700 dark:text-white dark:border-slate-500">Cancel</a>
 				<button type="button" onclick={submitForm} class="btn-psan-primary py-3 px-10 text-sm" disabled={isSaving}>
 					{isSaving ? 'Saving...' : 'Save Changes'}

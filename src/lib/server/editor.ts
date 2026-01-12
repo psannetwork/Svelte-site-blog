@@ -43,10 +43,6 @@ export function editorJsToHtml(blocks: any[]) {
 						${block.data.caption ? `<figcaption class="text-center text-xs mt-6 font-black opacity-30 uppercase tracking-widest">${block.data.caption}</figcaption>` : ''}
 					</figure>`;
 				break;
-			case 'widget':
-				// 記号トラブルを避けるため、アンダースコアを使用
-				html += `___WIDGET:${block.data.name}___`;
-				break;
 		}
 	});
 	return html;

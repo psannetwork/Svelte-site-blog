@@ -5,9 +5,6 @@
 	let { data, form } = $props<{ data: PageData, form: ActionData }>();
 	let replyingTo = $state<string | null>(null);
 
-	// ウィジェットマーカーでコンテンツを分割（マーカー自体も保持する）
-	const contentParts = $derived(data.post.content.split(/(___WIDGET:[a-z-]+___)/i));
-
 	// コメントをツリー構造に変換
 	const commentTree = $derived.by(() => {
 		const map = new Map();
@@ -27,12 +24,8 @@
 	});
 </script>
 
-<svelte:head>
-	<title>{data.post.title} | {data.settings?.site_title || 'Blog'}</title>
-</svelte:head>
-
 {#snippet commentItem(comment, depth = 0)}
-	<!-- depth に応じてインデント。最大 2階層までずらす -->
+	<!-- depth に応じてインデント -->
 	<div class="flex gap-4 group {depth > 0 && depth <= 2 ? 'ml-6 md:ml-10 mt-6 pt-6 border-t border-slate-200 dark:border-slate-800/50 relative before:absolute before:left-[-20px] before:top-0 before:bottom-0 before:w-0.5 before:bg-slate-200 dark:before:bg-slate-800/50 before:content-[\'\']' : 'mt-10'} {depth > 2 ? 'mt-6 pt-6 border-t border-slate-200 dark:border-slate-800/50' : ''}">
 		<div class="{depth > 0 ? 'w-8 h-8' : 'w-10 h-10'} rounded-2xl bg-slate-100 dark:bg-slate-800 overflow-hidden shrink-0 shadow-sm">
 			{#if comment.avatar_url}
@@ -96,7 +89,6 @@
 				</form>
 			{/if}
 
-			<!-- 再帰的にレンダー (depth を増やす) -->
 			{#each comment.replies as reply}
 				{@render commentItem(reply, depth + 1)}
 			{/each}
@@ -104,7 +96,15 @@
 	</div>
 {/snippet}
 
-{#snippet commentsSection()}
+<article class="max-w-4xl mx-auto px-4 py-20">
+	<header class="mb-12">
+		<h1 class="text-4xl md:text-6xl font-black tracking-tighter dark:text-white leading-[1.1]">{data.post.title}</h1>
+	</header>
+
+	<div class="prose prose-slate prose-xl dark:prose-invert max-w-none mb-20 border-b border-slate-100 dark:border-slate-800 pb-20 prose-img:rounded-[40px] prose-img:shadow-2xl">
+		{@html data.post.content}
+	</div>
+
 	<section id="comments" class="max-w-3xl mx-auto my-20">
 		<h2 class="text-2xl font-black tracking-tighter mb-10 uppercase">Feedback ({data.comments.length})</h2>
 
@@ -139,27 +139,4 @@
 			{/if}
 		{/if}
 	</section>
-{/snippet}
-
-<article class="max-w-4xl mx-auto px-4 py-20">
-	<header class="mb-12">
-		<h1 class="text-4xl md:text-6xl font-black tracking-tighter dark:text-white leading-[1.1]">{data.post.title}</h1>
-	</header>
-
-	<div class="prose prose-slate prose-xl dark:prose-invert max-w-none mb-20 border-b border-slate-100 dark:border-slate-800 pb-20 prose-img:rounded-[40px] prose-img:shadow-2xl">
-		{#each contentParts as part}
-			{#if part.includes('WIDGET:latest-posts')}
-				<!-- なし -->
-			{:else if part.includes('WIDGET:comments')}
-				{@render commentsSection()}
-			{:else}
-				{@html part}
-			{/if}
-		{/each}
-
-		<!-- ウィジェットが配置されていない場合のフォールバック -->
-		{#if !data.post.content.includes('WIDGET:comments')}
-			{@render commentsSection()}
-		{/if}
-	</div>
 </article>
