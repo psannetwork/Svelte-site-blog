@@ -1,7 +1,7 @@
 import { mkdirSync, existsSync, readdirSync, unlinkSync, statSync, copyFileSync } from 'fs';
 import { join } from 'path';
 import Database from 'better-sqlite3';
-import { db } from './db';
+import db from './db';
 import { getSetting, setSetting } from './settings';
 
 const BACKUP_DIR = join(process.cwd(), 'backups');

@@ -194,7 +194,7 @@
 				
 				<div class="grid md:grid-cols-2 gap-8">
 					<div class="space-y-4">
-						<label class="text-[10px] font-black text-muted uppercase">Site Icon (Favicon & Logo)</label>
+						<span class="text-[10px] font-black text-muted uppercase">Site Icon (Favicon & Logo)</span>
 						<div class="flex items-center gap-6">
 							<div class="w-20 h-20 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-none flex items-center justify-center overflow-hidden shadow-sm">
 								{#if siteIconUrl}
@@ -216,10 +216,10 @@
 
 					<div class="space-y-2">
 						<label for="custom_css" class="text-[10px] font-black text-muted uppercase">Custom CSS</label>
-						<textarea
-							id="custom_css"
-							name="custom_css"
-							rows="6"
+						<textarea 
+							id="custom_css" 
+							name="custom_css" 
+							rows="6" 
 							class="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-none rounded-xl p-4 font-mono text-xs text-main resize-y"
 							placeholder="body &#123; background: #f0f0f0; &#125;"
 						>{data.settings.custom_css || ''}</textarea>

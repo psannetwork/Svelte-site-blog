@@ -1,5 +1,5 @@
 import Database from 'better-sqlite3';
-import { DB_PATH } from '$env/static/private';
+import { env } from '$env/dynamic/private';
 
 // 開発中のホットリロードで複数の接続が作られないようにグローバル変数に保持
 const globalForDb = global as unknown as { db: Database.Database | null };
@@ -8,11 +8,11 @@ let db: Database.Database;
 
 if (process.env.NODE_ENV === 'development') {
 	// 開発環境では常に新しい接続を確立
-	db = new Database(DB_PATH || 'blog.db');
+	db = new Database(env.DB_PATH || 'blog.db');
 	globalForDb.db = db;
 } else {
 	// 本番環境ではグローバル変数を優先
-	db = globalForDb.db || new Database(DB_PATH || 'blog.db');
+	db = globalForDb.db || new Database(env.DB_PATH || 'blog.db');
 	globalForDb.db = db;
 }
 
