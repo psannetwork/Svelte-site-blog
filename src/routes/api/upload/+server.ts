@@ -1,8 +1,6 @@
 import { error, json } from '@sveltejs/kit';
-import { writeFileSync, mkdirSync, existsSync } from 'fs';
-import { join } from 'path';
-import { generateIdFromEntropySize } from 'lucia';
-import { getSetting } from '$lib/server/settings'; // 追加
+import { saveFile } from '$lib/server/files';
+import { getSetting } from '$lib/server/settings';
 import type { RequestHandler } from './$types';
 
 export const POST: RequestHandler = async ({ request, locals, url }) => {
@@ -12,7 +10,7 @@ export const POST: RequestHandler = async ({ request, locals, url }) => {
 
 	const formData = await request.formData();
 	const file = formData.get('image') as File;
-	const uploadType = url.searchParams.get('type') || 'misc'; // 'avatar' or 'post'
+	const uploadType = (url.searchParams.get('type') || 'misc') as any;
 
 	if (!file) throw error(400, 'No file uploaded');
 
@@ -22,34 +20,20 @@ export const POST: RequestHandler = async ({ request, locals, url }) => {
 	try {
 		allowedExtensions = JSON.parse(allowedExtensionsStr);
 	} catch {
-		allowedExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'ico']; // デフォルト
+		allowedExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'ico'];
 	}
 
 	const ext = file.name.split('.').pop()?.toLowerCase();
 	if (!ext || !allowedExtensions.includes(ext)) {
-		throw error(400, `Unsupported file type: .${ext}. Allowed: ${allowedExtensions.map(e => '.' + e).join(', ')}`);
+		throw error(400, `Unsupported file type: .${ext}`);
 	}
-
-	const buffer = Buffer.from(await file.arrayBuffer());
-	const fileName = `${Date.now()}-${generateIdFromEntropySize(5)}.${ext}`;
-	
-	// ディレクトリ分け: static/uploads/avatars/{userId} または static/uploads/posts/{userId}
-	// 投稿IDはアップロード時点では確定していないことが多いため、ユーザーIDで一旦まとめます
-	const subDir = uploadType === 'avatar' ? `avatars/${locals.user.id}` : `posts/${locals.user.id}`;
-	const uploadDir = join(process.cwd(), 'static', 'uploads', subDir);
-
-	if (!existsSync(uploadDir)) {
-		mkdirSync(uploadDir, { recursive: true });
-	}
-
-	const filePath = join(uploadDir, fileName);
 
 	try {
-		writeFileSync(filePath, buffer);
+		const fileInfo = await saveFile(file, uploadType, locals.user.id);
 		return json({
 			success: 1,
 			file: {
-				url: `/uploads/${subDir}/${fileName}`
+				url: fileInfo.url
 			}
 		});
 	} catch (e) {

@@ -288,6 +288,29 @@
 				</div>
 			</div>
 
+			<section class="card-psan p-8 space-y-6">
+				<h3 class="text-xl font-black text-psan-green italic uppercase">Storage Strategy</h3>
+				<div class="p-6 bg-psan-green/5 border border-psan-green/20 rounded-[32px] space-y-6">
+					<div class="flex items-center justify-between gap-8">
+						<div class="flex-1">
+							<h4 class="font-black text-sm text-main uppercase">File Storage Method</h4>
+							<p class="text-[10px] font-medium text-muted mt-1 leading-relaxed">
+								アップロードされた画像や動画の保存先を選択します。<br>
+								<span class="text-psan-pink font-bold">Local:</span> static/uploads フォルダに保存します（PaaSでは消える可能性があります）。<br>
+								<span class="text-psan-green font-bold">Database:</span> SQLite DB内に保存します（バックアップに含まれますが、DBサイズが大きくなります）。
+							</p>
+						</div>
+						<select 
+							name="storage_type" 
+							class="bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-500 rounded-xl text-xs font-black p-3 focus:ring-2 focus:ring-psan-green text-main dark:text-white"
+						>
+							<option value="local" selected={data.settings.storage_type === 'local'}>Local Filesystem</option>
+							<option value="database" selected={data.settings.storage_type === 'database'}>SQLite Database</option>
+						</select>
+					</div>
+				</div>
+			</section>
+
 			<section class="card-psan p-8 space-y-6 border-psan-pink/20 border-2">
 				<h3 class="text-xl font-black text-psan-pink italic uppercase">Security (Turnstile)</h3>
 				<label class="flex items-center justify-between p-4 bg-psan-pink/5 rounded-xl cursor-pointer">
