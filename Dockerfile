@@ -1,5 +1,6 @@
 # ビルドステージ
-FROM node:20 AS builder
+FROM node:20-slim AS builder
+RUN apt-get update && apt-get install -y python3 make g++ 
 WORKDIR /app
 
 # pnpmの有効化
@@ -21,7 +22,7 @@ RUN pnpm run build
 FROM node:20-slim AS runner
 WORKDIR /app
 
-# 実行環境に必要な最低限のライブラリ（ネイティブモジュール用）
+# 実行環境に必要なライブラリ（ネイティブモジュールの再ビルド用）
 RUN apt-get update && apt-get install -y \
     python3 \
     make \
@@ -36,8 +37,10 @@ COPY --from=builder /app/build ./build
 COPY --from=builder /app/package.json ./package.json
 COPY --from=builder /app/pnpm-lock.yaml ./pnpm-lock.yaml
 
-# 本番依存関係のみインストール（実行環境に合わせてビルドを確実に行う）
-RUN pnpm install --prod --frozen-lockfile && pnpm rebuild better-sqlite3
+# 本番依存関係のみインストールし、better-sqlite3を明示的にリビルド
+RUN pnpm config set side-effects-cache false && \
+    pnpm install --prod --frozen-lockfile && \
+    pnpm rebuild better-sqlite3
 
 # 環境変数の設定
 ENV NODE_ENV=production
