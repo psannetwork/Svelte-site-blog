@@ -66,18 +66,18 @@
 			<div>
 				<h2 class="text-4xl font-black tracking-tighter uppercase text-psan-green">Edit Story</h2>
 				<div class="flex gap-4 mt-2">
-					<select name="visibility" bind:value={visibility} class="text-[10px] font-black bg-slate-100 dark:bg-slate-800 border-none rounded-lg px-3 py-1 uppercase tracking-widest cursor-pointer">
-						<option value="draft">📁 Draft</option>
-						<option value="review">⏳ Review</option>
-						<option value="public">🌍 Public</option>
-						<option value="unlisted">🔗 Unlisted</option>
-						<option value="private">🔒 Private</option>
-						<option value="vip">💎 VIP</option>
+					<select name="visibility" bind:value={visibility} class="text-xs font-black bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-500 rounded-lg px-4 py-2 uppercase tracking-widest cursor-pointer text-slate-900 dark:text-white focus:ring-2 focus:ring-psan-green shadow-sm outline-none">
+						<option class="dark:bg-slate-800" value="draft">📁 Draft</option>
+						<option class="dark:bg-slate-800" value="review">⏳ Review</option>
+						<option class="dark:bg-slate-800" value="public">🌍 Public</option>
+						<option class="dark:bg-slate-800" value="unlisted">🔗 Unlisted</option>
+						<option class="dark:bg-slate-800" value="private">🔒 Private</option>
+						<option class="dark:bg-slate-800" value="vip">💎 VIP</option>
 					</select>
 				</div>
 			</div>
 			<div class="flex gap-3">
-				<a href="/dashboard/posts" class="btn-psan-ghost text-xs py-2">Cancel</a>
+				<a href="/dashboard/posts" class="btn-psan-ghost text-xs py-2 dark:bg-slate-700 dark:text-white dark:border-slate-500">Cancel</a>
 				<button class="btn-psan-primary py-3 px-10 text-sm">Save Changes</button>
 			</div>
 		</header>
@@ -88,7 +88,7 @@
 				type="text"
 				name="title"
 				bind:value={title}
-				class="w-full text-4xl md:text-6xl font-black bg-transparent border-none focus:ring-0 p-0 dark:text-white"
+				class="w-full text-4xl md:text-6xl font-black bg-transparent border-none focus:ring-0 p-0 text-main"
 				placeholder="Title here..."
 			/>
 
@@ -97,12 +97,12 @@
 				name="summary"
 				bind:value={summary}
 				rows="2"
-				class="w-full text-xl font-medium bg-transparent border-b border-slate-100 dark:border-slate-800 focus:border-psan-green focus:ring-0 p-0 pb-4 dark:text-slate-400"
+				class="w-full text-xl font-medium bg-transparent border-b border-slate-200 dark:border-slate-700 focus:border-psan-green focus:ring-0 p-0 pb-4 text-muted"
 				placeholder="Add a short summary..."
 			></textarea>
 
-			<div class="prose prose-slate dark:prose-invert max-w-none min-h-[500px]">
-				<div id="editorjs"></div>
+			<div class="prose dark:prose-invert max-w-none min-h-[500px]">
+				<div id="editorjs" class="text-main"></div>
 			</div>
 		</div>
 

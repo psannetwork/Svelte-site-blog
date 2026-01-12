@@ -80,9 +80,9 @@
 	<form id="post-form" bind:this={formElement} method="POST" class="space-y-8">
 		<header class="flex flex-col md:flex-row md:items-center justify-between gap-6">
 			<div>
-				<h2 class="text-4xl font-black tracking-tighter">CREATE STORY</h2>
+				<h2 class="text-4xl font-black tracking-tighter text-main">CREATE STORY</h2>
 				<div class="flex gap-4 mt-2">
-					<select name="visibility" bind:value={visibility} class="text-[10px] font-black bg-slate-100 dark:bg-slate-800 border-none rounded-lg px-3 py-1 uppercase tracking-widest cursor-pointer">
+					<select name="visibility" bind:value={visibility} class="text-xs font-black bg-white dark:bg-slate-800 border border-slate-200 dark:border-none rounded-lg px-4 py-2 uppercase tracking-widest cursor-pointer text-main focus:ring-2 focus:ring-psan-green shadow-sm">
 						<option value="draft">📁 Draft</option>
 						<option value="review">⏳ Review</option>
 						<option value="public">🌍 Public</option>
@@ -104,7 +104,7 @@
 				type="text"
 				name="title"
 				bind:value={title}
-				class="w-full text-4xl md:text-6xl font-black bg-transparent border-none focus:ring-0 p-0 dark:text-white placeholder:opacity-20"
+				class="w-full text-4xl md:text-6xl font-black bg-transparent border-none focus:ring-0 p-0 text-main placeholder:opacity-20"
 				placeholder="Title here..."
 			/>
 
@@ -113,12 +113,12 @@
 				name="summary"
 				bind:value={summary}
 				rows="2"
-				class="w-full text-xl font-medium bg-transparent border-b border-slate-100 dark:border-slate-800 focus:border-psan-green focus:ring-0 p-0 pb-4 dark:text-slate-400 placeholder:opacity-20"
+				class="w-full text-xl font-medium bg-transparent border-b border-border-color dark:border-slate-800 focus:border-psan-green focus:ring-0 p-0 pb-4 text-muted placeholder:opacity-20"
 				placeholder="Add a short summary..."
 			></textarea>
 
-			<div class="prose prose-slate dark:prose-invert max-w-none min-h-[500px]">
-				<div id="editorjs"></div>
+			<div class="prose dark:prose-invert max-w-none min-h-[500px]">
+				<div id="editorjs" class="text-main"></div>
 			</div>
 		</div>
 

@@ -13,7 +13,6 @@
 		{ name: '設定', href: '/dashboard/settings', icon: 'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z' }
 	];
 
-	// ページ遷移時にサイドバーを閉じる
 	$effect(() => {
 		page.url.pathname;
 		isSidebarOpen = false;
@@ -21,72 +20,71 @@
 </script>
 
 <div class="flex h-screen bg-[--bg-main] transition-colors overflow-hidden">
-	<!-- モバイル用オーバーレイ -->
 	{#if isSidebarOpen}
 		<button 
 			onclick={() => isSidebarOpen = false} 
-			class="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] lg:hidden animate-in fade-in duration-300"
-			aria-label="サイドバーを閉じる"
+			class="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] lg:hidden animate-in fade-in"
 		></button>
 	{/if}
 
-	<!-- サイドバー (レスポンシブ) -->
 	<aside class="
-		fixed lg:static inset-y-0 left-0 w-72 bg-[--card-bg] border-r border-[--border-main]
-		z-[101] lg:z-0 transform transition-transform duration-300 ease-in-out shrink-0 flex flex-col
+		fixed lg:static inset-y-0 left-0 w-72 bg-[--card-bg] border-r border-[--border-color]
+		z-[101] lg:z-0 transform transition-transform duration-300
 		{isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+		flex flex-col
 	">
 		<div class="p-8 flex items-center justify-between">
 			<div class="flex items-center gap-3">
 				<div class="w-8 h-8 bg-psan-green rounded-lg shrink-0"></div>
-				<span class="font-black text-xl tracking-tighter dark:text-white uppercase">Dashboard</span>
+				<span class="font-black text-xl tracking-tighter text-main uppercase">Dashboard</span>
 			</div>
-			<button onclick={() => isSidebarOpen = false} class="lg:hidden p-2 text-slate-400">
+			<button onclick={() => isSidebarOpen = false} class="lg:hidden p-2 text-main" aria-label="サイドバーを閉じる">
 				<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
 			</button>
 		</div>
 		
 		<nav class="flex-1 px-4 space-y-1 overflow-y-auto">
 			{#each menuItems as item}
-				<a href={item.href} class="flex items-center gap-3 px-4 py-4 lg:py-3 rounded-2xl font-bold text-sm lg:text-xs transition-all 
-					{page.url.pathname === item.href ? 'bg-psan-green/10 text-psan-green' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'}">
-					<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d={item.icon}/></svg>
+				<a href={item.href} class="flex items-center gap-3 px-4 py-4 lg:py-3 rounded-2xl font-black text-sm lg:text-xs transition-all
+					{page.url.pathname === item.href ? 'bg-psan-green text-white shadow-xl shadow-psan-green/30 translate-x-1' : 'text-muted hover:bg-slate-100 dark:hover:bg-slate-700/50 hover:text-[--text-main] dark:hover:text-white hover:translate-x-1'}">
+					<svg class="w-5 h-5 {page.url.pathname === item.href ? 'stroke-2' : ''}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d={item.icon}/></svg>
 					{item.name}
 				</a>
 			{/each}
 		</nav>
 
-		<div class="p-6 border-t dark:border-slate-800">
-			<a href="/" class="flex items-center justify-center gap-2 py-4 lg:py-3 bg-slate-100 dark:bg-slate-800 rounded-2xl text-[10px] font-black tracking-widest hover:bg-psan-green hover:text-white transition-all">
-				VIEW PUBLIC SITE
-			</a>
-		</div>
+		        <div class="p-6 border-t border-[--border-main] ">
+
+		                        <a href="/" class="btn-psan-ghost py-2.5 text-xs dark:bg-slate-700 dark:text-white dark:border-slate-400 hover:bg-psan-green hover:text-white hover:border-psan-green uppercase tracking-[0.2em] shadow-sm transition-all" aria-label="サイトを表示">
+		            
+		                            View Site
+		            
+		                        </a>
+		        </div>
 	</aside>
 
 	<div class="flex-1 flex flex-col min-w-0 overflow-hidden">
-		<!-- ダッシュボード用ヘッダー -->
-		<header class="h-20 bg-[--card-bg]/80 backdrop-blur-xl border-b border-[--border-main] px-4 md:px-8 flex items-center justify-between shrink-0">
+		<header class="h-20 bg-[--card-bg]/80 backdrop-blur-xl border-b border-[--border-color] px-4 md:px-8 flex items-center justify-between shrink-0">
 			<div class="flex items-center gap-4">
-				<button onclick={() => isSidebarOpen = true} class="lg:hidden p-2 bg-slate-100 dark:bg-slate-800 rounded-xl" aria-label="メニュー">
-					<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"/></svg>
-				</button>
-				<h1 class="text-[10px] font-black tracking-[0.2em] text-slate-400 uppercase hidden sm:block">Admin Console</h1>
+				                                				                <button onclick={() => isSidebarOpen = true} class="lg:hidden p-2 bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-500 rounded-xl text-main" aria-label="メニューを開く">
+				                                				                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"/></svg>
+				                                				                </button>				<h1 class="text-[10px] font-black tracking-[0.2em] text-muted uppercase hidden sm:block">Admin Console</h1>
 			</div>
 			
 			<div class="flex items-center gap-3 md:gap-6">
-				<button onclick={() => theme.toggle()} class="p-2 rounded-xl bg-slate-100 dark:bg-slate-800" aria-label="テーマ切替">
+				<button onclick={() => theme.toggle()} class="p-2 rounded-xl transition-all bg-slate-100 text-slate-600 border border-slate-200 dark:bg-slate-700 dark:border-slate-400 hover:border-psan-green active:scale-95 shadow-sm" aria-label="テーマ切替">
 					{#if theme.current === 'light'}
-						<svg class="w-4 h-4 text-slate-600" fill="currentColor" viewBox="0 0 20 20"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"/></svg>
+						<svg class="w-4 h-4 text-slate-700" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464l-.707-.707a1 1 0 00-1.414 1.414l.707.707a1 1 0 001.414-1.414zm2.12 10.607a1 1 0 010-1.414l.706-.707a1 1 0 111.414 1.414l-.707.707a1 1 0 01-1.414 0zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z"/></svg>
 					{:else}
-						<svg class="w-4 h-4 text-yellow-400" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464l-.707-.707a1 1 0 00-1.414 1.414l.707.707a1 1 0 001.414-1.414zm2.12 10.607a1 1 0 010-1.414l.706-.707a1 1 0 111.414 1.414l-.707.707a1 1 0 01-1.414 0zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z"/></svg>
+						<svg class="w-4 h-4 text-yellow-400" fill="currentColor" viewBox="0 0 20 20"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"/></svg>
 					{/if}
 				</button>
-				<a href="/account" class="flex items-center gap-3 sm:pl-6 sm:border-l dark:border-slate-800 group transition-all shrink-0">
+				<a href="/account" class="flex items-center gap-3 sm:pl-6 sm:border-l border-[--border-color] group">
 					<div class="text-right hidden md:block">
-						<div class="text-[10px] font-black tracking-tighter dark:text-white leading-none mb-1 group-hover:text-psan-green uppercase">{data.user?.nickname || data.user?.username}</div>
-						<div class="text-[8px] font-black text-psan-green uppercase tracking-widest">{data.user?.role}</div>
+						<div class="text-[10px] font-black text-[--text-main] uppercase">{data.user?.nickname || data.user?.username}</div>
+						<div class="text-[8px] font-black text-psan-green uppercase">{data.user?.role}</div>
 					</div>
-					<div class="w-10 h-10 rounded-2xl bg-psan-green overflow-hidden flex items-center justify-center font-black text-white shadow-lg shadow-psan-green/20 group-hover:scale-110 transition-transform">
+					<div class="w-10 h-10 rounded-2xl bg-psan-green overflow-hidden flex items-center justify-center font-black text-white shadow-lg">
 						{#if data.user?.avatar_url}
 							<img src={data.user.avatar_url} alt="" class="w-full h-full object-cover" />
 						{:else}
@@ -97,7 +95,6 @@
 			</div>
 		</header>
 
-		<!-- メインコンテンツ -->
 		<main class="flex-1 overflow-y-auto p-4 md:p-12 pb-32">
 			{@render children()}
 		</main>

@@ -1,9 +1,20 @@
 import { lucia } from "$lib/server/auth";
 import db from "$lib/server/db";
 import { getSetting } from "$lib/server/settings";
+import { performBackup } from "$lib/server/backup";
 import { redirect, type Handle } from "@sveltejs/kit";
 
 export const handle: Handle = async ({ event, resolve }) => {
+	// 自動バックアップチェック
+	const enableBackup = getSetting("enable_backup") === "true";
+	if (enableBackup) {
+		const interval = parseInt(getSetting("backup_interval", "24")) * 60 * 60 * 1000;
+		const lastBackup = parseInt(getSetting("last_backup_at", "0"));
+		if (Date.now() - lastBackup > interval) {
+			performBackup();
+		}
+	}
+
 	const isSetupCompleted = getSetting("is_setup_completed", "false") === "true";
 	if (!isSetupCompleted && !event.url.pathname.startsWith("/setup") && !event.url.pathname.startsWith("/api")) {
 		throw redirect(302, "/setup");

@@ -26,7 +26,7 @@
 
 {#snippet commentItem(comment, depth = 0)}
 	<!-- depth に応じてインデント。最大 2階層までずらす -->
-	<div class="flex gap-4 group {depth > 0 && depth <= 2 ? 'ml-6 md:ml-10 mt-6 pt-6 border-t border-slate-50 dark:border-slate-800/50' : 'mt-10'} {depth > 2 ? 'mt-6 pt-6 border-t border-slate-50 dark:border-slate-800/50' : ''}">
+	<div class="flex gap-4 group {depth > 0 && depth <= 2 ? 'ml-6 md:ml-10 mt-6 pt-6 border-t border-slate-200 dark:border-slate-800/50 relative before:absolute before:left-[-20px] before:top-0 before:bottom-0 before:w-0.5 before:bg-slate-200 dark:before:bg-slate-800/50 before:content-[\'\']' : 'mt-10'} {depth > 2 ? 'mt-6 pt-6 border-t border-slate-200 dark:border-slate-800/50' : ''}">
 		<div class="{depth > 0 ? 'w-8 h-8' : 'w-10 h-10'} rounded-2xl bg-slate-100 dark:bg-slate-800 overflow-hidden shrink-0 shadow-sm">
 			{#if comment.avatar_url}
 				<img src={comment.avatar_url} alt="" class="w-full h-full object-cover" />
@@ -41,25 +41,36 @@
 				<div class="flex items-center gap-2">
 					<span class="text-sm font-black dark:text-white truncate">{comment.author_name}</span>
 					{#if comment.author_role === 'admin'}
-						<span class="text-[8px] font-black px-1.5 py-0.5 bg-psan-green text-white rounded uppercase tracking-widest shrink-0">Admin</span>
+						<span class="text-[10px] font-black px-2 py-1 bg-psan-green text-white rounded-md uppercase tracking-wider shrink-0">Admin</span>
 					{/if}
 				</div>
-				<time class="text-[10px] font-bold opacity-30 uppercase whitespace-nowrap">{new Date(comment.created_at).toLocaleString()}</time>
+				<time class="text-xs font-bold text-muted uppercase whitespace-nowrap">{new Date(comment.created_at).toLocaleString()}</time>
 			</div>
-			<p class="text-sm font-medium opacity-70 leading-relaxed dark:text-slate-300 whitespace-pre-wrap">{comment.content}</p>
+			<p class="text-base font-medium leading-relaxed dark:text-slate-300 whitespace-pre-wrap">{comment.content}</p>
 			
-			<div class="flex items-center gap-4 mt-2">
+			<div class="flex items-center gap-2 mt-3">
 				<button 
 					onclick={() => replyingTo = replyingTo === comment.id ? null : comment.id}
-					class="text-[10px] font-black text-psan-green uppercase tracking-widest hover:underline"
+					class="btn-action-sm flex items-center gap-1.5 !text-psan-green"
 				>
+					<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"/></svg>
 					{replyingTo === comment.id ? 'Cancel' : 'Reply'}
 				</button>
 				
 				{#if data.user?.role === 'admin' || data.user?.role === 'editor'}
-					<form method="POST" action="?/deleteComment" use:enhance>
+					<form method="POST" action="?/deleteComment" use:enhance={({ cancel }) => {
+						if (!confirm('このコメントを削除しますか？')) {
+							cancel();
+						}
+						return async ({ update }) => {
+							await update();
+						};
+					}}>
 						<input type="hidden" name="id" value={comment.id} />
-						<button type="submit" class="text-[10px] font-black text-psan-pink opacity-0 group-hover:opacity-100 transition-opacity uppercase tracking-widest hover:underline">Delete</button>
+						<button type="submit" class="btn-action-sm flex items-center gap-1.5 !text-psan-pink">
+							<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+							Delete
+						</button>
 					</form>
 				{/if}
 			</div>
@@ -71,7 +82,7 @@
 						name="content" 
 						rows="3" 
 						required
-						class="w-full bg-slate-50 dark:bg-slate-900 border-none rounded-2xl p-4 text-sm font-medium focus:ring-2 focus:ring-psan-green"
+						class="w-full bg-secondary dark:bg-slate-900 border-none rounded-2xl p-4 text-sm font-medium focus:ring-2 focus:ring-psan-green"
 						placeholder="リプライを入力..."
 					></textarea>
 					<button type="submit" class="btn-psan-primary py-2 px-6 text-xs uppercase tracking-widest">Send Reply</button>
@@ -114,7 +125,7 @@
 						name="content" 
 						rows="4" 
 						required
-						class="w-full bg-slate-50 dark:bg-slate-900 border-none rounded-2xl p-6 text-base font-medium focus:ring-2 focus:ring-psan-green transition-all"
+						class="w-full bg-secondary dark:bg-slate-900 border-none rounded-2xl p-6 text-base font-medium focus:ring-2 focus:ring-psan-green transition-all"
 						placeholder="Write something..."
 					></textarea>
 					<div class="flex justify-end">

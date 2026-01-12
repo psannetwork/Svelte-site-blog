@@ -34,14 +34,14 @@
 </script>
 
 <div class="max-w-2xl mx-auto px-4 py-20">
-	<h2 class="text-4xl font-black tracking-tighter mb-10 uppercase">Account Settings</h2>
+	<h2 class="text-4xl font-black tracking-tighter mb-10 uppercase text-main">Account Settings</h2>
 
 	<div class="space-y-12 pb-20">
 		<section class="card-psan p-8 space-y-8 border-psan-green/30 border-2 shadow-psan-green/5">
 			<h3 class="font-black text-sm tracking-widest text-psan-green uppercase">Profile</h3>
 			<div class="flex flex-col items-center sm:flex-row gap-8">
 				<div class="relative group">
-					<div class="w-32 h-32 rounded-[40px] bg-slate-100 dark:bg-slate-800 overflow-hidden shadow-xl">
+					<div class="w-32 h-32 rounded-[40px] bg-secondary dark:bg-slate-800 overflow-hidden shadow-xl">
 						{#if avatarUrl}
 							<img src={avatarUrl} alt="Avatar" class="w-full h-full object-cover" />
 						{:else}
@@ -62,12 +62,12 @@
 				}} class="flex-1 space-y-4">
 					<input type="hidden" name="avatar_url" value={avatarUrl} />
 					<div class="space-y-2">
-						<label for="nickname" class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Nickname</label>
-						<input id="nickname" name="nickname" bind:value={nickname} placeholder="未設定（IDが表示されます）" class="w-full bg-slate-50 dark:bg-slate-800 border-none rounded-xl p-4 font-bold" />
+						<label for="nickname" class="text-[10px] font-black text-muted uppercase tracking-widest">Nickname</label>
+						<input id="nickname" name="nickname" bind:value={nickname} placeholder="未設定（IDが表示されます）" class="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-none rounded-xl p-4 font-bold text-main" />
 					</div>
 					
-					<label class="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800 rounded-xl cursor-pointer">
-						<span class="text-[10px] font-black uppercase tracking-widest text-slate-400">Notifications (Replies)</span>
+					<label class="flex items-center justify-between p-4 bg-secondary dark:bg-slate-800 rounded-xl cursor-pointer text-main">
+						<span class="text-[10px] font-black uppercase tracking-widest text-muted">Notifications (Replies)</span>
 						<input type="checkbox" name="notification_enabled" checked={notificationEnabled} class="w-5 h-5 accent-psan-green" />
 					</label>
 
@@ -77,20 +77,20 @@
 		</section>
 
 		<section class="card-psan p-8 space-y-6">
-			<h3 class="font-black text-sm tracking-widest text-slate-400 uppercase">Identity</h3>
+			<h3 class="font-black text-sm tracking-widest text-muted uppercase">Identity</h3>
 			<div>
-				<div class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">User ID</div>
-				<p class="text-xl font-black dark:text-white">{data.user?.username}</p>
+				<div class="text-[10px] font-black text-muted uppercase tracking-widest mb-1">User ID</div>
+				<p class="text-xl font-black text-main dark:text-white">{data.user?.username}</p>
 			</div>
 		</section>
 
 		<section class="card-psan p-8 space-y-6">
-			<h3 class="font-black text-sm tracking-widest text-psan-pink uppercase">Security</h3>
+			<h3 class="font-black text-sm tracking-widest text-psan-pink uppercase text-main">Security</h3>
 			<form method="POST" action="?/updatePassword" use:enhance class="space-y-4">
-				<input name="current_password" type="password" placeholder="Current Password" class="w-full bg-slate-50 dark:bg-slate-800 border-none rounded-xl p-4 font-bold" />
-				<input name="new_password" type="password" placeholder="New Password" class="w-full bg-slate-50 dark:bg-slate-800 border-none rounded-xl p-4 font-bold" />
+				<input name="current_password" type="password" placeholder="Current Password" class="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-none rounded-xl p-4 font-bold text-main" />
+				<input name="new_password" type="password" placeholder="New Password" class="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-none rounded-xl p-4 font-bold text-main" />
 				<div class="flex justify-end">
-					<button class="btn-psan bg-psan-pink text-white py-4 px-8 rounded-2xl font-black">Change Password</button>
+					<button class="btn-psan bg-psan-pink text-white py-4 px-8 rounded-2xl font-black hover:opacity-90 transition-all">Change Password</button>
 				</div>
 			</form>
 		</section>
