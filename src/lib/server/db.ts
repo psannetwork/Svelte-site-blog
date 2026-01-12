@@ -1,18 +1,33 @@
 import Database from 'better-sqlite3';
 import { env } from '$env/dynamic/private';
+import { mkdirSync, existsSync } from 'fs';
+import { dirname } from 'path';
 
 // 開発中のホットリロードで複数の接続が作られないようにグローバル変数に保持
 const globalForDb = global as unknown as { db: Database.Database | null };
 
 let db: Database.Database;
 
+const dbPath = env.DB_PATH || 'blog.db';
+const dbDir = dirname(dbPath);
+
+// データベースのディレクトリが存在しない場合は作成
+if (dbDir !== '.' && !existsSync(dbDir)) {
+	try {
+		mkdirSync(dbDir, { recursive: true });
+		console.log(`Created database directory: ${dbDir}`);
+	} catch (e) {
+		console.error(`Failed to create database directory: ${dbDir}`, e);
+	}
+}
+
 if (process.env.NODE_ENV === 'development') {
 	// 開発環境では常に新しい接続を確立
-	db = new Database(env.DB_PATH || 'blog.db');
+	db = new Database(dbPath);
 	globalForDb.db = db;
 } else {
 	// 本番環境ではグローバル変数を優先
-	db = globalForDb.db || new Database(env.DB_PATH || 'blog.db');
+	db = globalForDb.db || new Database(dbPath);
 	globalForDb.db = db;
 }
 
