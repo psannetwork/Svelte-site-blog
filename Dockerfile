@@ -1,5 +1,7 @@
 # ビルドステージ
 FROM node:20-alpine AS builder
+# ネイティブモジュール（better-sqlite3）のビルドに必要なツールをインストール
+RUN apk add --no-cache python3 make g++
 WORKDIR /app
 
 # pnpmの有効化
@@ -19,6 +21,8 @@ RUN pnpm run build
 
 # 実行ステージ
 FROM node:20-alpine AS runner
+# Alpineでネイティブバイナリを動かすために必須のライブラリを追加
+RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
 # pnpmの有効化
@@ -30,6 +34,7 @@ COPY --from=builder /app/package.json ./package.json
 COPY --from=builder /app/pnpm-lock.yaml ./pnpm-lock.yaml
 
 # 本番依存関係のみインストール
+# --prod と --frozen-lockfile を使用し、ネイティブバイナリをこの環境向けに再構築または配置
 RUN pnpm install --prod --frozen-lockfile
 
 # 環境変数の設定
