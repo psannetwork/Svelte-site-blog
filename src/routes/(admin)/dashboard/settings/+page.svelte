@@ -2,6 +2,7 @@
 	import { enhance } from '$app/forms';
 	import { onMount } from 'svelte';
 	import { invalidateAll } from '$app/navigation';
+	import { WidgetTool } from '$lib/editor/WidgetTool';
 	
 	let { data, form } = $props();
 	let formElement: HTMLFormElement;
@@ -44,7 +45,8 @@
 
 	async function initEditor(id: keyof typeof editors, holder: string, initialData: string) {
 		const el = document.getElementById(holder);
-		if (!el) return;
+		if (!el || editors[id].instance) return;
+
 		const EditorJS = (await import('@editorjs/editorjs')).default;
 		const Header = (await import('@editorjs/header')).default;
 		const List = (await import('@editorjs/list')).default;
@@ -54,6 +56,20 @@
 		const Code = (await import('@editorjs/code')).default;
 		const ColorPlugin = (await import('editorjs-text-color-plugin')).default;
 
+		let parsedData = { blocks: [] };
+		try {
+			if (initialData) {
+				const data = JSON.parse(initialData);
+				if (data && data.blocks) parsedData = data;
+			}
+		} catch (e) {
+			console.error(`Invalid editor data for ${id}`, e);
+		}
+
+		if (parsedData.blocks.length === 0) {
+			parsedData.blocks.push({ type: 'paragraph', data: { text: '' } });
+		}
+
 		const editor = new EditorJS({
 			holder,
 			tools: {
@@ -62,6 +78,7 @@
 				marker: Marker,
 				quote: Quote,
 				code: Code,
+				widget: WidgetTool,
 				color: { 
 					class: ColorPlugin, 
 					config: { 
@@ -77,12 +94,9 @@
 					} 
 				}
 			},
-			data: initialData ? JSON.parse(initialData) : { blocks: [] },
+			data: parsedData,
 			placeholder: 'Start building your page...',
-			onChange: async () => {
-				const savedData = await editor.save();
-				editors[id].data = JSON.stringify(savedData);
-			}
+			defaultBlock: 'paragraph'
 		});
 		editors[id].instance = editor;
 	}
@@ -91,15 +105,21 @@
 		if (isSaving) return;
 		isSaving = true;
 		try {
-			await Promise.all(Object.entries(editors).map(async ([id, e]) => {
+			// すべてのエディタのインスタンスから最新データを取得
+			const savePromises = Object.entries(editors).map(async ([id, e]) => {
 				if (e.instance) {
-					await e.instance.isReady;
 					const saved = await e.instance.save();
 					editors[id as keyof typeof editors].data = JSON.stringify(saved);
 				}
-			}));
-			formElement?.requestSubmit();
+			});
+			await Promise.all(savePromises);
+			
+			// ステートの反映を待つ
+			setTimeout(() => {
+				formElement?.requestSubmit();
+			}, 100);
 		} catch (e) {
+			console.error('Failed to save settings:', e);
 			isSaving = false;
 		}
 	}
@@ -172,12 +192,14 @@
 
 		<!-- 設定フォーム -->
 		<form bind:this={formElement} method="POST" action="?/saveSettings" use:enhance={() => {
-			return async ({ result }) => {
+			return async ({ result, update }) => {
 				isSaving = false;
 				if (result.type === 'success') {
 					showSuccess = true;
 					setTimeout(() => showSuccess = false, 3000);
-					await invalidateAll();
+					await update({ reset: false });
+				} else {
+					await update();
 				}
 			};
 		}} class="space-y-12">

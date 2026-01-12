@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { enhance } from '$app/forms';
+	import { WidgetTool } from '$lib/editor/WidgetTool';
 	import type { ActionData, PageData } from './$types';
 
 	let { data, form } = $props<{ data: PageData, form: ActionData }>();
@@ -16,7 +17,31 @@
 		}
 	}
 
+	async function handleKeydown(e: KeyboardEvent) {
+		if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+			e.preventDefault();
+			await submitForm();
+		}
+	}
+
+	async function submitForm() {
+		if (!editor || isSaving) return;
+		isSaving = true;
+		try {
+			const saved = await editor.save();
+			editorData = JSON.stringify(saved);
+			setTimeout(() => {
+				formElement?.requestSubmit();
+			}, 50);
+		} catch (err) {
+			console.error('Save failed', err);
+			isSaving = false;
+		}
+	}
+
 	onMount(async () => {
+		if (editor) return;
+
 		const EditorJS = (await import('@editorjs/editorjs')).default;
 		const Header = (await import('@editorjs/header')).default;
 		const List = (await import('@editorjs/list')).default;
@@ -26,6 +51,20 @@
 		const Marker = (await import('@editorjs/marker')).default;
 		const ColorPlugin = (await import('editorjs-text-color-plugin')).default;
 
+		let parsedData = { blocks: [] };
+		try {
+			if (editorData) {
+				const data = JSON.parse(editorData);
+				if (data && data.blocks) parsedData = data;
+			}
+		} catch (e) {
+			console.error('Invalid page data', e);
+		}
+
+		if (parsedData.blocks.length === 0) {
+			parsedData.blocks.push({ type: 'paragraph', data: { text: '' } });
+		}
+
 		editor = new EditorJS({
 			holder: 'editorjs',
 			tools: {
@@ -34,6 +73,7 @@
 				quote: Quote,
 				code: Code,
 				marker: Marker,
+				widget: WidgetTool,
 				color: {
 					class: ColorPlugin,
 					config: {
@@ -44,22 +84,20 @@
 				},
 				image: { class: Image, config: { endpoints: { byFile: '/api/upload' } } }
 			},
-			data: editorData ? JSON.parse(editorData) : { blocks: [] },
+			data: parsedData,
 			placeholder: 'Build your page content...',
-			onChange: async () => {
-				const saved = await editor.save();
-				editorData = JSON.stringify(saved);
-			}
+			defaultBlock: 'paragraph'
 		});
-	});
 
-	function handleSubmit() {
-		isSaving = true;
-		return async ({ update }: { update: any }) => {
-			await update();
-			isSaving = false;
+		window.addEventListener('keydown', handleKeydown);
+		return () => {
+			window.removeEventListener('keydown', handleKeydown);
+			if (editor && typeof editor.destroy === 'function') {
+				editor.destroy();
+				editor = null;
+			}
 		};
-	}
+	});
 </script>
 
 <svelte:head>
@@ -67,7 +105,17 @@
 </svelte:head>
 
 <div class="max-w-5xl mx-auto px-4 py-8">
-	<form bind:this={formElement} method="POST" action="?/savePage" use:enhance={handleSubmit} class="space-y-8">
+	<form bind:this={formElement} method="POST" action="?/savePage" class="space-y-8" use:enhance={() => {
+		return async ({ result, update }) => {
+			if (result.type === 'success') {
+				isSaving = false;
+				await update({ reset: false });
+			} else {
+				await update();
+				isSaving = false;
+			}
+		};
+	}}>
 		<header class="flex flex-col md:flex-row md:items-center justify-between gap-6">
 			<div>
 				<h2 class="text-4xl font-black tracking-tighter uppercase text-psan-green">Edit Page</h2>
@@ -80,7 +128,7 @@
 					<button type="button" onclick={() => addWidget('comments')} class="text-[10px] font-black px-3 py-1 bg-psan-pink/10 text-psan-pink rounded-full hover:bg-psan-pink hover:text-white transition-all">Comments</button>
 				</div>
 				<a href="/dashboard/pages" class="btn-psan-ghost text-xs py-2 dark:bg-slate-700 dark:text-white dark:border-slate-500">Back</a>
-				<button type="submit" class="btn-psan-primary py-3 px-10 text-sm" disabled={isSaving}>
+				<button type="button" onclick={submitForm} class="btn-psan-primary py-3 px-10 text-sm" disabled={isSaving}>
 					{isSaving ? 'Saving...' : 'Save Changes'}
 				</button>
 			</div>

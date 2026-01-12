@@ -3,7 +3,7 @@
 	let { data } = $props<{ data: PageData }>();
 
 	// ウィジェットマーカーでコンテンツを分割
-	const contentParts = $derived(data.homeHtml.split(/<!-- WIDGET:([a-z-]+) -->/));
+	const contentParts = $derived(data.homeHtml.split(/<!--\s*WIDGET:([a-z-]+)\s*-->/));
 </script>
 
 {#snippet latestStories()}

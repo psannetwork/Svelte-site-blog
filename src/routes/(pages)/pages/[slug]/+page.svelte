@@ -6,7 +6,7 @@
 	let replyingTo = $state<string | null>(null);
 
 	// ウィジェットマーカーでコンテンツを分割
-	const contentParts = $derived(data.post.content.split(/<!-- WIDGET:([a-z-]+) -->/));
+	const contentParts = $derived(data.post.content.split(/<!--\s*WIDGET:([a-z-]+)\s*-->/));
 
 	// コメントをツリー構造に変換
 	const commentTree = $derived.by(() => {

@@ -1,5 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { enhance } from '$app/forms';
+	import { WidgetTool } from '$lib/editor/WidgetTool';
 	import type { ActionData } from './$types';
 
 	let { form } = $props<{ form: ActionData }>();
@@ -8,6 +10,7 @@
 	let summary = $state('');
 	let visibility = $state('public');
 	let editorData = $state('');
+	let isSaving = $state(false);
 
 	function addWidget(name: string) {
 		if (editor) {
@@ -15,75 +18,101 @@
 		}
 	}
 
+	async function handleKeydown(e: KeyboardEvent) {
+		if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+			e.preventDefault();
+			await submitForm();
+		}
+	}
+
+	async function submitForm() {
+		if (!editor || isSaving) return;
+		isSaving = true;
+		try {
+			const saved = await editor.save();
+			editorData = JSON.stringify(saved);
+			setTimeout(() => {
+				formElement?.requestSubmit();
+			}, 50);
+		} catch (err) {
+			console.error('Save failed', err);
+			isSaving = false;
+		}
+	}
+
 	onMount(async () => {
+		if (editor) return;
+
 		const EditorJS = (await import('@editorjs/editorjs')).default;
 		const Header = (await import('@editorjs/header')).default;
 		const List = (await import('@editorjs/list')).default;
 		const Quote = (await import('@editorjs/quote')).default;
 		const Code = (await import('@editorjs/code')).default;
-						const Image = (await import('@editorjs/image')).default;
-						const Embed = (await import('@editorjs/embed')).default;
-						const Marker = (await import('@editorjs/marker')).default;
-						const ColorPlugin = (await import('editorjs-text-color-plugin')).default;
+		const Image = (await import('@editorjs/image')).default;
+		const Embed = (await import('@editorjs/embed')).default;
+		const Marker = (await import('@editorjs/marker')).default;
+		const ColorPlugin = (await import('editorjs-text-color-plugin')).default;
 				
-						editor = new EditorJS({
-							holder: 'editorjs',
-							tools: {
-								header: Header,
-								list: List,
-								quote: Quote,
-								code: Code,
-								marker: Marker,
-								color: {
-									class: ColorPlugin,
-									config: {
-										colorCollections: ['#00CC99', '#EB2D8C', '#1A1A1A', '#FF1313', '#2388FF', '#FFD300'],
-										defaultColor: '#1A1A1A',
-										type: 'text',
-										customPicker: true
-									}
-								},
-								image: {
-									class: Image,
-									config: { endpoints: { byFile: '/api/upload' } }
-								},
-								embed: {
-									class: Embed,
-									config: {
-										services: {
-											youtube: true,
-											vimeo: true,
-											twitter: true
-										}
-									}
-								}
-							},			placeholder: 'Start writing...',
-			onChange: async () => {
-				const data = await editor.save();
-				editorData = JSON.stringify(data);
-			}
+		editor = new EditorJS({
+			holder: 'editorjs',
+			tools: {
+				header: Header,
+				list: List,
+				quote: Quote,
+				code: Code,
+				marker: Marker,
+				widget: WidgetTool,
+				color: {
+					class: ColorPlugin,
+					config: {
+						colorCollections: ['#00CC99', '#EB2D8C', '#1A1A1A', '#FF1313', '#2388FF', '#FFD300'],
+						defaultColor: '#1A1A1A',
+						type: 'text',
+						customPicker: true
+					}
+				},
+				image: {
+					class: Image,
+					config: { 
+						endpoints: { byFile: '/api/upload' },
+						field: 'image',
+						types: 'image/*'
+					}
+				},
+				embed: {
+					class: Embed,
+					config: {
+						services: {
+							youtube: true,
+							vimeo: true,
+							twitter: true
+						}
+					}
+				}
+			},
+			data: { blocks: [{ type: 'paragraph', data: { text: '' } }] },
+			placeholder: 'Start writing...',
+			defaultBlock: 'paragraph'
 		});
-	});
-	let formElement: HTMLFormElement;
 
-	function handleKeydown(e: KeyboardEvent) {
-		if ((e.ctrlKey || e.metaKey) && e.key === 's') {
-			e.preventDefault();
-			formElement?.requestSubmit();
-		}
-	}
-
-	onMount(async () => {
-		const EditorJS = (await import('@editorjs/editorjs')).default;
-		// ... 既存のツール設定 ...
-		// 省略せず既存のものを維持するように設定を再適用
 		window.addEventListener('keydown', handleKeydown);
-		return () => window.removeEventListener('keydown', handleKeydown);
+		return () => {
+			window.removeEventListener('keydown', handleKeydown);
+			if (editor && typeof editor.destroy === 'function') {
+				editor.destroy();
+				editor = null;
+			}
+		};
 	});
 </script>
 
 <div class="max-w-5xl mx-auto px-4 py-8">
-	<form id="post-form" bind:this={formElement} method="POST" class="space-y-8">
+	<form bind:this={formElement} method="POST" class="space-y-8" use:enhance={() => {
+		return async ({ update }) => {
+			await update();
+			isSaving = false;
+		};
+	}}>
 		<header class="flex flex-col md:flex-row md:items-center justify-between gap-6">
 			<div>
 				<h2 class="text-4xl font-black tracking-tighter text-main">CREATE STORY</h2>
@@ -105,7 +134,9 @@
 					<button type="button" onclick={() => addWidget('comments')} class="text-[10px] font-black px-3 py-1 bg-psan-pink/10 text-psan-pink rounded-full hover:bg-psan-pink hover:text-white transition-all">Comments</button>
 				</div>
 				<a href="/dashboard/posts" class="btn-psan-ghost text-xs py-2">Discard</a>
-				<button class="btn-psan-primary py-3 px-10 text-sm">Publish</button>
+				<button type="button" onclick={submitForm} class="btn-psan-primary py-3 px-10 text-sm" disabled={isSaving}>
+					{isSaving ? 'Publishing...' : 'Publish'}
+				</button>
 			</div>
 		</header>
 

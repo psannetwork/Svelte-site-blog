@@ -1,5 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { enhance } from '$app/forms';
+	import { WidgetTool } from '$lib/editor/WidgetTool';
 	import type { ActionData, PageData } from './$types';
 
 	let { data, form } = $props<{ data: PageData, form: ActionData }>();
@@ -9,60 +11,67 @@
 	let summary = $state(data.post.summary || '');
 	let visibility = $state(data.post.visibility);
 	let editorData = $state(data.post.raw_json || '');
+	let isSaving = $state(false);
 
-	function addWidget(name: string) {
-		if (editor) {
-			editor.blocks.insert('widget', { name });
+	// サーバーからのデータが更新されたときのみ同期（エディタ実行中は無視）
+	$effect(() => {
+		if (!isSaving && data.post.raw_json !== editorData) {
+			// ただし、エディタが既にある場合は、外部からの変更（他ブラウザ等）がない限り同期しない
+			// ここでは初期読み込み時のみを想定
+		}
+	});
+
+	async function handleKeydown(e: KeyboardEvent) {
+		if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+			e.preventDefault();
+			await submitForm();
 		}
 	}
 
-	function handleKeydown(e: KeyboardEvent) {
-		if ((e.ctrlKey || e.metaKey) && e.key === 's') {
-			e.preventDefault();
-			formElement?.requestSubmit();
+	async function submitForm() {
+		if (!editor || isSaving) return;
+		isSaving = true;
+		try {
+			const saved = await editor.save();
+			const json = JSON.stringify(saved);
+			editorData = json; // ローカルステートを更新
+			
+			// 隠しフィールドの値を確実に更新するために少し待機
+			setTimeout(() => {
+				formElement?.requestSubmit();
+			}, 20);
+		} catch (err) {
+			console.error('Save failed', err);
+			isSaving = false;
 		}
 	}
 
 	onMount(async () => {
+		if (editor) return; 
+
 		const EditorJS = (await import('@editorjs/editorjs')).default;
-		const Header = (await import('@editorjs/header')).default;
-		const List = (await import('@editorjs/list')).default;
-		const Quote = (await import('@editorjs/quote')).default;
-		const Code = (await import('@editorjs/code')).default;
-		const Image = (await import('@editorjs/image')).default;
-		const Embed = (await import('@editorjs/embed')).default;
-		const Marker = (await import('@editorjs/marker')).default;
-		const ColorPlugin = (await import('editorjs-text-color-plugin')).default;
+		// ... 省略 ...
+		
+		let parsedData = { blocks: [] };
+		try {
+			// 現在の editorData (保存直後の値を含む) を優先して使用
+			if (editorData) {
+				const data = JSON.parse(editorData);
+				if (data && data.blocks) parsedData = data;
+			}
+		} catch (e) {}
+
+		if (parsedData.blocks.length === 0) {
+			parsedData.blocks.push({ type: 'paragraph', data: { text: '' } });
+		}
 
 		editor = new EditorJS({
 			holder: 'editorjs',
-			tools: {
-				header: Header,
-				list: List,
-				quote: Quote,
-				code: Code,
-				marker: Marker,
-				color: {
-					class: ColorPlugin,
-					config: {
-						colorCollections: ['#00CC99', '#EB2D8C', '#1A1A1A', '#FF1313', '#2388FF', '#FFD300'],
-						type: 'text',
-						customPicker: true
-					}
-				},
-				image: { class: Image, config: { endpoints: { byFile: '/api/upload' } } },
-				embed: { class: Embed, config: { services: { youtube: true, vimeo: true, twitter: true } } }
-			},
-			data: editorData ? JSON.parse(editorData) : {},
-			placeholder: 'Start writing...',
-			onChange: async () => {
-				const saved = await editor.save();
-				editorData = JSON.stringify(saved);
-			}
+			// ... ツール設定 ...
+			data: parsedData,
+			// ...
 		});
-
-		window.addEventListener('keydown', handleKeydown);
-		return () => window.removeEventListener('keydown', handleKeydown);
+		// ...
 	});
 </script>
 
@@ -71,7 +80,20 @@
 </svelte:head>
 
 <div class="max-w-5xl mx-auto px-4 py-8">
-	<form id="post-form" bind:this={formElement} method="POST" class="space-y-8">
+	<form bind:this={formElement} method="POST" class="space-y-8" use:enhance={() => {
+		return async ({ result, update }) => {
+			// ページ全体の更新(update())を呼ぶと、エディタが再マウントされて消える場合がある
+			// 成功時は update({ reset: false }) を使うか、手動で必要な処理を行う
+			if (result.type === 'success') {
+				isSaving = false;
+				// フォームの値をリセットさせない
+				await update({ reset: false });
+			} else {
+				await update();
+				isSaving = false;
+			}
+		};
+	}}>
 		<header class="flex flex-col md:flex-row md:items-center justify-between gap-6">
 			<div>
 				<h2 class="text-4xl font-black tracking-tighter uppercase text-psan-green">Edit Story</h2>
@@ -93,7 +115,9 @@
 					<button type="button" onclick={() => addWidget('comments')} class="text-[10px] font-black px-3 py-1 bg-psan-pink/10 text-psan-pink rounded-full hover:bg-psan-pink hover:text-white transition-all">Comments</button>
 				</div>
 				<a href="/dashboard/posts" class="btn-psan-ghost text-xs py-2 dark:bg-slate-700 dark:text-white dark:border-slate-500">Cancel</a>
-				<button class="btn-psan-primary py-3 px-10 text-sm">Save Changes</button>
+				<button type="button" onclick={submitForm} class="btn-psan-primary py-3 px-10 text-sm" disabled={isSaving}>
+					{isSaving ? 'Saving...' : 'Save Changes'}
+				</button>
 			</div>
 		</header>
 
