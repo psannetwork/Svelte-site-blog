@@ -56,5 +56,11 @@
 		"better-sqlite3": "^12.6.0",
 		"editorjs-text-color-plugin": "^2.0.4",
 		"lucia": "^3.2.2"
+	},
+	"pnpm": {
+		"onlyBuiltDependencies": [
+			"better-sqlite3",
+			"@node-rs/argon2"
+		]
 	}
 }

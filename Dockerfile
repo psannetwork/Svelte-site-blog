@@ -9,7 +9,7 @@ RUN corepack enable && corepack prepare pnpm@latest --activate
 # 依存関係ファイルのコピー
 COPY package.json pnpm-lock.yaml ./
 
-# 依存関係のインストール
+# 依存関係のインストール (package.jsonの設定によりbetter-sqlite3等のビルドが許可される)
 RUN pnpm install --frozen-lockfile
 
 # ソースコードのコピー
@@ -37,10 +37,10 @@ COPY --from=builder /app/build ./build
 COPY --from=builder /app/package.json ./package.json
 COPY --from=builder /app/pnpm-lock.yaml ./pnpm-lock.yaml
 
-# 本番依存関係のみインストールし、better-sqlite3を明示的にリビルド
-RUN pnpm config set only-allow-built-dependencies better-sqlite3 && \
-    pnpm install --prod --frozen-lockfile && \
-    pnpm rebuild better-sqlite3
+# 本番依存関係のみインストール
+# side-effects-cacheを無効化して確実にその場でコンパイルを実行
+RUN pnpm config set side-effects-cache false && \
+    pnpm install --prod --frozen-lockfile
 
 # 環境変数の設定
 ENV NODE_ENV=production
