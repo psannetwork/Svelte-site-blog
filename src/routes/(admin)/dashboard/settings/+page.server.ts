@@ -14,11 +14,12 @@ export const actions: Actions = {
 	saveSettings: async ({ request }) => {
 		const formData = await request.formData();
 		const allKeys = [
-			"site_title", "site_description", "accent_color", "is_site_public",
+			"site_title", "site_description", "accent_color", "is_site_public", "custom_css", "site_icon_url",
 			"allow_signup", "allow_comments", "allow_anonymous_comments", "allow_account_deletion", "anonymous_name", "show_footer_auth", "require_email_verification",
 			"home_hero_content", "about_page_content", "error_404_content", "error_500_content",
 			"enable_turnstile", "turnstile_site_key", "turnstile_secret_key",
-			"enable_backup", "backup_interval", "backup_keep_count"
+			"enable_backup", "backup_interval", "backup_keep_count",
+			"allowed_extensions" // ← 追加
 		];
 		const checkboxKeys = [
 			"allow_signup", "allow_comments", "allow_anonymous_comments", "allow_account_deletion",

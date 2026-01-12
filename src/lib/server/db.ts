@@ -163,7 +163,8 @@ const initialSettings = [
 	["backup_interval", "24"],
 	["backup_keep_count", "5"],
 	["last_backup_at", "0"],
-	["is_setup_completed", "false"]
+	["is_setup_completed", "false"],
+	["allowed_extensions", '["jpg","jpeg","png","gif","webp","svg","ico"]']
 ];
 
 const insertSetting = db.prepare("INSERT OR IGNORE INTO site_settings (key, value) VALUES (?, ?)");

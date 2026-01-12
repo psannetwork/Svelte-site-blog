@@ -2,6 +2,7 @@ import { error, json } from '@sveltejs/kit';
 import { writeFileSync, mkdirSync, existsSync } from 'fs';
 import { join } from 'path';
 import { generateIdFromEntropySize } from 'lucia';
+import { getSetting } from '$lib/server/settings'; // 追加
 import type { RequestHandler } from './$types';
 
 export const POST: RequestHandler = async ({ request, locals, url }) => {
@@ -15,10 +16,18 @@ export const POST: RequestHandler = async ({ request, locals, url }) => {
 
 	if (!file) throw error(400, 'No file uploaded');
 
-	const allowedExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'mp4', 'webm', 'svg'];
+	// 設定から許可拡張子を取得
+	const allowedExtensionsStr = getSetting('allowed_extensions', '["jpg","jpeg","png","gif","webp","svg","ico"]');
+	let allowedExtensions: string[] = [];
+	try {
+		allowedExtensions = JSON.parse(allowedExtensionsStr);
+	} catch {
+		allowedExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'ico']; // デフォルト
+	}
+
 	const ext = file.name.split('.').pop()?.toLowerCase();
 	if (!ext || !allowedExtensions.includes(ext)) {
-		throw error(400, 'Unsupported file type');
+		throw error(400, `Unsupported file type: .${ext}. Allowed: ${allowedExtensions.map(e => '.' + e).join(', ')}`);
 	}
 
 	const buffer = Buffer.from(await file.arrayBuffer());

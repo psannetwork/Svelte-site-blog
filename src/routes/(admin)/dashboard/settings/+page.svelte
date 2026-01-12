@@ -7,6 +7,8 @@
 	let formElement: HTMLFormElement;
 	let isSaving = $state(false);
 	let showSuccess = $state(false);
+	let isUploadingIcon = $state(false);
+	let siteIconUrl = $state(data.settings.site_icon_url || '');
 
 	let editors = $state({
 		home: { data: '', instance: null as any },
@@ -20,7 +22,25 @@
 		editors.about.data = data.settings.about_page_content;
 		editors.error404.data = data.settings.error_404_content;
 		editors.error500.data = data.settings.error_500_content;
+		siteIconUrl = data.settings.site_icon_url || '';
 	});
+
+	async function handleIconUpload(e: Event) {
+		const file = (e.target as HTMLInputElement).files?.[0];
+		if (!file) return;
+		isUploadingIcon = true;
+		const formData = new FormData();
+		formData.append('image', file);
+		try {
+			const res = await fetch('/api/upload?type=icon', { method: 'POST', body: formData });
+			const result = await res.json();
+			if (result.success) siteIconUrl = result.file.url;
+		} catch (err) {
+			console.error('Upload failed', err);
+		} finally {
+			isUploadingIcon = false;
+		}
+	}
 
 	async function initEditor(id: keyof typeof editors, holder: string, initialData: string) {
 		const el = document.getElementById(holder);
@@ -154,6 +174,56 @@
 				<div class="space-y-2">
 					<label for="site_description" class="text-[10px] font-black text-muted uppercase">Site Description (SEO)</label>
 					<input id="site_description" name="site_description" value={data.settings.site_description} class="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-none rounded-xl p-4 font-bold text-main" />
+				</div>
+
+				<div class="space-y-2">
+					<label for="allowed_extensions" class="text-[10px] font-black text-muted uppercase">許可するファイル拡張子</label>
+					<input
+						id="allowed_extensions"
+						name="allowed_extensions"
+						value={data.settings.allowed_extensions || '.jpg,.jpeg,.png,.gif,.webp,.svg,.ico'}
+						placeholder=".jpg,.jpeg,.png..."
+						class="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-none rounded-xl p-4 font-mono text-xs text-main"
+					/>
+					<p class="text-[10px] text-muted">カンマ区切りで入力（例：.jpg,.png）</p>
+				</div>
+			</section>
+
+			<section class="card-psan p-8 space-y-6">
+				<h3 class="text-xl font-black text-psan-green italic uppercase">Appearance</h3>
+				
+				<div class="grid md:grid-cols-2 gap-8">
+					<div class="space-y-4">
+						<label class="text-[10px] font-black text-muted uppercase">Site Icon (Favicon & Logo)</label>
+						<div class="flex items-center gap-6">
+							<div class="w-20 h-20 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-none flex items-center justify-center overflow-hidden shadow-sm">
+								{#if siteIconUrl}
+									<img src={siteIconUrl} alt="Site Icon" class="w-full h-full object-contain p-2" />
+								{:else}
+									<span class="text-xs font-bold text-muted opacity-50">No Icon</span>
+								{/if}
+							</div>
+							<div class="flex-1">
+								<label class="btn-psan-ghost py-2 text-xs w-full cursor-pointer dark:bg-slate-700 dark:text-white dark:border-slate-500">
+									{isUploadingIcon ? 'Uploading...' : 'Upload Icon'}
+									<input type="file" accept="image/*" class="hidden" onchange={handleIconUpload} disabled={isUploadingIcon} />
+								</label>
+								<p class="text-[10px] text-muted mt-2">Recommended: 512x512 PNG/SVG</p>
+								<input type="hidden" name="site_icon_url" value={siteIconUrl} />
+							</div>
+						</div>
+					</div>
+
+					<div class="space-y-2">
+						<label for="custom_css" class="text-[10px] font-black text-muted uppercase">Custom CSS</label>
+						<textarea
+							id="custom_css"
+							name="custom_css"
+							rows="6"
+							class="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-none rounded-xl p-4 font-mono text-xs text-main resize-y"
+							placeholder="body &#123; background: #f0f0f0; &#125;"
+						>{data.settings.custom_css || ''}</textarea>
+					</div>
 				</div>
 			</section>
 
