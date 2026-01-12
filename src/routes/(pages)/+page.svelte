@@ -2,8 +2,8 @@
 	import type { PageData } from "./$types";
 	let { data } = $props<{ data: PageData }>();
 
-	// ウィジェットマーカーでコンテンツを分割（マーカー自体も保持する）
-	const contentParts = $derived(data.homeHtml.split(/(\[\[\s*WIDGET\s*:\s*[a-z-]+\s*\]\])/i));
+	// ウィジェットマーカーでコンテンツを分割
+	const contentParts = $derived(data.homeHtml.split(/(___WIDGET:[a-z-]+___)/i));
 </script>
 
 {#snippet latestStories()}
@@ -75,7 +75,7 @@
 				{#if part.includes('WIDGET:latest-posts')}
 					{@render latestStories()}
 				{:else if part.includes('WIDGET:comments')}
-					<!-- ホームページにコメント欄を表示する場合はここに追加 -->
+					<!-- なし -->
 				{:else}
 					{@html part}
 				{/if}

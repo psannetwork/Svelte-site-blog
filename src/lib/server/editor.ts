@@ -44,8 +44,8 @@ export function editorJsToHtml(blocks: any[]) {
 					</figure>`;
 				break;
 			case 'widget':
-				// 特別なマーカーを出力。Svelte側でコンポーネントに置換される
-				html += `[[WIDGET:${block.data.name}]]`;
+				// 記号トラブルを避けるため、アンダースコアを使用
+				html += `___WIDGET:${block.data.name}___`;
 				break;
 		}
 	});
