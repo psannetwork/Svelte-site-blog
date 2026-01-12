@@ -38,8 +38,13 @@ export const actions: Actions = {
 			return fail(400, { message: "Title and content are required" });
 		}
 
-		const editorData = JSON.parse(editorDataRaw);
-		const htmlContent = editorJsToHtml(editorData.blocks);
+		let htmlContent = '';
+		try {
+			const editorData = JSON.parse(editorDataRaw);
+			htmlContent = editorJsToHtml(editorData.blocks);
+		} catch (e) {
+			return fail(400, { message: "Invalid editor data" });
+		}
 
 		db.prepare(`
 			UPDATE post 

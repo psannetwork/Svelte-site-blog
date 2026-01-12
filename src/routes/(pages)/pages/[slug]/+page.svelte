@@ -5,8 +5,8 @@
 	let { data, form } = $props<{ data: PageData, form: ActionData }>();
 	let replyingTo = $state<string | null>(null);
 
-	// ウィジェットマーカーでコンテンツを分割
-	const contentParts = $derived(data.post.content.split(/<!--\s*WIDGET:([a-z-]+)\s*-->/));
+	// ウィジェットマーカーでコンテンツを分割（マーカー自体も保持する）
+	const contentParts = $derived(data.post.content.split(/(\[\[\s*WIDGET\s*:\s*[a-z-]+\s*\]\])/i));
 
 	// コメントをツリー構造に変換
 	const commentTree = $derived.by(() => {
@@ -147,18 +147,18 @@
 	</header>
 
 	<div class="prose prose-slate prose-xl dark:prose-invert max-w-none mb-20 border-b border-slate-100 dark:border-slate-800 pb-20 prose-img:rounded-[40px] prose-img:shadow-2xl">
-		{#each contentParts as part, i}
-			{#if i % 2 === 0}
-				{@html part}
-			{:else if part === 'comments'}
+		{#each contentParts as part}
+			{#if part.includes('WIDGET:latest-posts')}
+				<!-- なし -->
+			{:else if part.includes('WIDGET:comments')}
 				{@render commentsSection()}
-			{:else if part === 'latest-posts'}
-				<!-- 記事詳細でも最新記事を埋め込めるようにする場合はここにレンダリングを追加できます（今回は割愛） -->
+			{:else}
+				{@html part}
 			{/if}
 		{/each}
 
 		<!-- ウィジェットが配置されていない場合のフォールバック -->
-		{#if !data.post.content.includes('<!-- WIDGET:comments -->')}
+		{#if !data.post.content.includes('WIDGET:comments')}
 			{@render commentsSection()}
 		{/if}
 	</div>

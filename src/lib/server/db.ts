@@ -87,7 +87,8 @@ function getDb(): Database.Database {
 		CREATE TABLE IF NOT EXISTS pages (
 			id TEXT PRIMARY KEY, -- 'home', 'about', or random id
 			title TEXT NOT NULL,
-			content TEXT NOT NULL, -- JSON from Editor.js
+			content TEXT NOT NULL, -- Rendered HTML
+			raw_json TEXT, -- Source JSON from Editor.js
 			updated_at INTEGER NOT NULL
 		);
 	`);

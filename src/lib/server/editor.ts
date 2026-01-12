@@ -45,7 +45,7 @@ export function editorJsToHtml(blocks: any[]) {
 				break;
 			case 'widget':
 				// 特別なマーカーを出力。Svelte側でコンポーネントに置換される
-				html += `<!-- WIDGET:${block.data.name} -->`;
+				html += `[[WIDGET:${block.data.name}]]`;
 				break;
 		}
 	});

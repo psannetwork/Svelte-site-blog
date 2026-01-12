@@ -1,5 +1,6 @@
 import db from "$lib/server/db";
 import { error, redirect } from "@sveltejs/kit";
+import { editorJsToHtml } from "$lib/server/editor";
 import type { PageServerLoad, Actions } from "./$types";
 
 export const load: PageServerLoad = async ({ locals, params }) => {
@@ -17,10 +18,15 @@ export const actions: Actions = {
 	savePage: async ({ request, params }) => {
 		const formData = await request.formData();
 		const title = formData.get('title') as string;
-		const content = formData.get('content') as string;
+		const contentJson = formData.get('content') as string;
 
-		db.prepare("UPDATE pages SET title = ?, content = ?, updated_at = ? WHERE id = ?")
-			.run(title, content, Date.now(), params.id);
+		if (!contentJson) return { success: false };
+
+		const editorData = JSON.parse(contentJson);
+		const htmlContent = editorJsToHtml(editorData.blocks);
+
+		db.prepare("UPDATE pages SET title = ?, content = ?, raw_json = ?, updated_at = ? WHERE id = ?")
+			.run(title, htmlContent, contentJson, Date.now(), params.id);
 
 		return { success: true };
 	}

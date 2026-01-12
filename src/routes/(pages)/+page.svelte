@@ -2,8 +2,8 @@
 	import type { PageData } from "./$types";
 	let { data } = $props<{ data: PageData }>();
 
-	// ウィジェットマーカーでコンテンツを分割
-	const contentParts = $derived(data.homeHtml.split(/<!--\s*WIDGET:([a-z-]+)\s*-->/));
+	// ウィジェットマーカーでコンテンツを分割（マーカー自体も保持する）
+	const contentParts = $derived(data.homeHtml.split(/(\[\[\s*WIDGET\s*:\s*[a-z-]+\s*\]\])/i));
 </script>
 
 {#snippet latestStories()}
@@ -71,18 +71,18 @@
 <article class="relative pt-20 pb-32 overflow-hidden transition-colors">
 	<div class="max-w-7xl mx-auto px-4">
 		<div class="max-w-none prose prose-xl dark:prose-invert prose-headings:font-black prose-headings:tracking-tighter prose-p:font-medium prose-img:rounded-[40px] prose-img:shadow-2xl">
-			{#each contentParts as part, i}
-				{#if i % 2 === 0}
-					{@html part}
-				{:else if part === 'latest-posts'}
+			{#each contentParts as part}
+				{#if part.includes('WIDGET:latest-posts')}
 					{@render latestStories()}
+				{:else if part.includes('WIDGET:comments')}
+					<!-- ホームページにコメント欄を表示する場合はここに追加 -->
 				{:else}
-					<!-- 不明なウィジェットは無視 -->
+					{@html part}
 				{/if}
 			{/each}
 
-			<!-- もしウィジェットが一度も配置されなかった場合のフォールバック（既存の下部配置を維持したい場合など） -->
-			{#if !data.homeHtml.includes('<!-- WIDGET:latest-posts -->')}
+			<!-- もしウィジェットが一度も配置されなかった場合のフォールバック -->
+			{#if !data.homeHtml.includes('WIDGET:latest-posts')}
 				{@render latestStories()}
 			{/if}
 		</div>

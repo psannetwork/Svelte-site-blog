@@ -1,6 +1,7 @@
 import db from "$lib/server/db";
 import { error, fail } from "@sveltejs/kit";
 import { getSetting, verifyTurnstile } from "$lib/server/settings";
+import { editorJsToHtml } from "$lib/server/editor";
 import { generateIdFromEntropySize } from "lucia";
 import type { PageServerLoad, Actions } from "./$types";
 
