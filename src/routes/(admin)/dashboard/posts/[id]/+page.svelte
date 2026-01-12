@@ -60,6 +60,10 @@
 	});
 </script>
 
+<svelte:head>
+	<title>Editing: {data.post.title} | {data.settings?.site_title || 'Admin'}</title>
+</svelte:head>
+
 <div class="max-w-5xl mx-auto px-4 py-8">
 	<form id="post-form" bind:this={formElement} method="POST" class="space-y-8">
 		<header class="flex flex-col md:flex-row md:items-center justify-between gap-6">

@@ -7,8 +7,8 @@ export const load: PageServerLoad = async ({ locals }) => {
 	const user = locals.user;
 	let posts;
 
-	const homeHeroJson = getSetting("home_hero_content", '{"blocks":[]}');
-	const homeHtml = editorJsToHtml(JSON.parse(homeHeroJson).blocks);
+	const homePage = db.prepare("SELECT * FROM pages WHERE id = 'home'").get() as any;
+	const homeHtml = homePage ? editorJsToHtml(JSON.parse(homePage.content).blocks) : '';
 
 	if (user?.role === 'admin' || user?.role === 'editor') {
 		posts = db.prepare(`

@@ -50,16 +50,35 @@
 		const List = (await import('@editorjs/list')).default;
 		const Image = (await import('@editorjs/image')).default;
 		const Marker = (await import('@editorjs/marker')).default;
+		const Quote = (await import('@editorjs/quote')).default;
+		const Code = (await import('@editorjs/code')).default;
 		const ColorPlugin = (await import('editorjs-text-color-plugin')).default;
 
 		const editor = new EditorJS({
 			holder,
 			tools: {
-				header: Header, list: List, marker: Marker,
-				color: { class: ColorPlugin, config: { colorCollections: ['#00CC99', '#EB2D8C', '#1A1A1A'], type: 'text' } },
-				image: { class: Image, config: { endpoints: { byFile: '/api/upload' } } }
+				header: Header, 
+				list: List, 
+				marker: Marker,
+				quote: Quote,
+				code: Code,
+				color: { 
+					class: ColorPlugin, 
+					config: { 
+						colorCollections: ['#00CC99', '#EB2D8C', '#1A1A1A', '#FF1313', '#2388FF', '#FFD300'], 
+						type: 'text',
+						customPicker: true 
+					} 
+				},
+				image: { 
+					class: Image, 
+					config: { 
+						endpoints: { byFile: '/api/upload' } 
+					} 
+				}
 			},
 			data: initialData ? JSON.parse(initialData) : { blocks: [] },
+			placeholder: 'Start building your page...',
 			onChange: async () => {
 				const savedData = await editor.save();
 				editors[id].data = JSON.stringify(savedData);
@@ -106,6 +125,10 @@
 		};
 	});
 </script>
+
+<svelte:head>
+	<title>System Settings | {data.settings?.site_title || 'Admin'}</title>
+</svelte:head>
 
 <div class="max-w-5xl mx-auto px-4 py-8">
 	<header class="flex flex-col md:flex-row md:items-center justify-between mb-12 gap-6">
@@ -163,17 +186,13 @@
 				<h3 class="text-xl font-black text-psan-green italic uppercase">Identity</h3>
 				<div class="grid md:grid-cols-2 gap-6">
 					<div class="space-y-2">
-						<label for="site_title" class="text-[10px] font-black text-muted uppercase">Site Title</label>
-						<input id="site_title" name="site_title" value={data.settings.site_title} class="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-none rounded-xl p-4 font-bold text-main" />
-					</div>
-					<div class="space-y-2">
 						<label for="accent_color" class="text-[10px] font-black text-muted uppercase">Accent Color</label>
 						<input id="accent_color" name="accent_color" type="color" value={data.settings.accent_color} class="w-full h-14" />
 					</div>
-				</div>
-				<div class="space-y-2">
-					<label for="site_description" class="text-[10px] font-black text-muted uppercase">Site Description (SEO)</label>
-					<input id="site_description" name="site_description" value={data.settings.site_description} class="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-none rounded-xl p-4 font-bold text-main" />
+					<div class="space-y-2">
+						<label for="site_description" class="text-[10px] font-black text-muted uppercase">Site Description (SEO)</label>
+						<input id="site_description" name="site_description" value={data.settings.site_description} class="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-none rounded-xl p-4 font-bold text-main" />
+					</div>
 				</div>
 
 				<div class="space-y-2">
@@ -190,39 +209,54 @@
 			</section>
 
 			<section class="card-psan p-8 space-y-6">
-				<h3 class="text-xl font-black text-psan-green italic uppercase">Appearance</h3>
+				<h3 class="text-xl font-black text-psan-green italic uppercase">Tab & Appearance</h3>
 				
 				<div class="grid md:grid-cols-2 gap-8">
-					<div class="space-y-4">
-						<span class="text-[10px] font-black text-muted uppercase">Site Icon (Favicon & Logo)</span>
-						<div class="flex items-center gap-6">
-							<div class="w-20 h-20 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-none flex items-center justify-center overflow-hidden shadow-sm">
-								{#if siteIconUrl}
-									<img src={siteIconUrl} alt="Site Icon" class="w-full h-full object-contain p-2" />
-								{:else}
-									<span class="text-xs font-bold text-muted opacity-50">No Icon</span>
-								{/if}
-							</div>
-							<div class="flex-1">
-								<label class="btn-psan-ghost py-2 text-xs w-full cursor-pointer dark:bg-slate-700 dark:text-white dark:border-slate-500">
-									{isUploadingIcon ? 'Uploading...' : 'Upload Icon'}
-									<input type="file" accept="image/*" class="hidden" onchange={handleIconUpload} disabled={isUploadingIcon} />
-								</label>
-								<p class="text-[10px] text-muted mt-2">Recommended: 512x512 PNG/SVG</p>
-								<input type="hidden" name="site_icon_url" value={siteIconUrl} />
+					<!-- ブラウザタブの設定 -->
+					<div class="space-y-6">
+						<h4 class="text-xs font-black text-main uppercase tracking-widest border-l-4 border-psan-green pl-3">Browser Tab Settings</h4>
+						
+						<div class="space-y-2">
+							<label for="site_title" class="text-[10px] font-black text-muted uppercase">Tab Title (Site Title)</label>
+							<input id="site_title" name="site_title" value={data.settings.site_title} class="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-none rounded-xl p-4 font-bold text-main" placeholder="My Awesome Blog" />
+						</div>
+
+						<div class="space-y-4">
+							<span class="text-[10px] font-black text-muted uppercase">Tab Icon (Favicon)</span>
+							<div class="flex items-center gap-6">
+								<div class="w-20 h-20 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-none flex items-center justify-center overflow-hidden shadow-sm">
+									{#if siteIconUrl}
+										<img src={siteIconUrl} alt="Site Icon" class="w-full h-full object-contain p-2" />
+									{:else}
+										<span class="text-xs font-bold text-muted opacity-50">No Icon</span>
+									{/if}
+								</div>
+								<div class="flex-1">
+									<label class="btn-psan-ghost py-2 text-xs w-full cursor-pointer dark:bg-slate-700 dark:text-white dark:border-slate-500">
+										{isUploadingIcon ? 'Uploading...' : 'Upload Icon'}
+										<input type="file" accept="image/*" class="hidden" onchange={handleIconUpload} disabled={isUploadingIcon} />
+									</label>
+									<p class="text-[10px] text-muted mt-2">Recommended: 512x512 PNG/SVG</p>
+									<input type="hidden" name="site_icon_url" value={siteIconUrl} />
+								</div>
 							</div>
 						</div>
 					</div>
 
-					<div class="space-y-2">
-						<label for="custom_css" class="text-[10px] font-black text-muted uppercase">Custom CSS</label>
-						<textarea 
-							id="custom_css" 
-							name="custom_css" 
-							rows="6" 
-							class="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-none rounded-xl p-4 font-mono text-xs text-main resize-y"
-							placeholder="body &#123; background: #f0f0f0; &#125;"
-						>{data.settings.custom_css || ''}</textarea>
+					<!-- カスタムスタイル -->
+					<div class="space-y-6">
+						<h4 class="text-xs font-black text-main uppercase tracking-widest border-l-4 border-psan-pink pl-3">Custom Styles</h4>
+						<div class="space-y-2">
+							<label for="custom_css" class="text-[10px] font-black text-muted uppercase">Custom CSS</label>
+							<textarea 
+								id="custom_css" 
+								name="custom_css" 
+								rows="8" 
+								class="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-none rounded-xl p-4 font-mono text-xs text-main resize-y"
+								placeholder="body &#123; background: #f0f0f0; &#125;"
+							>{data.settings.custom_css || ''}</textarea>
+							<p class="text-[10px] text-muted">サイト全体のスタイルを上書きできます。</p>
+						</div>
 					</div>
 				</div>
 			</section>
@@ -254,17 +288,28 @@
 			</section>
 
 			<div class="space-y-8">
+				<div class="flex items-center gap-4 mb-4">
+					<h3 class="text-2xl font-black text-main uppercase tracking-tighter italic">Page Contents</h3>
+					<div class="h-px flex-1 bg-slate-100 dark:bg-slate-800"></div>
+				</div>
+
 				<div class="card-psan p-8 space-y-6">
-					<h3 class="text-xl font-black text-psan-green italic uppercase">Home Content</h3>
-					<div class="bg-secondary dark:bg-slate-900 rounded-[32px] p-4 md:p-8 border border-[--border-color] dark:border-slate-800">
+					<div class="flex items-center justify-between">
+						<h3 class="text-xl font-black text-psan-green italic uppercase">Home Page Hero</h3>
+						<span class="text-[10px] font-bold text-muted uppercase">Top of the homepage</span>
+					</div>
+					<div class="bg-white dark:bg-slate-900 rounded-[32px] p-4 md:p-8 border border-slate-200 dark:border-slate-800 shadow-inner">
 						<div id="editor-home" class="text-main"></div>
 					</div>
 					<input type="hidden" name="home_hero_content" value={editors.home.data} />
 				</div>
 
 				<div class="card-psan p-8 space-y-6">
-					<h3 class="text-xl font-black text-psan-pink italic uppercase">About Content</h3>
-					<div class="bg-secondary dark:bg-slate-900 rounded-[32px] p-4 md:p-8 border border-[--border-color] dark:border-slate-800">
+					<div class="flex items-center justify-between">
+						<h3 class="text-xl font-black text-psan-pink italic uppercase">About Page</h3>
+						<span class="text-[10px] font-bold text-muted uppercase">Introduce yourself</span>
+					</div>
+					<div class="bg-white dark:bg-slate-900 rounded-[32px] p-4 md:p-8 border border-slate-200 dark:border-slate-800 shadow-inner">
 						<div id="editor-about" class="text-main"></div>
 					</div>
 					<input type="hidden" name="about_page_content" value={editors.about.data} />
@@ -273,14 +318,14 @@
 				<div class="grid md:grid-cols-2 gap-8">
 					<div class="card-psan p-6 space-y-4">
 						<h3 class="text-[10px] font-black text-muted uppercase tracking-widest">404 Error Content</h3>
-						<div class="bg-secondary dark:bg-slate-900 rounded-2xl p-4 border border-[--border-color] dark:border-slate-800">
+						<div class="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200 dark:border-slate-800">
 							<div id="editor-404" class="text-main"></div>
 						</div>
 						<input type="hidden" name="error_404_content" value={editors.error404.data} />
 					</div>
 					<div class="card-psan p-6 space-y-4">
 						<h3 class="text-[10px] font-black text-muted uppercase tracking-widest">500 Error Content</h3>
-						<div class="bg-secondary dark:bg-slate-900 rounded-2xl p-4 border border-[--border-color] dark:border-slate-800">
+						<div class="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200 dark:border-slate-800">
 							<div id="editor-500" class="text-main"></div>
 						</div>
 						<input type="hidden" name="error_500_content" value={editors.error500.data} />

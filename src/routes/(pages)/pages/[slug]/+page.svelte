@@ -24,6 +24,10 @@
 	});
 </script>
 
+<svelte:head>
+	<title>{data.post.title} | {data.settings?.site_title || 'Blog'}</title>
+</svelte:head>
+
 {#snippet commentItem(comment, depth = 0)}
 	<!-- depth に応じてインデント。最大 2階層までずらす -->
 	<div class="flex gap-4 group {depth > 0 && depth <= 2 ? 'ml-6 md:ml-10 mt-6 pt-6 border-t border-slate-200 dark:border-slate-800/50 relative before:absolute before:left-[-20px] before:top-0 before:bottom-0 before:w-0.5 before:bg-slate-200 dark:before:bg-slate-800/50 before:content-[\'\']' : 'mt-10'} {depth > 2 ? 'mt-6 pt-6 border-t border-slate-200 dark:border-slate-800/50' : ''}">

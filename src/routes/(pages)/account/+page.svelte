@@ -33,6 +33,10 @@
 	}
 </script>
 
+<svelte:head>
+	<title>Account Settings | {data.settings?.site_title || 'Blog'}</title>
+</svelte:head>
+
 <div class="max-w-2xl mx-auto px-4 py-20">
 	<h2 class="text-4xl font-black tracking-tighter mb-10 uppercase text-main">Account Settings</h2>
 

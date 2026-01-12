@@ -83,6 +83,13 @@ function getDb(): Database.Database {
 			storage_type TEXT NOT NULL, -- 'local' or 'database'
 			created_at INTEGER NOT NULL
 		);
+
+		CREATE TABLE IF NOT EXISTS pages (
+			id TEXT PRIMARY KEY, -- 'home', 'about', or random id
+			title TEXT NOT NULL,
+			content TEXT NOT NULL, -- JSON from Editor.js
+			updated_at INTEGER NOT NULL
+		);
 	`);
 
 	// カラム追加マイグレーション

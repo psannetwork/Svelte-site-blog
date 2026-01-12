@@ -1,10 +1,10 @@
-import { getSetting } from "$lib/server/settings";
+import db from "$lib/server/db";
 import { editorJsToHtml } from "$lib/server/editor";
 import type { PageServerLoad } from "./$types";
 
 export const load: PageServerLoad = async () => {
-	const aboutJson = getSetting("about_page_content", '{"blocks":[]}');
-	const aboutHtml = editorJsToHtml(JSON.parse(aboutJson).blocks);
+	const aboutPage = db.prepare("SELECT * FROM pages WHERE id = 'about'").get() as any;
+	const aboutHtml = aboutPage ? editorJsToHtml(JSON.parse(aboutPage.content).blocks) : '';
 	
 	return {
 		aboutHtml

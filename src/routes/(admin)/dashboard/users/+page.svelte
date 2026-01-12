@@ -3,6 +3,10 @@
 	let { data, form } = $props();
 </script>
 
+<svelte:head>
+	<title>User Management | {data.settings?.site_title || 'Admin'}</title>
+</svelte:head>
+
 <div class="max-w-6xl mx-auto">
 	<header class="mb-12">
 		<h2 class="text-4xl font-black tracking-tighter text-main uppercase">User Management</h2>

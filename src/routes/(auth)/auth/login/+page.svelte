@@ -5,6 +5,7 @@
 </script>
 
 <svelte:head>
+	<title>Login | {data.settings?.site_title || 'Auth'}</title>
 	{#if data.settings.enable_turnstile}
 		<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 	{/if}

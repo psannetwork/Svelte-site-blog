@@ -3,6 +3,10 @@
 	let { data } = $props();
 </script>
 
+<svelte:head>
+	<title>Manage Posts | {data.settings?.site_title || 'Admin'}</title>
+</svelte:head>
+
 <div class="max-w-7xl mx-auto">
 	<header class="flex flex-col md:flex-row md:items-center justify-between mb-8 md:12 gap-4">
 		<div>

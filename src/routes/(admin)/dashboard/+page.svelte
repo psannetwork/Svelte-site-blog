@@ -16,6 +16,10 @@
 	const areaPath = `0,${chartHeight} ${linePath} ${chartWidth},${chartHeight}`;
 </script>
 
+<svelte:head>
+	<title>Dashboard | {data.settings?.site_title || 'Admin'}</title>
+</svelte:head>
+
 <div class="max-w-7xl mx-auto space-y-8 md:space-y-12">
 	<header>
 		<h2 class="text-3xl md:text-4xl font-black tracking-tighter text-main uppercase">Overview</h2>
