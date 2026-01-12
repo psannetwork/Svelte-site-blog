@@ -104,6 +104,7 @@ function getDb(): Database.Database {
 	addColumn('user', 'email', 'TEXT');
 	addColumn('user', 'avatar_url', 'TEXT');
 	addColumn('post', 'raw_json', 'TEXT');
+	addColumn('pages', 'raw_json', 'TEXT');
 
 	const initialSettings = [
 		["site_title", "PSANBLOG"],
