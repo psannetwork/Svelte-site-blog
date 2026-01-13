@@ -1,29 +1,37 @@
-# 📚 Svelte Site Blog ドキュメント
+# 📚 Svelte Site Blog 総合ドキュメント
 
-Svelte Site Blog へようこそ。このプロジェクトは、SvelteKit、Lucia Auth、および libSQL (SQLite/Turso) を使用した、高速でモダンなフル機能ブログシステムです。
+Svelte Site Blog へようこそ！このプロジェクトは「誰でも・簡単に・プロ級のブログを」コンセプトに設計されています。
 
-このドキュメントでは、ローカルでの開発から本番環境へのデプロイ、サイトのカスタマイズ方法まで詳しく解説します。
+このドキュメントは、技術的な知識が少ない方でも、自分のブログを世界中に公開できるように、一つひとつのステップを細かく解説しています。
 
 ---
 
 ## 🗺️ 目次
 
-1.  **[クイックスタート (ローカル構築)](./Setup-Local.md)**
-    *   自分のパソコンでブログを動かすための手順。
-2.  **[本番デプロイガイド (Render & Turso)](./Deployment-Render-Turso.md)**
-    *   インターネット上に完全無料で公開する方法（推奨）。
-3.  **[機能ガイド](./Features-Guide.md)**
-    *   Editor.js を使った執筆、コメント管理、多言語対応などの解説。
-4.  **[カスタマイズと設定](./Settings-Customization.md)**
-    *   デザイン（CSS）、アイコン、セキュリティ（Turnstile）などの詳細設定。
+### 🏁 はじめる準備
+*   **[1. ローカル環境での構築手順](./Setup-Local.md)**
+    *   自分のパソコンでまずは動かしてみる、基本のセットアップ。
+
+### ☁️ 本番公開（デプロイ）
+*   **[2. Render × Turso で完全無料公開](./Deployment-Render.md)**
+    *   Render.com の無料枠と Turso (クラウドDB) を組み合わせて、1円もかけずに運用する手順。
+*   **[3. データベース (Turso) の作成と連携](./Database-Turso.md)**
+    *   Turso のアカウント作成から、接続情報の取得まで。
+
+### ✍️ 運用・カスタマイズ
+*   **[4. 投稿・管理ガイド (Editor.js の使い方)](./User-Manual.md)**
+    *   プロ級のレイアウトを作るエディタの操作方法。
+*   **[5. 詳細設定とデザイン変更](./Settings-Customization.md)**
+    *   アイコン、サイトタイトル、カスタムCSSの適用方法。
+
+### 🔧 困ったときは
+*   **[6. トラブルシューティング](./Troubleshooting.md)**
+    *   「動かない」「エラーが出る」ときの解決策まとめ。
 
 ---
 
-## 🛠 テックスタック
-
-*   **Frontend**: SvelteKit (Svelte 5 / Runes)
-*   **Styling**: Tailwind CSS v4
-*   **Database**: libSQL (Local SQLite or Remote Turso)
-*   **Authentication**: Lucia Auth
-*   **Editor**: Editor.js (Rich Text Editor)
-*   **Deployment**: Docker (Compatible with Render, Railway, Fly.io etc.)
+## 💡 このブログの強み
+*   **完全無料運用可能**: Render と Turso の無料枠を最大限に活用。
+*   **画像が消えない**: コンテナの再起動（Renderの仕様）に耐える、DB保存機能を搭載。
+*   **プロ仕様のエディタ**: Noteのような書き心地の Editor.js。
+*   **爆速**: SvelteKit による最新の高速ブラウジング。
