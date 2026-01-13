@@ -441,20 +441,26 @@
 
 			<section class="card-psan p-8 space-y-6 border-psan-green/20 border-2">
 				<h3 class="text-xl font-black text-psan-green italic uppercase">Backup Settings</h3>
-				<div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-end">
-					<label class="flex items-center justify-between p-4 bg-psan-green/5 rounded-xl cursor-pointer">
-						<span class="text-sm font-bold text-psan-green uppercase">Auto Backup</span>
-						<input type="checkbox" name="enable_backup" checked={data.settings.enable_backup === 'true'} class="w-6 h-6 accent-psan-green" />
-					</label>
-					<div class="space-y-2">
-						<label for="backup_interval" class="text-[10px] font-black text-muted uppercase">Interval (Hours)</label>
-						<input id="backup_interval" type="number" name="backup_interval" value={data.settings.backup_interval} class="w-full bg-secondary dark:bg-slate-800 rounded-xl p-4 font-bold text-main" />
+				{#if data.dbStatus.type === 'turso'}
+					<div class="p-4 bg-psan-green/10 text-psan-green rounded-2xl border border-psan-green/20 text-xs font-bold">
+						<p>ℹ️ 現在 Turso (リモートDB) を使用中のため、バックアップは Turso のダッシュボード側で管理されます。ローカルバックアップ機能は無効です。</p>
 					</div>
-					<div class="space-y-2">
-						<label for="backup_keep_count" class="text-[10px] font-black text-muted uppercase">Keep Count</label>
-						<input id="backup_keep_count" type="number" name="backup_keep_count" value={data.settings.backup_keep_count} class="w-full bg-secondary dark:bg-slate-800 rounded-xl p-4 font-bold text-main" />
+				{:else}
+					<div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-end">
+						<label class="flex items-center justify-between p-4 bg-psan-green/5 rounded-xl cursor-pointer">
+							<span class="text-sm font-bold text-psan-green uppercase">Auto Backup</span>
+							<input type="checkbox" name="enable_backup" checked={data.settings.enable_backup === 'true'} class="w-6 h-6 accent-psan-green" />
+						</label>
+						<div class="space-y-2">
+							<label for="backup_interval" class="text-[10px] font-black text-muted uppercase">Interval (Hours)</label>
+							<input id="backup_interval" type="number" name="backup_interval" value={data.settings.backup_interval} class="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-none rounded-xl p-4 font-bold text-main" />
+						</div>
+						<div class="space-y-2">
+							<label for="backup_keep_count" class="text-[10px] font-black text-muted uppercase">Keep Count</label>
+							<input id="backup_keep_count" type="number" name="backup_keep_count" value={data.settings.backup_keep_count} class="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-none rounded-xl p-4 font-bold text-main" />
+						</div>
 					</div>
-				</div>
+				{/if}
 			</section>
 		</form>
 

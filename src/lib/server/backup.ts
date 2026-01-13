@@ -14,8 +14,9 @@ export function isValidSqlite(buffer: Buffer): boolean {
 
 export function performBackup() {
 	if (env.TURSO_DB_URL) {
-		console.warn('[BACKUP] Skipping local backup because remote Turso database is in use.');
-		return { success: false, error: 'Remote database does not support local backup.' };
+		console.log('[BACKUP] Automatic backup is managed by Turso dashboard. Skipping local task.');
+		setSetting('last_backup_at', Date.now().toString());
+		return { success: true, message: 'Managed by Turso' };
 	}
 
 	if (!existsSync(BACKUP_DIR)) {
