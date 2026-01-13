@@ -15,12 +15,20 @@ function getDb(): any {
 	const tursoUrl = env.TURSO_DB_URL;
 	const tursoToken = env.TURSO_DB_AUTH_TOKEN;
 
-	if (tursoUrl) {
+	// TursoのURLが指定されており、かつトークンがURL形式でない（貼り付けミスのチェック）場合のみリモート接続
+	if (tursoUrl && tursoUrl.startsWith('libsql') && tursoToken && !tursoToken.startsWith('libsql')) {
 		// Turso リモート接続
 		console.log(`[DB] Connecting to Turso: ${tursoUrl}`);
-		_db = new (Database as any)(tursoUrl, { authToken: tursoToken });
-	} else {
-		// ローカル SQLite 接続
+		try {
+			_db = new (Database as any)(tursoUrl, { authToken: tursoToken });
+		} catch (e) {
+			console.error('[DB] Turso connection failed, falling back to local.', e);
+			_db = null;
+		}
+	}
+
+	if (!_db) {
+		// ローカル SQLite 接続 (Tursoが未設定または失敗した場合)
 		const dbPath = env.DB_PATH || 'blog.db';
 		const dbDir = dirname(dbPath);
 
