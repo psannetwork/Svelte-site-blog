@@ -1,6 +1,20 @@
 import { getSettings, setSetting, setSettings } from "$lib/server/settings";
 import { listBackups, performBackup, restoreBackup, isValidSqlite } from "$lib/server/backup";
-// ... (中略)
+import { getDbStatus } from "$lib/server/db";
+import { fail, redirect } from "@sveltejs/kit";
+import { join } from 'path';
+import { readFileSync, writeFileSync } from 'fs';
+import type { PageServerLoad, Actions } from "./$types";
+
+export const load: PageServerLoad = async ({ locals }) => {
+	if (!locals.user || locals.user.role !== "admin") throw redirect(302, "/dashboard");
+	return { 
+		settings: getSettings(), 
+		backups: listBackups(),
+		dbStatus: getDbStatus()
+	};
+};
+
 export const actions: Actions = {
 	saveSettings: async ({ request }) => {
 		const formData = await request.formData();
@@ -51,7 +65,6 @@ export const actions: Actions = {
 
 		const buffer = Buffer.from(await file.arrayBuffer());
 		
-		// セキュリティチェック: SQLiteシグネチャの確認
 		if (!isValidSqlite(buffer)) {
 			return fail(400, { message: "無効なデータベースファイルです。" });
 		}

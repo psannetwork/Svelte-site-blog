@@ -169,13 +169,13 @@ export function getDbStatus() {
 /**
  * 既存のコード (db.prepare 等) を壊さないための Proxy
  */
-const dbProxy = {
-	get prepare() { return getDb().prepare.bind(getDb()); },
-	get exec() { return getDb().exec.bind(getDb()); },
-	get transaction() { return getDb().transaction.bind(getDb()); },
-	get backup() { return getDb().backup.bind(getDb()); },
-	get close() { return getDb().close.bind(getDb()); }
+const dbProxy: any = {
+	prepare: (...args: any[]) => getDb().prepare(...args),
+	exec: (...args: any[]) => getDb().exec(...args),
+	transaction: (fn: any) => getDb().transaction(fn),
+	backup: (path: string) => getDb().backup(path),
+	close: () => getDb().close()
 };
 
-export default dbProxy as Database.Database;
+export default dbProxy;
 export { getDb };
