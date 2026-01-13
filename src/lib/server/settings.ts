@@ -15,12 +15,9 @@ export const setSetting = (key: string, value: string) => {
 
 export const setSettings = (settings: Record<string, string>) => {
 	const insert = db.prepare("INSERT OR REPLACE INTO site_settings (key, value) VALUES (?, ?)");
-	const transaction = db.transaction((data: Record<string, string>) => {
-		for (const [key, value] of Object.entries(data)) {
-			insert.run(key, value);
-		}
-	});
-	transaction(settings);
+	for (const [key, value] of Object.entries(settings)) {
+		insert.run(key, value);
+	}
 };
 
 export const getSettings = () => {

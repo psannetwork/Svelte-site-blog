@@ -172,7 +172,10 @@ export function getDbStatus() {
 const dbProxy: any = {
 	prepare: (...args: any[]) => getDb().prepare(...args),
 	exec: (...args: any[]) => getDb().exec(...args),
-	transaction: (fn: any) => getDb().transaction(fn),
+	transaction: (fn: any) => {
+		const db = getDb();
+		return db.transaction(fn).bind(db);
+	},
 	backup: (path: string) => getDb().backup(path),
 	close: () => getDb().close()
 };
