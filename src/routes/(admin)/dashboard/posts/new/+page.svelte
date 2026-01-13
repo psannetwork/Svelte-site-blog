@@ -67,10 +67,14 @@
 		const InlineCode = (await import('@editorjs/inline-code')).default;
 		const Underline = (await import('@editorjs/underline')).default;
 		const ColorPlugin = (await import('editorjs-text-color-plugin')).default;
+		const Undo = (await import('editorjs-undo')).default;
 				
 		editor = new EditorJS({
 			holder: 'editorjs',
 			i18n: data?.settings?.site_language === 'ja' ? editorI18n : undefined,
+			onReady: () => {
+				new Undo({ editor });
+			},
 			tools: {
 				header: Header,
 				list: List,

@@ -70,6 +70,7 @@
 		const InlineCode = (await import('@editorjs/inline-code')).default;
 		const Underline = (await import('@editorjs/underline')).default;
 		const ColorPlugin = (await import('editorjs-text-color-plugin')).default;
+		const Undo = (await import('editorjs-undo')).default;
 		
 		let parsedData = { blocks: [] };
 		try {
@@ -108,6 +109,9 @@
 				},
 				image: { class: Image, config: { endpoints: { byFile: '/api/upload' } } },
 				embed: { class: Embed, config: { services: { youtube: true, vimeo: true, twitter: true } } }
+			},
+			onReady: () => {
+				new Undo({ editor });
 			},
 			data: parsedData,
 			placeholder: 'Start writing...',

@@ -59,6 +59,9 @@ importers:
       editorjs-text-color-plugin:
         specifier: ^2.0.4
         version: 2.0.4
+      editorjs-undo:
+        specifier: ^2.0.28
+        version: 2.0.28
       libsql:
         specifier: ^0.5.22
         version: 0.5.22
@@ -1137,6 +1140,9 @@ packages:
   editorjs-text-color-plugin@2.0.4:
     resolution: {integrity: sha512-QpibTkOxs3ndlKNOLT8ZlC4ktc3/eKIajiLO0Jm/hh9AJug/CrM1/rAvHy+ldfUKavbWeI+YZvgjad0YTyoyGw==}
 
+  editorjs-undo@2.0.28:
+    resolution: {integrity: sha512-7MiLdjIsPOXn8+cHDeAt2HapVklg4vcLWWkd2eMMlGI6UVtwYSjdQquDSv9752B/fOEP1C3NMF2sdiCoZV3tTA==}
+
   electron-to-chromium@1.5.267:
     resolution: {integrity: sha512-0Drusm6MVRXSOJpGbaSVgcQsuB4hEkMpHXaVstcPmhu5LIedxs1xNK/nIxmQIU/RPC0+1/o0AVZfBTkTNJOdUw==}
 
@@ -1711,6 +1717,9 @@ packages:
 
   util-deprecate@1.0.2:
     resolution: {integrity: sha512-EPD5q1uXyFxJpCrLnCc1nHnq3gOa6DZBocAIiI2TaSCA7VCJ1UJDMagCzIkXNsUYfD1daK//LTEQ8xiIbrHtcw==}
+
+  vanilla-caret-js@1.1.0:
+    resolution: {integrity: sha512-vl3R4Xjqb+xnM0gYyg+wcqWGYwKKnkz58Yj29/FQB+w+yP7R8IR1DGoJnDIs05moEZiGlQUTabPMoEtnQNcrpQ==}
 
   vite@7.3.1:
     resolution: {integrity: sha512-w+N7Hifpc3gRjZ63vYBXA56dvvRlNWRczTdmCBBa+CotUzAPf5b7YMdMR/8CQoeYE5LX3W4wj6RYTgonm1b9DA==}
@@ -2614,6 +2623,10 @@ snapshots:
 
   editorjs-text-color-plugin@2.0.4: {}
 
+  editorjs-undo@2.0.28:
+    dependencies:
+      vanilla-caret-js: 1.1.0
+
   electron-to-chromium@1.5.267: {}
 
   enhanced-resolve@5.18.4:
@@ -3194,6 +3207,8 @@ snapshots:
       punycode: 2.3.1
 
   util-deprecate@1.0.2: {}
+
+  vanilla-caret-js@1.1.0: {}
 
   vite@7.3.1(@types/node@24.10.7)(jiti@2.6.1)(lightningcss@1.30.2):
     dependencies:

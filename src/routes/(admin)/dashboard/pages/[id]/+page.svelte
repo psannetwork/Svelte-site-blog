@@ -65,6 +65,7 @@
 		const InlineCode = (await import('@editorjs/inline-code')).default;
 		const Underline = (await import('@editorjs/underline')).default;
 		const ColorPlugin = (await import('editorjs-text-color-plugin')).default;
+		const Undo = (await import('editorjs-undo')).default;
 
 		let parsedData = { blocks: [] };
 		try {
@@ -104,6 +105,9 @@
 					}
 				},
 				image: { class: Image, config: { endpoints: { byFile: '/api/upload' } } }
+			},
+			onReady: () => {
+				new Undo({ editor });
 			},
 			data: parsedData,
 			placeholder: 'Build your page content...',

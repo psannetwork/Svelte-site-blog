@@ -57,6 +57,7 @@
 		"@lucia-auth/adapter-sqlite": "^3.0.2",
 		"@node-rs/argon2": "^2.0.2",
 		"editorjs-text-color-plugin": "^2.0.4",
+		"editorjs-undo": "^2.0.28",
 		"libsql": "^0.5.22",
 		"lucia": "^3.2.2"
 	},
