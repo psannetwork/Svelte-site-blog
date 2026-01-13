@@ -401,13 +401,18 @@
 			<section class="card-psan p-8 space-y-6">
 				<h3 class="text-xl font-black text-psan-green italic uppercase">Storage Strategy</h3>
 				<div class="p-6 bg-psan-green/5 border border-psan-green/20 rounded-[32px] space-y-6">
+					{#if data.dbStatus.type === 'turso'}
+						<div class="p-4 bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 rounded-2xl border border-amber-200 dark:border-amber-800 text-xs font-bold mb-4">
+							<p>💡 **Turso を使用中の方へ**: コンテナ環境（Render等）で画像を永続化するには、保存先を **"SQLite Database"** に設定することを強くおすすめします。Local を選ぶと、サーバーの再起動時に画像が消えてしまいます。</p>
+						</div>
+					{/if}
 					<div class="flex items-center justify-between gap-8">
 						<div class="flex-1">
 							<h4 class="font-black text-sm text-main uppercase">File Storage Method</h4>
 							<p class="text-[10px] font-medium text-muted mt-1 leading-relaxed">
 								アップロードされた画像や動画の保存先を選択します。<br>
 								<span class="text-psan-pink font-bold">Local:</span> static/uploads フォルダに保存します（PaaSでは消える可能性があります）。<br>
-								<span class="text-psan-green font-bold">Database:</span> SQLite DB内に保存します（バックアップに含まれますが、DBサイズが大きくなります）。
+								<span class="text-psan-green font-bold">Database:</span> SQLite DB（Turso含む）内に保存します。どこでも画像が消えなくなります。
 							</p>
 						</div>
 						<select 
