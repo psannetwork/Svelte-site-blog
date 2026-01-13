@@ -35,9 +35,8 @@ function getDb(): any {
 
 		console.log(`[DB] Connecting to local database at: ${dbPath}`);
 		_db = new Database(dbPath);
+		_db.pragma('journal_mode = WAL');
 	}
-
-	_db.pragma('journal_mode = WAL');
 
 	// スキーマの初期化ロジック
 	_db.exec(`

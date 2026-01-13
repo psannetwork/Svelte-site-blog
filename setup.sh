@@ -86,3 +86,7 @@ else
 fi
 echo "初回起動時に管理者アカウントのセットアップが必要な場合があります。"
 echo "コンソールに表示されるURL (通常 http://localhost:5173) にアクセスしてください。"
+
+echo -e "\n${BLUE}💡 デプロイのヒント:${NC}"
+echo "Render.com 等で無料で公開する場合は、Turso (libSQL) の使用をおすすめします。"
+echo "詳細は DEPLOY.md を確認してください。"
