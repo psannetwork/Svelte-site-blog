@@ -13,6 +13,16 @@ export const setSetting = (key: string, value: string) => {
 	db.prepare("INSERT OR REPLACE INTO site_settings (key, value) VALUES (?, ?)").run(key, value);
 };
 
+export const setSettings = (settings: Record<string, string>) => {
+	const insert = db.prepare("INSERT OR REPLACE INTO site_settings (key, value) VALUES (?, ?)");
+	const transaction = db.transaction((data: Record<string, string>) => {
+		for (const [key, value] of Object.entries(data)) {
+			insert.run(key, value);
+		}
+	});
+	transaction(settings);
+};
+
 export const getSettings = () => {
 	try {
 		const rows = db.prepare("SELECT key, value FROM site_settings").all() as { key: string; value: string }[];

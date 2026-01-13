@@ -1,20 +1,6 @@
-import { getSettings, setSetting } from "$lib/server/settings";
+import { getSettings, setSetting, setSettings } from "$lib/server/settings";
 import { listBackups, performBackup, restoreBackup, isValidSqlite } from "$lib/server/backup";
-import { getDbStatus } from "$lib/server/db";
-import { fail, redirect } from "@sveltejs/kit";
-import { join } from 'path';
-import { readFileSync, writeFileSync } from 'fs';
-import type { PageServerLoad, Actions } from "./$types";
-
-export const load: PageServerLoad = async ({ locals }) => {
-	if (!locals.user || locals.user.role !== "admin") throw redirect(302, "/dashboard");
-	return { 
-		settings: getSettings(), 
-		backups: listBackups(),
-		dbStatus: getDbStatus()
-	};
-};
-
+// ... (中略)
 export const actions: Actions = {
 	saveSettings: async ({ request }) => {
 		const formData = await request.formData();
@@ -24,19 +10,35 @@ export const actions: Actions = {
 			"home_hero_content", "about_page_content", "error_404_content", "error_500_content",
 			"enable_turnstile", "turnstile_site_key", "turnstile_secret_key",
 			"enable_backup", "backup_interval", "backup_keep_count",
-			"allowed_extensions" // ← 追加
+			"allowed_extensions"
 		];
 		const checkboxKeys = [
 			"allow_signup", "allow_comments", "allow_anonymous_comments", "allow_account_deletion",
 			"show_footer_auth", "enable_turnstile", "require_email_verification", "enable_backup"
 		];
+
+		const settingsToUpdate: Record<string, string> = {};
+
 		for (const key of allKeys) {
 			const val = formData.get(key);
-			if (key === "is_site_public") { setSetting(key, val === "on" ? "false" : "true"); }
-			else if (checkboxKeys.includes(key)) { setSetting(key, val === "on" ? "true" : "false"); }
-			else if (val !== null) { setSetting(key, val.toString()); }
+			if (key === "is_site_public") { 
+				settingsToUpdate[key] = val === "on" ? "false" : "true"; 
+			}
+			else if (checkboxKeys.includes(key)) { 
+				settingsToUpdate[key] = val === "on" ? "true" : "false"; 
+			}
+			else if (val !== null) { 
+				settingsToUpdate[key] = val.toString(); 
+			}
 		}
-		return { success: true };
+
+		try {
+			setSettings(settingsToUpdate);
+			return { success: true, message: "設定を保存しました。" };
+		} catch (e) {
+			console.error("Save settings error:", e);
+			return fail(500, { message: "保存中にエラーが発生しました。" });
+		}
 	},
 	createBackup: async () => {
 		performBackup();
