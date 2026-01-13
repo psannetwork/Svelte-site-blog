@@ -177,6 +177,30 @@
 	</header>
 
 	<div class="space-y-12 pb-32">
+		<!-- Database Status -->
+		<section class="card-psan p-8 space-y-4 border-2 {data.dbStatus.type === 'turso' ? 'border-psan-green/30' : 'border-slate-200'} shadow-sm">
+			<div class="flex items-center justify-between">
+				<h3 class="text-xl font-black text-main uppercase tracking-tighter italic">Database Status</h3>
+				<span class="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest 
+					{data.dbStatus.type === 'turso' ? 'bg-psan-green text-white' : 'bg-slate-100 dark:bg-slate-800 text-muted'}">
+					{data.dbStatus.type}
+				</span>
+			</div>
+			<div class="flex flex-col md:flex-row md:items-center gap-4 text-xs font-bold">
+				<div class="flex-1 p-4 bg-slate-50 dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800">
+					<span class="text-[10px] text-muted uppercase block mb-1">Connection Details</span>
+					<code class="text-psan-green break-all">{data.dbStatus.type === 'turso' ? data.dbStatus.url : data.dbStatus.path}</code>
+				</div>
+				<div class="flex-none text-muted leading-relaxed">
+					{#if data.dbStatus.type === 'turso'}
+						<p>✅ リモートデータベース (Turso) に正常に接続されています。</p>
+					{:else}
+						<p>🏠 ローカルの SQLite データベースを使用中です。</p>
+					{/if}
+				</div>
+			</div>
+		</section>
+
 		<!-- メッセージ表示エリア -->
 		{#if form?.success && form?.message}
 			<div class="bg-psan-green/10 border-2 border-psan-green text-psan-green p-6 rounded-[32px] animate-in zoom-in duration-300">

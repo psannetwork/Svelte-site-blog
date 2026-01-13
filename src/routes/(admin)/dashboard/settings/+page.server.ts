@@ -1,5 +1,6 @@
 import { getSettings, setSetting } from "$lib/server/settings";
 import { listBackups, performBackup, restoreBackup, isValidSqlite } from "$lib/server/backup";
+import { getDbStatus } from "$lib/server/db";
 import { fail, redirect } from "@sveltejs/kit";
 import { join } from 'path';
 import { readFileSync, writeFileSync } from 'fs';
@@ -7,7 +8,11 @@ import type { PageServerLoad, Actions } from "./$types";
 
 export const load: PageServerLoad = async ({ locals }) => {
 	if (!locals.user || locals.user.role !== "admin") throw redirect(302, "/dashboard");
-	return { settings: getSettings(), backups: listBackups() };
+	return { 
+		settings: getSettings(), 
+		backups: listBackups(),
+		dbStatus: getDbStatus()
+	};
 };
 
 export const actions: Actions = {

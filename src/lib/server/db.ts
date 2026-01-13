@@ -3,8 +3,12 @@ import { env } from '$env/dynamic/private';
 import { mkdirSync, existsSync } from 'fs';
 import { dirname } from 'path';
 
-// グローバルで接続を保持（開発時のホットリロード対策）
 let _db: any | null = null;
+let _dbStatus = {
+	type: 'local',
+	path: 'blog.db',
+	url: ''
+};
 
 /**
  * データベースを初期化または取得する
@@ -21,6 +25,7 @@ function getDb(): any {
 		console.log(`[DB] Connecting to Turso: ${tursoUrl}`);
 		try {
 			_db = new (Database as any)(tursoUrl, { authToken: tursoToken });
+			_dbStatus = { type: 'turso', path: '', url: tursoUrl };
 		} catch (e) {
 			console.error('[DB] Turso connection failed, falling back to local.', e);
 			_db = null;
@@ -43,6 +48,7 @@ function getDb(): any {
 
 		console.log(`[DB] Connecting to local database at: ${dbPath}`);
 		_db = new Database(dbPath);
+		_dbStatus = { type: 'local', path: dbPath, url: '' };
 		_db.pragma('journal_mode = WAL');
 	}
 
@@ -151,6 +157,13 @@ function getDb(): any {
 	initialSettings.forEach(([k, v]) => insertSetting.run(k, v));
 
 	return _db;
+}
+
+/**
+ * データベースの状態を取得する
+ */
+export function getDbStatus() {
+	return _dbStatus;
 }
 
 /**
