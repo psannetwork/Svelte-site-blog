@@ -2,7 +2,15 @@ import { fail, redirect } from "@sveltejs/kit";
 import db from "$lib/server/db";
 import { generateIdFromEntropySize } from "lucia";
 import { editorJsToHtml } from "$lib/server/editor";
-import type { Actions } from "./$types";
+import { getSettings } from "$lib/server/settings";
+import type { PageServerLoad, Actions } from "./$types";
+
+export const load: PageServerLoad = async ({ locals }) => {
+	if (!locals.user || (locals.user.role !== "admin" && locals.user.role !== "editor")) {
+		throw redirect(302, "/auth/login");
+	}
+	return { settings: getSettings() };
+};
 
 export const actions: Actions = {
 	default: async ({ request, locals }) => {

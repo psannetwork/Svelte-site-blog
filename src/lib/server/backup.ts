@@ -1,11 +1,11 @@
 import { mkdirSync, existsSync, readdirSync, unlinkSync, statSync, copyFileSync } from 'fs';
 import { join } from 'path';
-import Database from 'better-sqlite3';
 import db from './db';
 import { getSetting, setSetting } from './settings';
+import { env } from '$env/dynamic/private';
 
 const BACKUP_DIR = join(process.cwd(), 'backups');
-const DB_PATH = join(process.cwd(), 'blog.db');
+const DB_PATH = env.DB_PATH || join(process.cwd(), 'blog.db');
 
 export function isValidSqlite(buffer: Buffer): boolean {
 	const header = buffer.toString('utf8', 0, 16);
@@ -13,6 +13,11 @@ export function isValidSqlite(buffer: Buffer): boolean {
 }
 
 export function performBackup() {
+	if (env.TURSO_DB_URL) {
+		console.warn('[BACKUP] Skipping local backup because remote Turso database is in use.');
+		return { success: false, error: 'Remote database does not support local backup.' };
+	}
+
 	if (!existsSync(BACKUP_DIR)) {
 		mkdirSync(BACKUP_DIR, { recursive: true });
 	}
@@ -20,7 +25,7 @@ export function performBackup() {
 	const backupPath = join(BACKUP_DIR, `backup-${timestamp}.db`);
 	try {
 		// 現在のDBの内容をバックアップファイルに保存
-		db.backup(backupPath);
+		(db as any).backup(backupPath);
 		setSetting('last_backup_at', Date.now().toString());
 		rotateBackups();
 		return { success: true, path: backupPath };

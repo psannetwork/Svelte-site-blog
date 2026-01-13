@@ -133,3 +133,97 @@
   height: 100%;
   object-fit: contain;
 }
+
+/* Editor.js 編集中の見出しスタイル */
+.ce-header {
+  font-weight: 900;
+  letter-spacing: -0.05em;
+  margin-top: 1.5em;
+  margin-bottom: 0.5em;
+}
+
+h1.ce-header { font-size: 3rem !important; line-height: 1; }
+h2.ce-header { font-size: 2.25rem !important; line-height: 1.1; }
+h3.ce-header { font-size: 1.875rem !important; line-height: 1.2; }
+h4.ce-header { font-size: 1.5rem !important; line-height: 1.3; }
+h5.ce-header { font-size: 1.25rem !important; line-height: 1.4; }
+h6.ce-header { font-size: 1.125rem !important; line-height: 1.5; }
+
+/* 編集中のパラグラフ */
+.ce-paragraph {
+  font-size: 1.125rem;
+  line-height: 1.75;
+}
+
+/* 引用 */
+.ce-block--quote .cdx-quote__text {
+  font-size: 1.5rem;
+  font-weight: 700;
+  border-left: 8px solid var(--psan-green);
+  padding-left: 1.5rem;
+}
+
+/* 複数選択時のスタイル */
+.ce-block--selected .ce-block__content {
+  background-color: var(--psan-green) !important;
+  border-radius: 1rem;
+  color: white !important;
+}
+
+.ce-block--selected .ce-block__content * {
+  color: white !important;
+}
+
+/* ドラッグハンドルの視認性 */
+.ce-toolbar__settings-btn {
+  background-color: var(--psan-green) !important;
+  color: white !important;
+  border-radius: 8px !important;
+  width: 32px !important;
+  height: 32px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+}
+
+/* ツールボックス（プラスボタン） */
+.ce-toolbar__plus {
+  background-color: var(--psan-pink) !important;
+  color: white !important;
+  border-radius: 8px !important;
+  width: 32px !important;
+  height: 32px !important;
+}
+
+/* 左側のはみ出し修正：ボタンを内側に強制配置し、被りを防ぐ */
+.codex-editor__redactor {
+  padding-left: 80px !important; /* 被りを防ぐため余白を拡大 */
+  padding-right: 40px !important;
+  margin-right: 0 !important;
+}
+
+.ce-toolbar {
+  left: 0 !important; /* ツールバーの基準を左端に */
+}
+
+.ce-toolbar__actions {
+  left: 20px !important; /* テキスト（80px地点）より手前に配置 */
+  transform: none !important;
+}
+
+/* ツールバーの横幅をコンテナに合わせる */
+.ce-toolbar__content {
+  max-width: 100% !important;
+  margin-left: 0 !important;
+}
+
+@media (max-width: 650px) {
+  .codex-editor__redactor {
+    padding-left: 60px !important;
+    padding-right: 15px !important;
+  }
+  .ce-toolbar__actions {
+    left: 10px !important;
+  }
+}

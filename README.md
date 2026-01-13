@@ -25,6 +25,10 @@ npm run dev
 npm run dev -- --open
 ```
 
+## 🚀 Deployment
+
+For detailed instructions on how to deploy this blog locally or to the web (Render.com), please see our **[Deployment Guide (Japanese)](./DEPLOY.md)**.
+
 ## 📦 Building
 
 To create a production version of your app:

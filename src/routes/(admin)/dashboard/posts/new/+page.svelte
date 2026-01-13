@@ -2,9 +2,10 @@
 	import { onMount } from 'svelte';
 	import { enhance } from '$app/forms';
 	import { editorJsToHtml } from '$lib/utils/editor';
-	import type { ActionData } from './$types';
+	import { editorI18n } from '$lib/utils/editor_i18n';
+	import type { ActionData, PageData } from './$types';
 
-	let { form } = $props<{ form: ActionData }>();
+	let { data, form } = $props<{ data: PageData, form: ActionData }>();
 	let editor: any;
 	let title = $state('');
 	let summary = $state('');
@@ -69,6 +70,7 @@
 				
 		editor = new EditorJS({
 			holder: 'editorjs',
+			i18n: data?.settings?.site_language === 'ja' ? editorI18n : undefined,
 			tools: {
 				header: Header,
 				list: List,

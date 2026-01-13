@@ -2,6 +2,7 @@
 	import { enhance } from '$app/forms';
 	import { onMount } from 'svelte';
 	import { invalidateAll } from '$app/navigation';
+	import { editorI18n } from '$lib/utils/editor_i18n';
 	
 	let { data, form } = $props();
 	let formElement: HTMLFormElement;
@@ -77,6 +78,7 @@
 
 		const editor = new EditorJS({
 			holder,
+			i18n: data.settings?.site_language === 'ja' ? editorI18n : undefined,
 			tools: {
 				header: Header, 
 				list: List, 
@@ -220,6 +222,13 @@
 					<div class="space-y-2">
 						<label for="accent_color" class="text-[10px] font-black text-muted uppercase">Accent Color</label>
 						<input id="accent_color" name="accent_color" type="color" value={data.settings.accent_color} class="w-full h-14" />
+					</div>
+					<div class="space-y-2">
+						<label for="site_language" class="text-[10px] font-black text-muted uppercase">Site Language</label>
+						<select name="site_language" class="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-none rounded-xl p-4 font-bold text-main">
+							<option value="ja" selected={data.settings.site_language === 'ja'}>日本語 (Japanese)</option>
+							<option value="en" selected={data.settings.site_language === 'en'}>English</option>
+						</select>
 					</div>
 					<div class="space-y-2">
 						<label for="site_description" class="text-[10px] font-black text-muted uppercase">Site Description (SEO)</label>

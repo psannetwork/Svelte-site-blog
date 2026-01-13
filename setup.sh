@@ -43,8 +43,12 @@ echo -e "\n${BLUE}⚙️  環境設定 (.env) を確認しています...${NC}"
 if [ ! -f .env ]; then
     echo ".env ファイルを作成しています..."
     cat <<EOF > .env
-# Database
+# Database (Local SQLite)
 DB_PATH=blog.db
+
+# Database (Turso LibSQL) - If set, local SQLite will be ignored
+# TURSO_DB_URL=libsql://your-db-name.turso.io
+# TURSO_DB_AUTH_TOKEN=your-auth-token
 
 # Security (Cloudflare Turnstile) - Optional
 # TURNSTILE_SITE_KEY=

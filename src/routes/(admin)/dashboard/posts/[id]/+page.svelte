@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 	import { enhance } from '$app/forms';
 	import { editorJsToHtml } from '$lib/utils/editor';
+	import { editorI18n } from '$lib/utils/editor_i18n';
 	import type { ActionData, PageData } from './$types';
 
 	let { data, form } = $props<{ data: PageData, form: ActionData }>();
@@ -17,14 +18,12 @@
 
 	async function togglePreview() {
 		if (!isPreview) {
-			// プレビューモードへ移行
 			if (editor) {
 				const saved = await editor.save();
 				previewHtml = editorJsToHtml(saved.blocks);
 			}
 			isPreview = true;
 		} else {
-			// エディタモードへ復帰
 			isPreview = false;
 		}
 	}
@@ -86,6 +85,7 @@
 
 		editor = new EditorJS({
 			holder: 'editorjs',
+			i18n: data?.settings?.site_language === 'ja' ? editorI18n : undefined,
 			tools: {
 				header: Header,
 				list: List,
@@ -112,6 +112,20 @@
 			data: parsedData,
 			placeholder: 'Start writing...',
 			defaultBlock: 'paragraph'
+		});
+
+		const editorContainer = document.getElementById('editorjs');
+		editorContainer?.addEventListener('contextmenu', (e) => {
+			e.preventDefault();
+			const target = e.target as HTMLElement;
+			const block = target.closest('.ce-block');
+			if (block) {
+				// ブロックの右側にある設定ボタン (⋮) を探して擬似的にクリック
+				const settingsBtn = block.querySelector('.ce-toolbar__settings-btn') as HTMLElement;
+				if (settingsBtn) {
+					settingsBtn.click();
+				}
+			}
 		});
 
 		window.addEventListener('keydown', handleKeydown);

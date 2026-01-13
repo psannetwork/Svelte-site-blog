@@ -1,33 +1,42 @@
-import Database from 'better-sqlite3';
+import Database from 'libsql';
 import { env } from '$env/dynamic/private';
 import { mkdirSync, existsSync } from 'fs';
 import { dirname } from 'path';
 
 // グローバルで接続を保持（開発時のホットリロード対策）
-let _db: Database.Database | null = null;
+let _db: any | null = null;
 
 /**
  * データベースを初期化または取得する
  */
-function getDb(): Database.Database {
+function getDb(): any {
 	if (_db) return _db;
 
-	// 実行時に環境変数を取得。なければ blog.db を使う
-	const dbPath = env.DB_PATH || 'blog.db';
-	const dbDir = dirname(dbPath);
+	const tursoUrl = env.TURSO_DB_URL;
+	const tursoToken = env.TURSO_DB_AUTH_TOKEN;
 
-	// サーバー起動後の最初のアクセス時にディレクトリを作る
-	if (dbDir !== '.' && !existsSync(dbDir)) {
-		try {
-			mkdirSync(dbDir, { recursive: true });
-			console.log(`[DB] Created directory: ${dbDir}`);
-		} catch (e) {
-			console.error(`[DB] Failed to create directory: ${dbDir}`, e);
+	if (tursoUrl) {
+		// Turso リモート接続
+		console.log(`[DB] Connecting to Turso: ${tursoUrl}`);
+		_db = new (Database as any)(tursoUrl, { authToken: tursoToken });
+	} else {
+		// ローカル SQLite 接続
+		const dbPath = env.DB_PATH || 'blog.db';
+		const dbDir = dirname(dbPath);
+
+		if (dbDir !== '.' && !existsSync(dbDir)) {
+			try {
+				mkdirSync(dbDir, { recursive: true });
+				console.log(`[DB] Created directory: ${dbDir}`);
+			} catch (e) {
+				console.error(`[DB] Failed to create directory: ${dbDir}`, e);
+			}
 		}
+
+		console.log(`[DB] Connecting to local database at: ${dbPath}`);
+		_db = new Database(dbPath);
 	}
 
-	console.log(`[DB] Connecting to database at: ${dbPath}`);
-	_db = new Database(dbPath);
 	_db.pragma('journal_mode = WAL');
 
 	// スキーマの初期化ロジック
@@ -127,7 +136,8 @@ function getDb(): Database.Database {
 		["last_backup_at", "0"],
 		["is_setup_completed", "false"],
 		["allowed_extensions", '["jpg","jpeg","png","gif","webp","svg","ico"]'],
-		["storage_type", "local"]
+		["storage_type", "local"],
+		["site_language", "ja"]
 	];
 
 	const insertSetting = _db!.prepare("INSERT OR IGNORE INTO site_settings (key, value) VALUES (?, ?)");
