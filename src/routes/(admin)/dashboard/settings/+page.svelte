@@ -252,8 +252,8 @@
 					isSaving = false;
 					showSuccess = true;
 					
-					// ページ全体のキャッシュを完全に破壊して再取得
-					await invalidateAll();
+					// 依存関係を無効化してサーバーサイドの load() を再実行させる
+					// これにより Network ログに新しいリクエストが現れます
 					await invalidate('app:settings');
 					
 					setTimeout(() => showSuccess = false, 3000);

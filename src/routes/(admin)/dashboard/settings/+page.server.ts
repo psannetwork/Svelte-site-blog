@@ -6,8 +6,12 @@ import { join } from 'path';
 import { readFileSync, writeFileSync } from 'fs';
 import type { PageServerLoad, Actions } from "./$types";
 
-export const load: PageServerLoad = async ({ locals }) => {
+export const load: PageServerLoad = async ({ locals, depends }) => {
 	if (!locals.user || locals.user.role !== "admin") throw redirect(302, "/dashboard");
+	
+	// 設定更新時に再フェッチを強制するための登録
+	depends('app:settings');
+
 	return { 
 		settings: getSettings(), 
 		backups: listBackups(),
