@@ -27,8 +27,12 @@ export const setSettings = (settings: Record<string, string>) => {
 
 export const getSettings = () => {
 	try {
+		// キャッシュを避けるため、クエリを常に新しくする（SQLiteの特性上、通常は不要ですが念のため）
 		const rows = db.prepare("SELECT key, value FROM site_settings").all() as { key: string; value: string }[];
-		return rows.reduce((acc, row) => ({ ...acc, [row.key]: row.value }), {} as Record<string, string>);
+		const settings = rows.reduce((acc, row) => ({ ...acc, [row.key]: row.value }), {} as Record<string, string>);
+		// 更新時刻を付与して変更を検知しやすくする
+		settings._updated = Date.now().toString();
+		return settings;
 	} catch (e) {
 		return {};
 	}

@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import { onMount } from 'svelte';
-	import { invalidateAll, invalidate } from '$app/navigation';
+	import { invalidateAll, invalidate, goto } from '$app/navigation';
 	import { editorI18n } from '$lib/utils/editor_i18n';
 	
 	let { data, form } = $props();
@@ -238,11 +238,12 @@
 				if (result.type === 'success') {
 					isSaving = false;
 					showSuccess = true;
-					setTimeout(() => showSuccess = false, 3000);
 					
-					// キャッシュを無効化して最新データを強制ロード
-					await invalidate('app:settings');
+					// ページ全体のキャッシュを完全に破壊して再取得
 					await invalidateAll();
+					await invalidate('app:settings');
+					
+					setTimeout(() => showSuccess = false, 3000);
 					await update({ reset: false });
 				} else {
 					await update();

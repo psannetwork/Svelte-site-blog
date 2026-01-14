@@ -4,7 +4,14 @@ import type { LayoutServerLoad } from "./$types";
 
 export const prerender = false;
 
-export const load: LayoutServerLoad = async ({ locals, depends }) => {
+export const load: LayoutServerLoad = async ({ locals, depends, setHeaders }) => {
+	// キャッシュを無効化
+	setHeaders({
+		'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+		'Pragma': 'no-cache',
+		'Expires': '0'
+	});
+
 	// 設定変更時に再取得できるように依存関係を登録
 	depends('app:settings');
 	
