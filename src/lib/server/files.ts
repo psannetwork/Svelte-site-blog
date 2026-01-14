@@ -24,23 +24,25 @@ export async function saveFile(file: File, type: 'avatar' | 'post' | 'icon' | 'm
 	const size = file.size;
 	const buffer = Buffer.from(await file.arrayBuffer());
 
+	const subDir = type === 'avatar' ? `avatars/${userId}` : type === 'icon' ? 'site' : `posts/${userId}`;
+	const relativeDir = join('uploads', subDir);
+	const relativePath = join(relativeDir, filename).replace(/\\/g, '/');
+
 	if (storageType === 'database') {
 		db.prepare(`
-			INSERT INTO file_storage (id, filename, mime_type, size, data, storage_type, created_at)
-			VALUES (?, ?, ?, ?, ?, ?, ?)
-		`).run(id, filename, mimeType, size, buffer, 'database', Date.now());
+			INSERT INTO file_storage (id, filename, mime_type, size, data, path, storage_type, created_at)
+			VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+		`).run(id, filename, mimeType, size, buffer, relativePath, 'database', Date.now());
 
 		return {
 			id,
 			filename,
 			mime_type: mimeType,
 			size,
-			url: `/api/files/${id}`
+			url: `/${relativePath}` // DB保存時も /uploads/... のURLを返すように変更
 		};
 	} else {
 		// ローカル保存
-		const subDir = type === 'avatar' ? `avatars/${userId}` : type === 'icon' ? 'site' : `posts/${userId}`;
-		const relativeDir = join('uploads', subDir);
 		const uploadDir = join(process.cwd(), 'static', relativeDir);
 
 		if (!existsSync(uploadDir)) {
