@@ -10,6 +10,13 @@
 	let showSuccess = $state(false);
 	let isUploadingIcon = $state(false);
 	let siteIconUrl = $state(data.settings.site_icon_url || '');
+	
+	// 設定項目のローカルステート
+	let siteTitle = $state(data.settings.site_title || '');
+	let siteDescription = $state(data.settings.site_description || '');
+	let accentColor = $state(data.settings.accent_color || '#00CC99');
+	let siteLanguage = $state(data.settings.site_language || 'ja');
+	let allowedExtensions = $state(data.settings.allowed_extensions || '.jpg,.jpeg,.png,.gif,.webp,.svg,.ico');
 
 	let editors = $state({
 		home: { data: '', instance: null as any },
@@ -26,6 +33,12 @@
 			editors.error404.data = data.settings.error_404_content || '';
 			editors.error500.data = data.settings.error_500_content || '';
 			siteIconUrl = data.settings.site_icon_url || '';
+			
+			siteTitle = data.settings.site_title || '';
+			siteDescription = data.settings.site_description || '';
+			accentColor = data.settings.accent_color || '#00CC99';
+			siteLanguage = data.settings.site_language || 'ja';
+			allowedExtensions = data.settings.allowed_extensions || '.jpg,.jpeg,.png,.gif,.webp,.svg,.ico';
 		}
 	});
 
@@ -257,18 +270,18 @@
 				<div class="grid md:grid-cols-2 gap-6">
 					<div class="space-y-2">
 						<label for="accent_color" class="text-[10px] font-black text-muted uppercase">Accent Color</label>
-						<input id="accent_color" name="accent_color" type="color" value={data.settings.accent_color} class="w-full h-14" />
+						<input id="accent_color" name="accent_color" type="color" bind:value={accentColor} class="w-full h-14" />
 					</div>
 					<div class="space-y-2">
 						<label for="site_language" class="text-[10px] font-black text-muted uppercase">Site Language</label>
-						<select name="site_language" class="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-none rounded-xl p-4 font-bold text-main">
-							<option value="ja" selected={data.settings.site_language === 'ja'}>日本語 (Japanese)</option>
-							<option value="en" selected={data.settings.site_language === 'en'}>English</option>
+						<select name="site_language" bind:value={siteLanguage} class="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-none rounded-xl p-4 font-bold text-main">
+							<option value="ja">日本語 (Japanese)</option>
+							<option value="en">English</option>
 						</select>
 					</div>
 					<div class="space-y-2">
 						<label for="site_description" class="text-[10px] font-black text-muted uppercase">Site Description (SEO)</label>
-						<input id="site_description" name="site_description" value={data.settings.site_description} class="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-none rounded-xl p-4 font-bold text-main" />
+						<input id="site_description" name="site_description" bind:value={siteDescription} class="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-none rounded-xl p-4 font-bold text-main" />
 					</div>
 				</div>
 
@@ -277,7 +290,7 @@
 					<input
 						id="allowed_extensions"
 						name="allowed_extensions"
-						value={data.settings.allowed_extensions || '.jpg,.jpeg,.png,.gif,.webp,.svg,.ico'}
+						bind:value={allowedExtensions}
 						placeholder=".jpg,.jpeg,.png..."
 						class="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-none rounded-xl p-4 font-mono text-xs text-main"
 					/>
@@ -295,7 +308,7 @@
 						
 						<div class="space-y-2">
 							<label for="site_title" class="text-[10px] font-black text-muted uppercase">Tab Title (Site Title)</label>
-							<input id="site_title" name="site_title" value={data.settings.site_title} class="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-none rounded-xl p-4 font-bold text-main" placeholder="My Awesome Blog" />
+							<input id="site_title" name="site_title" bind:value={siteTitle} class="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-none rounded-xl p-4 font-bold text-main" placeholder="My Awesome Blog" />
 						</div>
 
 						<div class="space-y-4">
