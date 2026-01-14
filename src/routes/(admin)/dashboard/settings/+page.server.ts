@@ -53,7 +53,9 @@ export const actions: Actions = {
 		try {
 			console.log("[SETTINGS] Saving to DB:", settingsToUpdate);
 			setSettings(settingsToUpdate);
-			return { success: true, message: "設定を保存しました。" };
+			// 最新の設定データを返すことで、UIへの即時反映を可能にする
+			const updatedSettings = getSettings();
+			return { success: true, message: "設定を保存しました。", settings: updatedSettings };
 		} catch (e) {
 			console.error("Save settings error:", e);
 			return fail(500, { message: "保存中にエラーが発生しました。" });

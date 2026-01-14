@@ -253,9 +253,25 @@
 					isSaving = false;
 					showSuccess = true;
 
-					// 依存関係を無效化してサーバーサイドの load() を再実行させる
-					await invalidate('app:settings');
-					await invalidateAll();
+					// サーバーから返された最新の設定データがあれば、それを使用してUIを更新
+					if (result.data?.settings) {
+						// 直接ローカルステートを更新
+						editors.home.data = result.data.settings.home_hero_content || '';
+						editors.about.data = result.data.settings.about_page_content || '';
+						editors.error404.data = result.data.settings.error_404_content || '';
+						editors.error500.data = result.data.settings.error_500_content || '';
+						siteIconUrl = result.data.settings.site_icon_url || '';
+
+						siteTitle = result.data.settings.site_title || '';
+						siteDescription = result.data.settings.site_description || '';
+						accentColor = result.data.settings.accent_color || '#00CC99';
+						siteLanguage = result.data.settings.site_language || 'ja';
+						allowedExtensions = result.data.settings.allowed_extensions || '.jpg,.jpeg,.png,.gif,.webp,.svg,.ico';
+					} else {
+						// レスポンスに設定データがない場合は従来通りinvalidateを使用
+						await invalidate('app:settings');
+						await invalidateAll();
+					}
 
 					// $effect が新しい data.settings をもとにローカルステートを更新するのを少し待つ
 					await new Promise(resolve => setTimeout(resolve, 100));
