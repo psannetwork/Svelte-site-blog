@@ -3,16 +3,20 @@ import { getFile } from '$lib/server/files';
 import type { RequestHandler } from './$types';
 
 export const GET: RequestHandler = async ({ params }) => {
-	const file = getFile(params.id);
+	// 拡張子がついている場合（.png等）を考慮してIDを抽出
+	const id = params.id.split('.')[0];
+	const file = getFile(id);
 
 	if (!file) {
+		console.warn(`[FILES] File not found: ${id}`);
 		throw error(404, 'File not found');
 	}
 
 	if (file.storage_type === 'database' && file.data) {
-		return new Response(new Uint8Array(file.data), {
+		const data = file.data instanceof Uint8Array ? file.data : new Uint8Array(file.data);
+		return new Response(data, {
 			headers: {
-				'Content-Type': file.mime_type,
+				'Content-Type': file.mime_type || 'image/png',
 				'Content-Length': file.size.toString(),
 				'Cache-Control': 'public, max-age=31536000, immutable'
 			}
