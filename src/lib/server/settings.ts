@@ -14,9 +14,14 @@ export const setSetting = (key: string, value: string) => {
 };
 
 export const setSettings = (settings: Record<string, string>) => {
-	const insert = db.prepare("INSERT OR REPLACE INTO site_settings (key, value) VALUES (?, ?)");
+	// 確実に1件ずつ実行し、エラーが発生しても他の更新を邪魔しないようにする
+	const stmt = db.prepare("INSERT OR REPLACE INTO site_settings (key, value) VALUES (?, ?)");
 	for (const [key, value] of Object.entries(settings)) {
-		insert.run(key, value);
+		try {
+			stmt.run(key, value);
+		} catch (e) {
+			console.error(`Failed to set setting ${key}:`, e);
+		}
 	}
 };
 
@@ -32,16 +37,12 @@ export const getSettings = () => {
 export async function verifyTurnstile(token: string) {
 	const enabled = getSetting("enable_turnstile", "false") === "true";
 	const secret = getSetting("turnstile_secret_key");
-	
 	if (!enabled || !secret || !token) return !enabled;
-
 	const formData = new FormData();
 	formData.append("secret", secret);
 	formData.append("response", token);
-
 	try {
-		const url = "https://challenges.cloudflare.com/turnstile/v0/siteverify";
-		const res = await fetch(url, { body: formData, method: "POST" });
+		const res = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", { body: formData, method: "POST" });
 		const outcome = await res.json();
 		return outcome.success;
 	} catch (e) {

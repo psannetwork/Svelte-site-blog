@@ -19,11 +19,14 @@
 	});
 
 	$effect(() => {
-		editors.home.data = data.settings.home_hero_content;
-		editors.about.data = data.settings.about_page_content;
-		editors.error404.data = data.settings.error_404_content;
-		editors.error500.data = data.settings.error_500_content;
-		siteIconUrl = data.settings.site_icon_url || '';
+		// サーバーからのデータ（data.settings）が更新されたら、ローカルの編集用ステートに反映
+		if (data.settings) {
+			editors.home.data = data.settings.home_hero_content || '';
+			editors.about.data = data.settings.about_page_content || '';
+			editors.error404.data = data.settings.error_404_content || '';
+			editors.error500.data = data.settings.error_500_content || '';
+			siteIconUrl = data.settings.site_icon_url || '';
+		}
 	});
 
 	async function handleIconUpload(e: Event) {
