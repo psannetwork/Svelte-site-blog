@@ -253,9 +253,19 @@
 					showSuccess = true;
 					
 					// 依存関係を無効化してサーバーサイドの load() を再実行させる
-					// これにより Network ログに新しいリクエストが現れます
 					await invalidate('app:settings');
+					await invalidateAll();
 					
+					// 最新の data.settings をローカル変数に強制反映
+					if (data.settings) {
+						siteTitle = data.settings.site_title || '';
+						siteDescription = data.settings.site_description || '';
+						accentColor = data.settings.accent_color || '#00CC99';
+						siteLanguage = data.settings.site_language || 'ja';
+						allowedExtensions = data.settings.allowed_extensions || '.jpg,.jpeg,.png,.gif,.webp,.svg,.ico';
+						siteIconUrl = data.settings.site_icon_url || '';
+					}
+
 					setTimeout(() => showSuccess = false, 3000);
 					await update({ reset: false });
 				} else {
