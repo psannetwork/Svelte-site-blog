@@ -51,6 +51,7 @@ export const actions: Actions = {
 		}
 
 		try {
+			console.log("[SETTINGS] Saving to DB:", settingsToUpdate);
 			setSettings(settingsToUpdate);
 			return { success: true, message: "設定を保存しました。" };
 		} catch (e) {

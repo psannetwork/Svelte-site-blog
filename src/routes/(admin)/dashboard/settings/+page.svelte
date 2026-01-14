@@ -26,8 +26,9 @@
 	});
 
 	$effect(() => {
-		// サーバーからのデータ（data.settings）が更新されたら、ローカルの編集用ステートに反映
-		if (data.settings) {
+		// サーバーからのデータ（data.settings）が正しく取得できている場合のみ、ローカルステートを更新
+		// キーが1つもない（または_updatedのみの）場合は、データ取得失敗とみなして上書きしない
+		if (data.settings && Object.keys(data.settings).length > 1) {
 			editors.home.data = data.settings.home_hero_content || '';
 			editors.about.data = data.settings.about_page_content || '';
 			editors.error404.data = data.settings.error_404_content || '';
@@ -251,20 +252,13 @@
 				if (result.type === 'success') {
 					isSaving = false;
 					showSuccess = true;
-					
-					// 依存関係を無効化してサーバーサイドの load() を再実行させる
+
+					// 依存関係を無效化してサーバーサイドの load() を再実行させる
 					await invalidate('app:settings');
 					await invalidateAll();
-					
-					// 最新の data.settings をローカル変数に強制反映
-					if (data.settings) {
-						siteTitle = data.settings.site_title || '';
-						siteDescription = data.settings.site_description || '';
-						accentColor = data.settings.accent_color || '#00CC99';
-						siteLanguage = data.settings.site_language || 'ja';
-						allowedExtensions = data.settings.allowed_extensions || '.jpg,.jpeg,.png,.gif,.webp,.svg,.ico';
-						siteIconUrl = data.settings.site_icon_url || '';
-					}
+
+					// $effect が新しい data.settings をもとにローカルステートを更新するのを少し待つ
+					await new Promise(resolve => setTimeout(resolve, 100));
 
 					setTimeout(() => showSuccess = false, 3000);
 					await update({ reset: false });

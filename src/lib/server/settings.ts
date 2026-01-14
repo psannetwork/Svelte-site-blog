@@ -5,36 +5,40 @@ export const getSetting = (key: string, defaultValue: string = ""): string => {
 		const row = db.prepare("SELECT value FROM site_settings WHERE key = ?").get(key) as { value: string } | undefined;
 		return row ? row.value : defaultValue;
 	} catch (e) {
+		console.error(`[SETTINGS] Error getting setting ${key}:`, e);
 		return defaultValue;
 	}
 };
 
 export const setSetting = (key: string, value: string) => {
-	db.prepare("INSERT OR REPLACE INTO site_settings (key, value) VALUES (?, ?)").run(key, value);
+	try {
+		db.prepare("INSERT OR REPLACE INTO site_settings (key, value) VALUES (?, ?)").run(key, value);
+	} catch (e) {
+		console.error(`[SETTINGS] Error setting ${key}:`, e);
+		throw e;
+	}
 };
 
 export const setSettings = (settings: Record<string, string>) => {
-	// 確実に1件ずつ実行し、エラーが発生しても他の更新を邪魔しないようにする
-	const stmt = db.prepare("INSERT OR REPLACE INTO site_settings (key, value) VALUES (?, ?)");
+	console.log(`[SETTINGS] Updating ${Object.keys(settings).length} settings...`);
 	for (const [key, value] of Object.entries(settings)) {
-		try {
-			stmt.run(key, value);
-		} catch (e) {
-			console.error(`Failed to set setting ${key}:`, e);
-		}
+		setSetting(key, value);
 	}
 };
 
 export const getSettings = () => {
 	try {
-		// キャッシュを避けるため、クエリを常に新しくする（SQLiteの特性上、通常は不要ですが念のため）
 		const rows = db.prepare("SELECT key, value FROM site_settings").all() as { key: string; value: string }[];
+		if (!rows || rows.length === 0) {
+			console.warn("[SETTINGS] No settings found in database.");
+		}
 		const settings = rows.reduce((acc, row) => ({ ...acc, [row.key]: row.value }), {} as Record<string, string>);
-		// 更新時刻を付与して変更を検知しやすくする
 		settings._updated = Date.now().toString();
 		return settings;
 	} catch (e) {
-		return {};
+		console.error("[SETTINGS] Fatal error in getSettings:", e);
+		// エラー時は null を返して、UI側で「データ欠落」として扱えるようにする
+		return null;
 	}
 };
 
