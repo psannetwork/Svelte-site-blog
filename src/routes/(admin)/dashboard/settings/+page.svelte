@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import { onMount } from 'svelte';
-	import { invalidateAll } from '$app/navigation';
+	import { invalidateAll, invalidate } from '$app/navigation';
 	import { editorI18n } from '$lib/utils/editor_i18n';
 	
 	let { data, form } = $props();
@@ -233,16 +233,20 @@
 			</div>
 		{/if}
 
-		<!-- 設定フォーム -->
 		<form bind:this={formElement} method="POST" action="?/saveSettings" use:enhance={() => {
 			return async ({ result, update }) => {
-				isSaving = false;
 				if (result.type === 'success') {
+					isSaving = false;
 					showSuccess = true;
 					setTimeout(() => showSuccess = false, 3000);
+					
+					// キャッシュを無効化して最新データを強制ロード
+					await invalidate('app:settings');
+					await invalidateAll();
 					await update({ reset: false });
 				} else {
 					await update();
+					isSaving = false;
 				}
 			};
 		}} class="space-y-12">

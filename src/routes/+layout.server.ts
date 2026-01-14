@@ -4,7 +4,10 @@ import type { LayoutServerLoad } from "./$types";
 
 export const prerender = false;
 
-export const load: LayoutServerLoad = async ({ locals }) => {
+export const load: LayoutServerLoad = async ({ locals, depends }) => {
+	// 設定変更時に再取得できるように依存関係を登録
+	depends('app:settings');
+	
 	const settings = getSettings();
 	
 	// エラーコンテンツをHTML化（初期表示用）
