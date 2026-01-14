@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import { onMount } from 'svelte';
-	import { invalidateAll, invalidate, goto } from '$app/navigation';
+	import { invalidateAll, invalidate } from '$app/navigation';
 	import { editorI18n } from '$lib/utils/editor_i18n';
 	
 	let { data, form } = $props();
@@ -9,37 +9,47 @@
 	let isSaving = $state(false);
 	let showSuccess = $state(false);
 	let isUploadingIcon = $state(false);
-	let siteIconUrl = $state(data.settings.site_icon_url || '');
+	let siteIconUrl = $state(data.settings?.site_icon_url || '');
 	
 	// 設定項目のローカルステート
-	let siteTitle = $state(data.settings.site_title || '');
-	let siteDescription = $state(data.settings.site_description || '');
-	let accentColor = $state(data.settings.accent_color || '#00CC99');
-	let siteLanguage = $state(data.settings.site_language || 'ja');
-	let allowedExtensions = $state(data.settings.allowed_extensions || '.jpg,.jpeg,.png,.gif,.webp,.svg,.ico');
+	let siteTitle = $state(data.settings?.site_title || '');
+	let siteDescription = $state(data.settings?.site_description || '');
+	let accentColor = $state(data.settings?.accent_color || '#00CC99');
+	let siteLanguage = $state(data.settings?.site_language || 'ja');
+	let allowedExtensions = $state(data.settings?.allowed_extensions || '.jpg,.jpeg,.png,.gif,.webp,.svg,.ico');
 
 	let editors = $state({
-		home: { data: '', instance: null as any },
-		about: { data: '', instance: null as any },
-		error404: { data: '', instance: null as any },
-		error500: { data: '', instance: null as any }
+		home: { data: '', instance: null as any, holder: 'editor-home' },
+		about: { data: '', instance: null as any, holder: 'editor-about' },
+		error404: { data: '', instance: null as any, holder: 'editor-404' },
+		error500: { data: '', instance: null as any, holder: 'editor-500' }
 	});
 
+	// サーバーからのデータ（data.settings）が更新されたら、ローカルステートとエディタを更新
 	$effect(() => {
-		// サーバーからのデータ（data.settings）が正しく取得できている場合のみ、ローカルステートを更新
-		// キーが1つもない（または_updatedのみの）場合は、データ取得失敗とみなして上書きしない
 		if (data.settings && Object.keys(data.settings).length > 1) {
-			editors.home.data = data.settings.home_hero_content || '';
-			editors.about.data = data.settings.about_page_content || '';
-			editors.error404.data = data.settings.error_404_content || '';
-			editors.error500.data = data.settings.error_500_content || '';
-			siteIconUrl = data.settings.site_icon_url || '';
-			
 			siteTitle = data.settings.site_title || '';
 			siteDescription = data.settings.site_description || '';
 			accentColor = data.settings.accent_color || '#00CC99';
 			siteLanguage = data.settings.site_language || 'ja';
 			allowedExtensions = data.settings.allowed_extensions || '.jpg,.jpeg,.png,.gif,.webp,.svg,.ico';
+			siteIconUrl = data.settings.site_icon_url || '';
+
+			// 各エディタに最新データを再描画（リアクティブではないため手動でrender）
+			Object.entries(editors).forEach(([id, e]) => {
+				const key = id === 'home' ? 'home_hero_content' : 
+				            id === 'about' ? 'about_page_content' : 
+				            id === 'error404' ? 'error_404_content' : 'error_500_content';
+				const content = data.settings[key];
+				if (e.instance && e.instance.isReady && content) {
+					try {
+						const parsed = JSON.parse(content);
+						if (parsed.blocks && parsed.blocks.length > 0) {
+							e.instance.isReady.then(() => e.instance.render(parsed));
+						}
+					} catch (err) {}
+				}
+			});
 		}
 	});
 
@@ -52,7 +62,9 @@
 		try {
 			const res = await fetch('/api/upload?type=icon', { method: 'POST', body: formData });
 			const result = await res.json();
-			if (result.success) siteIconUrl = result.file.url;
+			if (result.success) {
+				siteIconUrl = result.file.url;
+			}
 		} catch (err) {
 			console.error('Upload failed', err);
 		} finally {
@@ -60,9 +72,10 @@
 		}
 	}
 
-	async function initEditor(id: keyof typeof editors, holder: string, initialData: string) {
-		const el = document.getElementById(holder);
-		if (!el || editors[id].instance) return;
+	async function initEditor(id: keyof typeof editors, initialData: string) {
+		const e = editors[id];
+		const el = document.getElementById(e.holder);
+		if (!el || e.instance) return;
 
 		const EditorJS = (await import('@editorjs/editorjs')).default;
 		const Header = (await import('@editorjs/header')).default;
@@ -86,49 +99,25 @@
 				const data = JSON.parse(initialData);
 				if (data && data.blocks) parsedData = data;
 			}
-		} catch (e) {
-			console.error(`Invalid editor data for ${id}`, e);
-		}
+		} catch (err) {}
 
 		if (parsedData.blocks.length === 0) {
 			parsedData.blocks.push({ type: 'paragraph', data: { text: '' } });
 		}
 
 		const editor = new EditorJS({
-			holder,
-			i18n: data.settings?.site_language === 'ja' ? editorI18n : undefined,
+			holder: e.holder,
+			i18n: siteLanguage === 'ja' ? editorI18n : undefined,
 			tools: {
-				header: Header, 
-				list: List, 
-				marker: Marker,
-				quote: Quote,
-				code: Code,
-				table: Table,
-				checklist: Checklist,
-				warning: Warning,
-				delimiter: Delimiter,
-				inlineCode: InlineCode,
-				underline: Underline,
-				color: { 
-					class: ColorPlugin, 
-					config: { 
-						colorCollections: ['#00CC99', '#EB2D8C', '#1A1A1A', '#FF1313', '#2388FF', '#FFD300'], 
-						type: 'text',
-						customPicker: true 
-					} 
-				},
-				image: { 
-					class: Image, 
-					config: { 
-						endpoints: { byFile: '/api/upload' } 
-					} 
-				}
+				header: Header, list: List, marker: Marker, quote: Quote, code: Code,
+				table: Table, checklist: Checklist, warning: Warning, delimiter: Delimiter,
+				inlineCode: InlineCode, underline: Underline,
+				color: { class: ColorPlugin, config: { colorCollections: ['#00CC99', '#EB2D8C', '#1A1A1A', '#FF1313', '#2388FF', '#FFD300'], type: 'text', customPicker: true } },
+				image: { class: Image, config: { endpoints: { byFile: '/api/upload' } } }
 			},
-			onReady: () => {
-				new Undo({ editor });
-			},
+			onReady: () => { new Undo({ editor }); },
 			data: parsedData,
-			placeholder: 'Start building your page...',
+			placeholder: 'Start building...',
 			defaultBlock: 'paragraph'
 		});
 		editors[id].instance = editor;
@@ -138,7 +127,6 @@
 		if (isSaving) return;
 		isSaving = true;
 		try {
-			// すべてのエディタのインスタンスから最新データを取得
 			const savePromises = Object.entries(editors).map(async ([id, e]) => {
 				if (e.instance) {
 					const saved = await e.instance.save();
@@ -146,11 +134,7 @@
 				}
 			});
 			await Promise.all(savePromises);
-			
-			// ステートの反映を待つ
-			setTimeout(() => {
-				formElement?.requestSubmit();
-			}, 100);
+			setTimeout(() => { formElement?.requestSubmit(); }, 100);
 		} catch (e) {
 			console.error('Failed to save settings:', e);
 			isSaving = false;
@@ -166,11 +150,11 @@
 
 	onMount(() => {
 		setTimeout(() => {
-			initEditor('home', 'editor-home', data.settings.home_hero_content);
-			initEditor('about', 'editor-about', data.settings.about_page_content);
-			initEditor('error404', 'editor-404', data.settings.error_404_content);
-			initEditor('error500', 'editor-500', data.settings.error_500_content);
-		}, 100);
+			initEditor('home', data.settings?.home_hero_content || '');
+			initEditor('about', data.settings?.about_page_content || '');
+			initEditor('error404', data.settings?.error_404_content || '');
+			initEditor('error500', data.settings?.error_500_content || '');
+		}, 200);
 		window.addEventListener('keydown', handleKeydown);
 		return () => {
 			window.removeEventListener('keydown', handleKeydown);
@@ -180,7 +164,7 @@
 </script>
 
 <svelte:head>
-	<title>System Settings | {data.settings?.site_title || 'Admin'}</title>
+	<title>System Settings | {siteTitle || 'Admin'}</title>
 </svelte:head>
 
 <div class="max-w-5xl mx-auto px-4 py-8">
@@ -235,47 +219,13 @@
 			</div>
 		{/if}
 
-		{#if form?.message && !form?.success}
-			<div class="bg-psan-pink/10 border-2 border-psan-pink text-psan-pink p-6 rounded-[32px] animate-in shake duration-300">
-				<div class="flex items-center gap-4">
-					<svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-					<div>
-						<p class="font-black uppercase tracking-widest text-sm">Error Occurred</p>
-						<p class="font-bold text-xs opacity-80">{form.message}</p>
-					</div>
-				</div>
-			</div>
-		{/if}
-
 		<form bind:this={formElement} method="POST" action="?/saveSettings" use:enhance={() => {
 			return async ({ result, update }) => {
 				if (result.type === 'success') {
 					isSaving = false;
 					showSuccess = true;
-
-					// サーバーから返された最新の設定データがあれば、それを使用してUIを更新
-					if (result.data?.settings) {
-						// 直接ローカルステートを更新
-						editors.home.data = result.data.settings.home_hero_content || '';
-						editors.about.data = result.data.settings.about_page_content || '';
-						editors.error404.data = result.data.settings.error_404_content || '';
-						editors.error500.data = result.data.settings.error_500_content || '';
-						siteIconUrl = result.data.settings.site_icon_url || '';
-
-						siteTitle = result.data.settings.site_title || '';
-						siteDescription = result.data.settings.site_description || '';
-						accentColor = result.data.settings.accent_color || '#00CC99';
-						siteLanguage = result.data.settings.site_language || 'ja';
-						allowedExtensions = result.data.settings.allowed_extensions || '.jpg,.jpeg,.png,.gif,.webp,.svg,.ico';
-					} else {
-						// レスポンスに設定データがない場合は従来通りinvalidateを使用
-						await invalidate('app:settings');
-						await invalidateAll();
-					}
-
-					// $effect が新しい data.settings をもとにローカルステートを更新するのを少し待つ
-					await new Promise(resolve => setTimeout(resolve, 100));
-
+					await invalidate('app:settings');
+					await invalidateAll();
 					setTimeout(() => showSuccess = false, 3000);
 					await update({ reset: false });
 				} else {
@@ -307,30 +257,19 @@
 
 				<div class="space-y-2">
 					<label for="allowed_extensions" class="text-[10px] font-black text-muted uppercase">許可するファイル拡張子</label>
-					<input
-						id="allowed_extensions"
-						name="allowed_extensions"
-						bind:value={allowedExtensions}
-						placeholder=".jpg,.jpeg,.png..."
-						class="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-none rounded-xl p-4 font-mono text-xs text-main"
-					/>
+					<input id="allowed_extensions" name="allowed_extensions" bind:value={allowedExtensions} class="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-none rounded-xl p-4 font-mono text-xs text-main" />
 					<p class="text-[10px] text-muted">カンマ区切りで入力（例：.jpg,.png）</p>
 				</div>
 			</section>
 
 			<section class="card-psan p-8 space-y-6">
 				<h3 class="text-xl font-black text-psan-green italic uppercase">Tab & Appearance</h3>
-				
 				<div class="grid md:grid-cols-2 gap-8">
-					<!-- ブラウザタブの設定 -->
 					<div class="space-y-6">
-						<h4 class="text-xs font-black text-main uppercase tracking-widest border-l-4 border-psan-green pl-3">Browser Tab Settings</h4>
-						
 						<div class="space-y-2">
 							<label for="site_title" class="text-[10px] font-black text-muted uppercase">Tab Title (Site Title)</label>
 							<input id="site_title" name="site_title" bind:value={siteTitle} class="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-none rounded-xl p-4 font-bold text-main" placeholder="My Awesome Blog" />
 						</div>
-
 						<div class="space-y-4">
 							<span class="text-[10px] font-black text-muted uppercase">Tab Icon (Favicon)</span>
 							<div class="flex items-center gap-6">
@@ -346,37 +285,39 @@
 										{isUploadingIcon ? 'Uploading...' : 'Upload Icon'}
 										<input type="file" accept="image/*" class="hidden" onchange={handleIconUpload} disabled={isUploadingIcon} />
 									</label>
-									<p class="text-[10px] text-muted mt-2">Recommended: 512x512 PNG/SVG</p>
 									<input type="hidden" name="site_icon_url" value={siteIconUrl} />
 								</div>
 							</div>
 						</div>
 					</div>
-
-					<!-- カスタムスタイル -->
-					<div class="space-y-6">
-						<h4 class="text-xs font-black text-main uppercase tracking-widest border-l-4 border-psan-pink pl-3">Custom Styles</h4>
-						<div class="space-y-2">
-							<label for="custom_css" class="text-[10px] font-black text-muted uppercase">Custom CSS</label>
-							<textarea 
-								id="custom_css" 
-								name="custom_css" 
-								rows="8" 
-								class="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-none rounded-xl p-4 font-mono text-xs text-main resize-y"
-								placeholder="body &#123; background: #f0f0f0; &#125;"
-							>{data.settings.custom_css || ''}</textarea>
-							<p class="text-[10px] text-muted">サイト全体のスタイルを上書きできます。</p>
-						</div>
+					<div class="space-y-2">
+						<label for="custom_css" class="text-[10px] font-black text-muted uppercase">Custom CSS</label>
+						<textarea id="custom_css" name="custom_css" rows="8" class="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-none rounded-xl p-4 font-mono text-xs text-main resize-y" value={data.settings?.custom_css || ''}></textarea>
 					</div>
 				</div>
 			</section>
 
 			<section class="card-psan p-8 space-y-6">
+				<h3 class="text-xl font-black text-psan-green italic uppercase">Storage Strategy</h3>
+				<div class="p-6 bg-psan-green/5 border border-psan-green/20 rounded-[32px] space-y-6">
+					{#if data.dbStatus.type === 'turso'}
+						<div class="p-4 bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 rounded-2xl border border-amber-200 dark:border-amber-800 text-xs font-bold mb-4">
+							<p>💡 **Turso を使用中の方へ**: 保存先を **"SQLite Database"** に設定することを強くおすすめします。</p>
+						</div>
+					{/if}
+					<select name="storage_type" class="bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-500 rounded-xl text-xs font-black p-3 text-main dark:text-white">
+						<option value="local" selected={data.settings?.storage_type === 'local'}>Local Filesystem</option>
+						<option value="database" selected={data.settings?.storage_type === 'database'}>SQLite Database</option>
+					</select>
+				</div>
+			</section>
+
+			<section class="card-psan p-8 space-y-6 border-psan-pink/20 border-2">
 				<h3 class="text-xl font-black text-psan-pink italic uppercase">Access Control</h3>
 				<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
 					<label class="flex items-center justify-between p-4 bg-secondary dark:bg-slate-800 rounded-2xl cursor-pointer text-main">
 						<span class="text-xs font-bold">ログインを強制する (非公開サイト)</span>
-						<input type="checkbox" name="is_site_public" checked={data.settings.is_site_public === 'false'} class="w-6 h-6 accent-psan-pink" />
+						<input type="checkbox" name="is_site_public" checked={data.settings?.is_site_public === 'false'} class="w-6 h-6 accent-psan-pink" />
 					</label>
 					{#each [
 						{ id: 'allow_signup', label: '新規登録を許可' },
@@ -387,12 +328,12 @@
 					] as item}
 						<label class="flex items-center justify-between p-4 bg-secondary dark:bg-slate-800 rounded-2xl cursor-pointer text-main">
 							<span class="text-xs font-bold">{item.label}</span>
-							<input type="checkbox" name={item.id} checked={data.settings[item.id] === 'true'} class="w-5 h-5 accent-psan-green" />
+							<input type="checkbox" name={item.id} checked={data.settings?.[item.id] === 'true'} class="w-5 h-5 accent-psan-green" />
 						</label>
 					{/each}
 					<div class="p-4 bg-secondary dark:bg-slate-800 rounded-2xl space-y-2 text-main">
 						<label for="anonymous_name" class="text-[10px] font-black text-muted uppercase">匿名ユーザーの表示名</label>
-						<input id="anonymous_name" name="anonymous_name" value={data.settings.anonymous_name || 'Anonymous'} class="w-full bg-white dark:bg-slate-900 border-none rounded-lg p-2 text-sm font-bold text-main" />
+						<input id="anonymous_name" name="anonymous_name" value={data.settings?.anonymous_name || 'Anonymous'} class="w-full bg-white dark:bg-slate-900 border-none rounded-lg p-2 text-sm font-bold text-main" />
 					</div>
 				</div>
 			</section>
@@ -402,119 +343,59 @@
 					<h3 class="text-2xl font-black text-main uppercase tracking-tighter italic">Page Contents</h3>
 					<div class="h-px flex-1 bg-slate-100 dark:bg-slate-800"></div>
 				</div>
-
 				<div class="card-psan p-8 space-y-6">
-					<div class="flex items-center justify-between">
-						<h3 class="text-xl font-black text-psan-green italic uppercase">Home Page Hero</h3>
-						<span class="text-[10px] font-bold text-muted uppercase">Top of the homepage</span>
-					</div>
+					<h3 class="text-xl font-black text-psan-green italic uppercase">Home Page Hero</h3>
 					<div class="bg-white dark:bg-slate-900 rounded-[32px] p-4 md:p-8 border border-slate-200 dark:border-slate-800 shadow-inner">
 						<div id="editor-home" class="text-main"></div>
 					</div>
 					<input type="hidden" name="home_hero_content" value={editors.home.data} />
 				</div>
-
 				<div class="card-psan p-8 space-y-6">
-					<div class="flex items-center justify-between">
-						<h3 class="text-xl font-black text-psan-pink italic uppercase">About Page</h3>
-						<span class="text-[10px] font-bold text-muted uppercase">Introduce yourself</span>
-					</div>
+					<h3 class="text-xl font-black text-psan-pink italic uppercase">About Page</h3>
 					<div class="bg-white dark:bg-slate-900 rounded-[32px] p-4 md:p-8 border border-slate-200 dark:border-slate-800 shadow-inner">
 						<div id="editor-about" class="text-main"></div>
 					</div>
 					<input type="hidden" name="about_page_content" value={editors.about.data} />
 				</div>
-
 				<div class="grid md:grid-cols-2 gap-8">
 					<div class="card-psan p-6 space-y-4">
 						<h3 class="text-[10px] font-black text-muted uppercase tracking-widest">404 Error Content</h3>
-						<div class="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200 dark:border-slate-800">
-							<div id="editor-404" class="text-main"></div>
-						</div>
+						<div class="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200 dark:border-slate-800"><div id="editor-404" class="text-main"></div></div>
 						<input type="hidden" name="error_404_content" value={editors.error404.data} />
 					</div>
 					<div class="card-psan p-6 space-y-4">
 						<h3 class="text-[10px] font-black text-muted uppercase tracking-widest">500 Error Content</h3>
-						<div class="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200 dark:border-slate-800">
-							<div id="editor-500" class="text-main"></div>
-						</div>
+						<div class="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200 dark:border-slate-800"><div id="editor-500" class="text-main"></div></div>
 						<input type="hidden" name="error_500_content" value={editors.error500.data} />
 					</div>
 				</div>
 			</div>
 
-			<section class="card-psan p-8 space-y-6">
-				<h3 class="text-xl font-black text-psan-green italic uppercase">Storage Strategy</h3>
-				<div class="p-6 bg-psan-green/5 border border-psan-green/20 rounded-[32px] space-y-6">
-					{#if data.dbStatus.type === 'turso'}
-						<div class="p-4 bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 rounded-2xl border border-amber-200 dark:border-amber-800 text-xs font-bold mb-4">
-							<p>💡 **Turso を使用中の方へ**: コンテナ環境（Render等）で画像を永続化するには、保存先を **"SQLite Database"** に設定することを強くおすすめします。Local を選ぶと、サーバーの再起動時に画像が消えてしまいます。</p>
-						</div>
-					{/if}
-					<div class="flex items-center justify-between gap-8">
-						<div class="flex-1">
-							<h4 class="font-black text-sm text-main uppercase">File Storage Method</h4>
-							<p class="text-[10px] font-medium text-muted mt-1 leading-relaxed">
-								アップロードされた画像や動画の保存先を選択します。<br>
-								<span class="text-psan-pink font-bold">Local:</span> static/uploads フォルダに保存します（PaaSでは消える可能性があります）。<br>
-								<span class="text-psan-green font-bold">Database:</span> SQLite DB（Turso含む）内に保存します。どこでも画像が消えなくなります。
-							</p>
-						</div>
-						<select 
-							name="storage_type" 
-							class="bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-500 rounded-xl text-xs font-black p-3 focus:ring-2 focus:ring-psan-green text-main dark:text-white"
-						>
-							<option value="local" selected={data.settings.storage_type === 'local'}>Local Filesystem</option>
-							<option value="database" selected={data.settings.storage_type === 'database'}>SQLite Database</option>
-						</select>
-					</div>
-				</div>
-			</section>
-
-			<section class="card-psan p-8 space-y-6 border-psan-pink/20 border-2">
-				<h3 class="text-xl font-black text-psan-pink italic uppercase">Security (Turnstile)</h3>
-				<label class="flex items-center justify-between p-4 bg-psan-pink/5 rounded-xl cursor-pointer">
-					<span class="text-sm font-bold text-psan-pink">Turnstileを有効化</span>
-					<input type="checkbox" name="enable_turnstile" checked={data.settings.enable_turnstile === 'true'} class="w-5 h-5 accent-psan-pink" />
-				</label>
-				<div class="grid md:grid-cols-2 gap-6">
-					<div class="space-y-2">
-						<label for="turnstile_site_key" class="text-[10px] font-black text-muted uppercase">Site Key</label>
-						<input id="turnstile_site_key" name="turnstile_site_key" placeholder="Site Key" value={data.settings.turnstile_site_key} class="w-full bg-secondary dark:bg-slate-800 rounded-xl p-4 font-mono text-xs text-main" />
-					</div>
-					<div class="space-y-2">
-						<label for="turnstile_secret_key" class="text-[10px] font-black text-muted uppercase">Secret Key</label>
-						<input id="turnstile_secret_key" name="turnstile_secret_key" placeholder="Secret Key" type="password" value={data.settings.turnstile_secret_key} class="w-full bg-secondary dark:bg-slate-800 rounded-xl p-4 font-mono text-xs text-main" />
-					</div>
-				</div>
-			</section>
-
 			<section class="card-psan p-8 space-y-6 border-psan-green/20 border-2">
 				<h3 class="text-xl font-black text-psan-green italic uppercase">Backup Settings</h3>
 				{#if data.dbStatus.type === 'turso'}
 					<div class="p-4 bg-psan-green/10 text-psan-green rounded-2xl border border-psan-green/20 text-xs font-bold">
-						<p>ℹ️ 現在 Turso (リモートDB) を使用中のため、バックアップは Turso のダッシュボード側で管理されます。ローカルバックアップ機能は無効です。</p>
+						<p>ℹ️ 現在 Turso (リモートDB) を使用中のため、バックアップは Turso のダッシュボード側で管理されます。</p>
 					</div>
 				{:else}
 					<div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-end">
 						<label class="flex items-center justify-between p-4 bg-psan-green/5 rounded-xl cursor-pointer">
 							<span class="text-sm font-bold text-psan-green uppercase">Auto Backup</span>
-							<input type="checkbox" name="enable_backup" checked={data.settings.enable_backup === 'true'} class="w-6 h-6 accent-psan-green" />
+							<input type="checkbox" name="enable_backup" checked={data.settings?.enable_backup === 'true'} class="w-6 h-6 accent-psan-green" />
 						</label>
 						<div class="space-y-2">
 							<label for="backup_interval" class="text-[10px] font-black text-muted uppercase">Interval (Hours)</label>
-							<input id="backup_interval" type="number" name="backup_interval" value={data.settings.backup_interval} class="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-none rounded-xl p-4 font-bold text-main" />
+							<input id="backup_interval" type="number" name="backup_interval" value={data.settings?.backup_interval} class="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-none rounded-xl p-4 font-bold text-main" />
 						</div>
 						<div class="space-y-2">
 							<label for="backup_keep_count" class="text-[10px] font-black text-muted uppercase">Keep Count</label>
-							<input id="backup_keep_count" type="number" name="backup_keep_count" value={data.settings.backup_keep_count} class="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-none rounded-xl p-4 font-bold text-main" />
+							<input id="backup_keep_count" type="number" name="backup_keep_count" value={data.settings?.backup_keep_count} class="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-none rounded-xl p-4 font-bold text-main" />
 						</div>
 					</div>
 				{/if}
 			</section>
 		</form>
 
-		<!-- BACKUP HISTORY -->
 		<section class="card-psan p-8 space-y-8">
 			<div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
 				<h3 class="text-xl font-black text-muted uppercase tracking-tighter italic">Backup History</h3>
@@ -528,7 +409,6 @@
 					</form>
 				</div>
 			</div>
-
 			<div class="space-y-3">
 				{#each data.backups as backup}
 					<div class="flex items-center justify-between p-4 bg-white dark:bg-slate-800 border border-slate-100 dark:border-none rounded-2xl group/item transition-all hover:ring-2 ring-psan-green/20 shadow-sm">
@@ -537,14 +417,10 @@
 							<div class="text-[10px] font-bold text-muted uppercase">{(backup.size / 1024 / 1024).toFixed(2)} MB • {new Date(backup.time).toLocaleString()}</div>
 						</div>
 						<div class="flex gap-2">
-							<a href="?/downloadBackup&filename={backup.name}" aria-label="バックアップをダウンロード" class="p-2 text-psan-green hover:bg-psan-green/10 rounded-lg">
-								<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
-							</a>
+							<a href="?/downloadBackup&filename={backup.name}" aria-label="バックアップをダウンロード" class="p-2 text-psan-green hover:bg-psan-green/10 rounded-lg"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg></a>
 							<form method="POST" action="?/restoreBackup" use:enhance>
 								<input type="hidden" name="filename" value={backup.name} />
-								<button type="submit" aria-label="このバックアップを復元" class="p-2 text-psan-pink hover:bg-psan-pink/10 rounded-lg" onclick={(e) => !confirm("本当に復元しますか？ 復元後は自動的に再起動します。") && e.preventDefault()}>
-									<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.001 0 01-15.357-2m15.357 2H15"/></svg>
-								</button>
+								<button type="submit" aria-label="このバックアップを復元" class="p-2 text-psan-pink hover:bg-psan-pink/10 rounded-lg" onclick={(e) => !confirm("本当に復元しますか？ 復元後は自動的に再起動します。") && e.preventDefault()}><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.001 0 01-15.357-2m15.357 2H15"/></svg></button>
 							</form>
 						</div>
 					</div>
