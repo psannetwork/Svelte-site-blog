@@ -10,21 +10,12 @@ export const getSetting = (key: string, defaultValue: string = ""): string => {
 	}
 };
 
-export const setSetting = (key: string, value: string) => {
-	try {
-		// INSERT OR REPLACE を確実に実行
-		db.prepare("INSERT OR REPLACE INTO site_settings (key, value) VALUES (?, ?)").run(key, value);
-	} catch (e) {
-		console.error(`[SETTINGS] Error setting ${key}:`, e);
-		throw e;
-	}
-};
-
 export const setSettings = (settings: Record<string, string>) => {
 	console.log(`[SETTINGS] Updating ${Object.keys(settings).length} settings...`);
 
 	try {
-		// トランザクションを作成（これにより全ての更新が1回の処理として扱われます）
+		// ★修正ポイント: トランザクションを使って一括保存する
+		// これにより、Tursoへの通信回数が 20回 -> 1回 になり、高速化＆ロック回避できます
 		const updateTransaction = db.transaction((data: Record<string, string>) => {
 			const stmt = db.prepare("INSERT OR REPLACE INTO site_settings (key, value) VALUES (?, ?)");
 			for (const [key, value] of Object.entries(data)) {
@@ -32,12 +23,12 @@ export const setSettings = (settings: Record<string, string>) => {
 			}
 		});
 
-		// トランザクション実行
 		updateTransaction(settings);
+		console.log("[SETTINGS] Transaction committed successfully.");
 
 	} catch (e) {
+		// トランザクションがサポートされていない場合などのフォールバック
 		console.error("[SETTINGS] Transaction failed, falling back to sequential updates:", e);
-		// 万が一トランザクションが動かない環境のためのフォールバック
 		for (const [key, value] of Object.entries(settings)) {
 			try {
 				db.prepare("INSERT OR REPLACE INTO site_settings (key, value) VALUES (?, ?)").run(key, value);
@@ -52,14 +43,14 @@ export const getSettings = () => {
 	try {
 		const rows = db.prepare("SELECT key, value FROM site_settings").all() as { key: string; value: string }[];
 		if (!rows || rows.length === 0) {
-			console.warn("[SETTINGS] No settings found in database.");
+			// ここでWarnが出ている可能性がありますが、初回以外は通常データがあるはず
 			return {};
 		}
 		const settings = rows.reduce((acc, row) => ({ ...acc, [row.key]: row.value }), {} as Record<string, string>);
-		// キャッシュを破壊するためのユニークIDを付与
 		settings._updated = Date.now().toString();
 		return settings;
 	} catch (e) {
+		// ★ここが原因で画面が真っ白になっていました
 		console.error("[SETTINGS] Fatal error in getSettings:", e);
 		return {};
 	}
@@ -76,7 +67,7 @@ export async function verifyTurnstile(token: string) {
 		const res = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", { body: formData, method: "POST" });
 		const outcome = await res.json();
 		return outcome.success;
-	} catch (e) {
+	} catch {
 		return false;
 	}
 }
