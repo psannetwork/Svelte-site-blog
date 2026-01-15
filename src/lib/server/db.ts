@@ -10,35 +10,38 @@ let _dbStatus = {
 	url: ''
 };
 
-function getDb(): any {
-	if (_db) return _db;
-
+// データベースの同期的な初期化（接続のみ）
+function initializeDb(): any {
 	const tursoUrl = env.TURSO_DB_URL;
 	const tursoToken = env.TURSO_DB_AUTH_TOKEN;
 
 	if (tursoUrl && tursoUrl.startsWith('libsql') && tursoToken && !tursoToken.startsWith('libsql')) {
 		console.log(`[DB] Connecting to Turso: ${tursoUrl}`);
 		try {
-			_db = new (Database as any)(tursoUrl, { authToken: tursoToken });
+			const db = new Database(tursoUrl, { authToken: tursoToken } as any);
 			_dbStatus = { type: 'turso', path: '', url: tursoUrl };
+			return db;
 		} catch (e) {
 			console.error('[DB] Turso connection failed', e);
 		}
 	}
 
-	if (!_db) {
-		const dbPath = env.DB_PATH || 'blog.db';
-		const dbDir = dirname(dbPath);
-		if (dbDir !== '.' && !existsSync(dbDir)) {
-			mkdirSync(dbDir, { recursive: true });
-		}
-		_db = new Database(dbPath);
-		_dbStatus = { type: 'local', path: dbPath, url: '' };
-		_db.pragma('journal_mode = WAL');
+	const dbPath = env.DB_PATH || 'blog.db';
+	const dbDir = dirname(dbPath);
+	if (dbDir !== '.' && !existsSync(dbDir)) {
+		mkdirSync(dbDir, { recursive: true });
 	}
+	const db = new Database(dbPath);
+	_dbStatus = { type: 'local', path: dbPath, url: '' };
+	db.pragma('journal_mode = WAL');
 
-	// テーブル作成ロジック（省略せずに実行）
-	_db.exec(`
+	return db;
+}
+
+// スキーマと初期データのセットアップ
+function initSchema(db: any) {
+	// テーブル作成ロジック
+	db.exec(`
 		CREATE TABLE IF NOT EXISTS user (id TEXT PRIMARY KEY, username TEXT NOT NULL UNIQUE, nickname TEXT, password_hash TEXT NOT NULL, role TEXT NOT NULL DEFAULT 'user', is_protected INTEGER DEFAULT 0);
 		CREATE TABLE IF NOT EXISTS session (id TEXT PRIMARY KEY, expires_at INTEGER NOT NULL, user_id TEXT NOT NULL, FOREIGN KEY (user_id) REFERENCES user(id) ON DELETE CASCADE);
 		CREATE TABLE IF NOT EXISTS post (id TEXT PRIMARY KEY, title TEXT NOT NULL, summary TEXT, content TEXT NOT NULL, author_id TEXT NOT NULL, visibility TEXT NOT NULL DEFAULT 'public', created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL, FOREIGN KEY (author_id) REFERENCES user(id));
@@ -75,22 +78,77 @@ function getDb(): any {
 		["site_language", "ja"]
 	];
 
-	const insertSetting = _db.prepare("INSERT OR IGNORE INTO site_settings (key, value) VALUES (?, ?)");
+	const insertSetting = db.prepare("INSERT OR IGNORE INTO site_settings (key, value) VALUES (?, ?)");
 	for (const [k, v] of initialSettings) {
 		insertSetting.run(k, v);
 	}
+}
 
+// データベースのセットアップ（接続＋スキーマ初期化）
+function setupDb(): any {
+	const db = initializeDb();
+	initSchema(db);
+	return db;
+}
+
+// 初期化済みのデータベースを取得（なければ作成）
+function getDb(): any {
+	if (!_db) {
+		_db = setupDb();
+	}
 	return _db;
 }
 
+// データベース接続をリセット（バックアップ復元時などに使用）
+export function resetDb() {
+	if (_db) {
+		console.log('[DB] Closing database connection...');
+		try {
+			_db.close();
+		} catch (e) {
+			console.error('[DB] Error closing database:', e);
+		}
+		_db = null;
+		console.log('[DB] Database connection reset.');
+	}
+}
+
 export function getDbStatus() { return _dbStatus; }
+
+// LuciaのSQLiteアダプターと互換性のあるように、prepareメソッドを適切にラップ
+function createPreparedStatement(sql: string, dbInstance: any) {
+	return {
+		run: (...params: any[]) => {
+			const stmt = dbInstance.prepare(sql);
+			return stmt.run(...params);
+		},
+		all: (...params: any[]) => {
+			const stmt = dbInstance.prepare(sql);
+			return stmt.all(...params);
+		},
+		get: (...params: any[]) => {
+			const stmt = dbInstance.prepare(sql);
+			return stmt.get(...params);
+		}
+	};
+}
 
 // 標準の Proxy を使用して、既存の db.prepare 等の呼び出しを透過的に扱う
 const dbProxy = new Proxy({}, {
 	get(target, prop) {
 		const instance = getDb();
 		const value = instance[prop];
-		return typeof value === 'function' ? value.bind(instance) : value;
+
+		if (prop === 'prepare') {
+			// prepareメソッドはSQLを受け取ってPreparedStatement風のオブジェクトを返す
+			return (sql: string) => createPreparedStatement(sql, instance);
+		}
+
+		if (typeof value === 'function') {
+			return value.bind(instance);
+		}
+
+		return value;
 	}
 });
 

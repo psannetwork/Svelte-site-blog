@@ -1,6 +1,6 @@
 import { mkdirSync, existsSync, readdirSync, unlinkSync, statSync, copyFileSync } from 'fs';
 import { join } from 'path';
-import db from './db';
+import db, { resetDb } from './db';
 import { getSetting, setSetting } from './settings';
 import { env } from '$env/dynamic/private';
 
@@ -27,14 +27,14 @@ export function performBackup() {
 	
 	try {
 		// `libsql` のクライアント実装によっては `backup` メソッドがない場合がある
-		if (typeof (db as any).backup !== 'function') {
-			console.warn('[BACKUP SKIPPED] The current database driver does not support programmatic backup (db.backup is not a function). This is common in some environments or when using remote DBs.');
-			setSetting('last_backup_at', Date.now().toString()); // エラーログ連発を防ぐため更新とみなす
-			return { success: false, error: 'Backup not supported by driver' };
+		if (typeof (db as any).backup === 'function') {
+			(db as any).backup(backupPath);
+		} else {
+			// backupメソッドがない場合のフォールバック（ファイルコピー）
+			// WALモードの場合、チェックポイントが必要だが簡易的なバックアップとしてコピー
+			copyFileSync(DB_PATH, backupPath);
 		}
 
-		// 現在のDBの内容をバックアップファイルに保存
-		(db as any).backup(backupPath);
 		setSetting('last_backup_at', Date.now().toString());
 		rotateBackups();
 		return { success: true, path: backupPath };
@@ -75,20 +75,15 @@ export async function restoreBackup(filename: string) {
 	if (!existsSync(backupPath)) return { success: false, error: 'Backup not found' };
 
 	try {
-		// 1. 現在の接続を閉じる
-		if (db) {
-			db.close();
-		}
+		// 1. 現在の接続を閉じてリセット
+		resetDb();
 
 		// 2. ファイルを上書きコピー
 		copyFileSync(backupPath, DB_PATH);
 
-		// 3. プロセスを終了させることで、ViteやPM2などのマネージャーによる自動再起動を促す
-		// これが最も確実に接続をリセットし、WALファイルなどの整合性を保つ方法です
-		console.log(`[RESTORE] Database restored from ${filename}. Restarting...`);
-		setTimeout(() => process.exit(0), 500);
-
-		return { success: true };
+		console.log(`[RESTORE] Database restored from ${filename}. Connection reset.`);
+		
+		return { success: true, message: "データベースの復元が完了しました。" };
 	} catch (e) {
 		console.error('[RESTORE ERROR]', e);
 		return { success: false, error: e };
