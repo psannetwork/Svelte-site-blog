@@ -9,14 +9,15 @@
 	let isSaving = $state(false);
 	let showSuccess = $state(false);
 	let isUploadingIcon = $state(false);
-	let siteIconUrl = $state(data.settings?.site_icon_url || '');
-	
 	// 設定項目のローカルステート
-	let siteTitle = $state(data.settings?.site_title || '');
-	let siteDescription = $state(data.settings?.site_description || '');
-	let accentColor = $state(data.settings?.accent_color || '#00CC99');
-	let siteLanguage = $state(data.settings?.site_language || 'ja');
-	let allowedExtensions = $state(data.settings?.allowed_extensions || '.jpg,.jpeg,.png,.gif,.webp,.svg,.ico');
+	// data.settings を直接 $state に渡すと "state_referenced_locally" 警告が出るため、一度変数に受ける
+	const s = data.settings || {};
+	let siteTitle = $state(s.site_title || '');
+	let siteDescription = $state(s.site_description || '');
+	let accentColor = $state(s.accent_color || '#00CC99');
+	let siteLanguage = $state(s.site_language || 'ja');
+	let allowedExtensions = $state(s.allowed_extensions || '.jpg,.jpeg,.png,.gif,.webp,.svg,.ico');
+	let siteIconUrl = $state(s.site_icon_url || '');
 
 	let editors = $state({
 		home: { data: '', instance: null as any, holder: 'editor-home' },

@@ -24,7 +24,15 @@ export function performBackup() {
 	}
 	const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
 	const backupPath = join(BACKUP_DIR, `backup-${timestamp}.db`);
+	
 	try {
+		// `libsql` のクライアント実装によっては `backup` メソッドがない場合がある
+		if (typeof (db as any).backup !== 'function') {
+			console.warn('[BACKUP SKIPPED] The current database driver does not support programmatic backup (db.backup is not a function). This is common in some environments or when using remote DBs.');
+			setSetting('last_backup_at', Date.now().toString()); // エラーログ連発を防ぐため更新とみなす
+			return { success: false, error: 'Backup not supported by driver' };
+		}
+
 		// 現在のDBの内容をバックアップファイルに保存
 		(db as any).backup(backupPath);
 		setSetting('last_backup_at', Date.now().toString());

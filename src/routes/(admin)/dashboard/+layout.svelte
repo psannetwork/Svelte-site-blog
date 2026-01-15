@@ -24,6 +24,7 @@
 	{#if isSidebarOpen}
 		<button 
 			onclick={() => isSidebarOpen = false} 
+			aria-label="サイドバーを閉じる"
 			class="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] lg:hidden animate-in fade-in"
 		></button>
 	{/if}

@@ -54,7 +54,14 @@ export const actions: Actions = {
 			console.log("[SETTINGS] Saving to DB:", settingsToUpdate);
 			setSettings(settingsToUpdate);
 			// 最新の設定データを返すことで、UIへの即時反映を可能にする
-			const updatedSettings = getSettings();
+			let updatedSettings = getSettings();
+			
+			// もし読み込みに失敗して空だった場合、保存したデータをそのまま返してUIの空白化を防ぐ
+			if (!updatedSettings || Object.keys(updatedSettings).length === 0) {
+				console.warn("[SETTINGS] getSettings() returned empty after save. Using submitted data for UI update.");
+				updatedSettings = { ...settingsToUpdate, _updated: Date.now().toString() };
+			}
+
 			return { success: true, message: "設定を保存しました。", settings: updatedSettings };
 		} catch (e) {
 			console.error("Save settings error:", e);

@@ -8,8 +8,11 @@
 	let { data, form } = $props<{ data: PageData, form: ActionData }>();
 	let editor: any;
 	let formElement: HTMLFormElement;
-	let title = $state(data.page.title);
-	let editorData = $state(data.page.raw_json || data.page.content || '');
+	
+	// 初期データをローカル変数に退避して "state_referenced_locally" 警告を回避
+	const initialPage = data.page;
+	let title = $state(initialPage.title);
+	let editorData = $state(initialPage.raw_json || initialPage.content || '');
 	let isSaving = $state(false);
 	let isPreview = $state(false);
 	let previewHtml = $state('');

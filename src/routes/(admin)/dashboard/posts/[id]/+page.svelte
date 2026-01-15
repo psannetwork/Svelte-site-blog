@@ -8,10 +8,13 @@
 	let { data, form } = $props<{ data: PageData, form: ActionData }>();
 	let editor: any;
 	let formElement: HTMLFormElement;
-	let title = $state(data.post.title);
-	let summary = $state(data.post.summary || '');
-	let visibility = $state(data.post.visibility);
-	let editorData = $state(data.post.raw_json || data.post.content || '');
+	
+	// 初期データをローカル変数に退避して "state_referenced_locally" 警告を回避
+	const initialPost = data.post;
+	let title = $state(initialPost.title);
+	let summary = $state(initialPost.summary || '');
+	let visibility = $state(initialPost.visibility);
+	let editorData = $state(initialPost.raw_json || initialPost.content || '');
 	let isSaving = $state(false);
 	let isPreview = $state(false);
 	let previewHtml = $state('');

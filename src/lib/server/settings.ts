@@ -23,8 +23,7 @@ export const setSettings = (settings: Record<string, string>) => {
 	console.log(`[SETTINGS] Updating ${Object.keys(settings).length} settings...`);
 
 	try {
-		// ★修正ポイント: トランザクションを使って一括保存する
-		// これにより、Tursoへの通信回数が 20回 -> 1回 になり、高速化＆ロック回避できます
+		// トランザクションを試行
 		const updateTransaction = db.transaction((data: Record<string, string>) => {
 			const stmt = db.prepare("INSERT OR REPLACE INTO site_settings (key, value) VALUES (?, ?)");
 			for (const [key, value] of Object.entries(data)) {
@@ -36,33 +35,44 @@ export const setSettings = (settings: Record<string, string>) => {
 		console.log("[SETTINGS] Transaction committed successfully.");
 
 	} catch (e) {
-		// トランザクションがサポートされていない場合などのフォールバック
-		console.error("[SETTINGS] Transaction failed, falling back to sequential updates:", e);
+		console.warn("[SETTINGS] Transaction failed (likely Turso/HTTP mode), falling back to sequential updates. Error:", e);
+		
+		// フォールバック: 個別実行
+		const stmt = db.prepare("INSERT OR REPLACE INTO site_settings (key, value) VALUES (?, ?)");
 		for (const [key, value] of Object.entries(settings)) {
 			try {
-				db.prepare("INSERT OR REPLACE INTO site_settings (key, value) VALUES (?, ?)").run(key, value);
+				stmt.run(key, value);
 			} catch (err) {
-				console.error(`Failed to update ${key}:`, err);
+				console.error(`[SETTINGS] Failed to update ${key} in fallback mode:`, err);
 			}
 		}
 	}
 };
 
 export const getSettings = () => {
-	try {
-		const rows = db.prepare("SELECT key, value FROM site_settings").all() as { key: string; value: string }[];
-		if (!rows || rows.length === 0) {
-			// ここでWarnが出ている可能性がありますが、初回以外は通常データがあるはず
-			return {};
+	let retries = 3;
+	while (retries > 0) {
+		try {
+			const rows = db.prepare("SELECT key, value FROM site_settings").all() as { key: string; value: string }[];
+			if (!rows) return {};
+			
+			const settings = rows.reduce((acc, row) => ({ ...acc, [row.key]: row.value }), {} as Record<string, string>);
+			settings._updated = Date.now().toString();
+			return settings;
+		} catch (e) {
+			console.error(`[SETTINGS] Error in getSettings (retries left: ${retries - 1}):`, e);
+			retries--;
+			if (retries === 0) {
+				console.error("[SETTINGS] Fatal error in getSettings: All retries failed.");
+				return {};
+			}
+			// 短い待機を入れてリトライ（Tursoの一時的なエラー対策）
+			// Note: 同期関数のため sleep はブロッキングになるが、サーバー起動時や設定ロード時のみなので許容
+			const start = Date.now();
+			while (Date.now() - start < 100) {} 
 		}
-		const settings = rows.reduce((acc, row) => ({ ...acc, [row.key]: row.value }), {} as Record<string, string>);
-		settings._updated = Date.now().toString();
-		return settings;
-	} catch (e) {
-		// ★ここが原因で画面が真っ白になっていました
-		console.error("[SETTINGS] Fatal error in getSettings:", e);
-		return {};
 	}
+	return {};
 };
 
 export async function verifyTurnstile(token: string) {
