@@ -10,6 +10,15 @@ export const getSetting = (key: string, defaultValue: string = ""): string => {
 	}
 };
 
+export const setSetting = (key: string, value: string) => {
+	try {
+		db.prepare("INSERT OR REPLACE INTO site_settings (key, value) VALUES (?, ?)").run(key, value);
+	} catch (e) {
+		console.error(`[SETTINGS] Error setting ${key}:`, e);
+		throw e;
+	}
+};
+
 export const setSettings = (settings: Record<string, string>) => {
 	console.log(`[SETTINGS] Updating ${Object.keys(settings).length} settings...`);
 
