@@ -11,7 +11,9 @@ export function editorJsToHtml(blocks: any[]) {
 				html += `<h${level} class="${sizes[level]} font-black mt-16 mb-8 tracking-tighter">${text}</h${level}>`;
 				break;
 			case 'paragraph':
-				html += `<p class="leading-relaxed mb-8 opacity-80 font-medium text-lg">${text}</p>`;
+				// textが未定義またはnullの場合に空文字を保証
+				const pText = block.data?.text ?? '';
+				html += `<p class="leading-relaxed mb-8 opacity-80 font-medium text-lg">${pText}</p>`;
 				break;
 			case 'list':
 				const tag = block.data.style === 'ordered' ? 'ol' : 'ul';
