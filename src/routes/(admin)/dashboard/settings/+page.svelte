@@ -20,6 +20,10 @@
 	let allowedExtensions = $state(initialSettings?.allowed_extensions || '.jpg,.jpeg,.png,.gif,.webp,.svg,.ico');
 	let siteIconUrl = $state(initialSettings?.site_icon_url || '');
 
+	// ユーザーが変更したかどうかを追跡するフラグ
+	let userEdited = $state<Record<string, boolean>>({});
+
+	// 最後に反映したデータのタイムスタンプ
 	let lastSyncTime = $state(parseInt(initialSettings?._updated || '0'));
 
 	async function refreshSettings() {
@@ -33,29 +37,20 @@
 				const newTime = parseInt(s._updated || '0');
 				
 				if (newTime > lastSyncTime) {
-					let changedCount = 0;
+					let changed = false;
 					
-					// ユーザーが変更していない場合のみAPIの値を反映
-					if (siteTitle === (initialSettings?.site_title || '')) {
-						siteTitle = s.site_title || '';
-						changedCount++;
-					}
-					if (siteDescription === (initialSettings?.site_description || '')) {
-						siteDescription = s.site_description || '';
-						changedCount++;
-					}
-					if (accentColor === (initialSettings?.accent_color || '#00CC99')) {
-						accentColor = s.accent_color || '#00CC99';
-						changedCount++;
-					}
-					if (siteLanguage === (initialSettings?.site_language || 'ja')) {
-						siteLanguage = s.site_language || 'ja';
-						changedCount++;
-					}
-					if (siteIconUrl === (initialSettings?.site_icon_url || '')) {
-						siteIconUrl = s.site_icon_url || '';
-						changedCount++;
-					}
+					const syncField = (key: string, currentVal: any, newVal: any, setter: (v: any) => void) => {
+						if (!userEdited[key] && currentVal !== newVal) {
+							setter(newVal);
+							changed = true;
+						}
+					};
+
+					syncField('site_title', siteTitle, s.site_title, v => siteTitle = v);
+					syncField('site_description', siteDescription, s.site_description, v => siteDescription = v);
+					syncField('accent_color', accentColor, s.accent_color, v => accentColor = v);
+					syncField('site_language', siteLanguage, s.site_language, v => siteLanguage = v);
+					syncField('site_icon_url', siteIconUrl, s.site_icon_url, v => siteIconUrl = v);
 
 					Object.entries(editors).forEach(([id, e]) => {
 						const key = id === 'home' ? 'home_hero_content' : 
@@ -63,15 +58,14 @@
 						            id === 'error404' ? 'error_404_content' : 'error_500_content';
 						const content = s[key];
 						
-						// エディタがフォーカスされておらず、かつ内容が異なる場合のみ再描画
-						if (e.instance && content && !e.instance.isFocused) {
+						if (e.instance && content && !e.instance.isFocused && !isSaving) {
 							try {
 								const parsed = JSON.parse(content);
 								e.instance.isReady.then(async () => {
 									const current = await e.instance.save();
 									if (JSON.stringify(current.blocks) !== JSON.stringify(parsed.blocks)) {
 										await e.instance.render(parsed);
-										changedCount++;
+										changed = true;
 									}
 								});
 							} catch (err) {}
@@ -79,13 +73,18 @@
 					});
 					
 					lastSyncTime = newTime;
-					if (changedCount > 0) console.log(`[SETTINGS] synced ${changedCount} items.`);
+					if (changed) console.log('[SETTINGS] Insurance: Data synced.');
 				}
 			}
 		} catch (err) {
 		} finally {
 			isRefreshing = false;
 		}
+	}
+
+	// 入力時に編集済みフラグを立てる
+	function markEdited(key: string) {
+		userEdited[key] = true;
 	}
 
 	let editors = $state({
@@ -344,24 +343,24 @@
 				<div class="grid md:grid-cols-2 gap-6">
 					<div class="space-y-2">
 						<label for="accent_color" class="text-[10px] font-black text-muted uppercase">Accent Color</label>
-						<input id="accent_color" name="accent_color" type="color" bind:value={accentColor} class="w-full h-14" />
+						<input id="accent_color" name="accent_color" type="color" bind:value={accentColor} oninput={() => markEdited('accent_color')} class="w-full h-14" />
 					</div>
 					<div class="space-y-2">
 						<label for="site_language" class="text-[10px] font-black text-muted uppercase">Site Language</label>
-						<select name="site_language" bind:value={siteLanguage} class="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-none rounded-xl p-4 font-bold text-main">
+						<select name="site_language" bind:value={siteLanguage} onchange={() => markEdited('site_language')} class="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-none rounded-xl p-4 font-bold text-main">
 							<option value="ja">日本語 (Japanese)</option>
 							<option value="en">English</option>
 						</select>
 					</div>
 					<div class="space-y-2">
 						<label for="site_description" class="text-[10px] font-black text-muted uppercase">Site Description (SEO)</label>
-						<input id="site_description" name="site_description" bind:value={siteDescription} class="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-none rounded-xl p-4 font-bold text-main" />
+						<input id="site_description" name="site_description" bind:value={siteDescription} oninput={() => markEdited('site_description')} class="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-none rounded-xl p-4 font-bold text-main" />
 					</div>
 				</div>
 
 				<div class="space-y-2">
 					<label for="allowed_extensions" class="text-[10px] font-black text-muted uppercase">許可するファイル拡張子</label>
-					<input id="allowed_extensions" name="allowed_extensions" bind:value={allowedExtensions} class="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-none rounded-xl p-4 font-mono text-xs text-main" />
+					<input id="allowed_extensions" name="allowed_extensions" bind:value={allowedExtensions} oninput={() => markEdited('allowed_extensions')} class="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-none rounded-xl p-4 font-mono text-xs text-main" />
 					<p class="text-[10px] text-muted">カンマ区切りで入力（例：.jpg,.png）</p>
 				</div>
 			</section>
@@ -372,7 +371,7 @@
 					<div class="space-y-6">
 						<div class="space-y-2">
 							<label for="site_title" class="text-[10px] font-black text-muted uppercase">Tab Title (Site Title)</label>
-							<input id="site_title" name="site_title" bind:value={siteTitle} class="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-none rounded-xl p-4 font-bold text-main" placeholder="My Awesome Blog" />
+							<input id="site_title" name="site_title" bind:value={siteTitle} oninput={() => markEdited('site_title')} class="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-none rounded-xl p-4 font-bold text-main" placeholder="My Awesome Blog" />
 						</div>
 						<div class="space-y-4">
 							<span class="text-[10px] font-black text-muted uppercase">Tab Icon (Favicon)</span>
@@ -396,7 +395,30 @@
 					</div>
 					<div class="space-y-2">
 						<label for="custom_css" class="text-[10px] font-black text-muted uppercase">Custom CSS</label>
-						<textarea id="custom_css" name="custom_css" rows="8" class="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-none rounded-xl p-4 font-mono text-xs text-main resize-y" value={data.settings?.custom_css || ''}></textarea>
+						<textarea id="custom_css" name="custom_css" rows="8" oninput={() => markEdited('custom_css')} class="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-none rounded-xl p-4 font-mono text-xs text-main resize-y" value={data.settings?.custom_css || ''}></textarea>
+					</div>
+				</div>
+			</section>
+
+			<section class="card-psan p-8 space-y-6">
+				<h3 class="text-xl font-black text-psan-green italic uppercase">Security & Spam Protection</h3>
+				<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+					<label class="flex items-center justify-between p-6 bg-psan-green/5 border border-psan-green/20 rounded-3xl cursor-pointer">
+						<div class="space-y-1">
+							<span class="text-sm font-black text-main uppercase">Cloudflare Turnstile</span>
+							<p class="text-[10px] text-muted font-bold">自動ボットによる投稿を防止します。</p>
+						</div>
+						<input type="checkbox" name="enable_turnstile" checked={data.settings?.enable_turnstile === 'true'} onchange={() => markEdited('enable_turnstile')} class="w-6 h-6 accent-psan-green" />
+					</label>
+					<div class="space-y-4">
+						<div class="space-y-2">
+							<label for="turnstile_site_key" class="text-[10px] font-black text-muted uppercase">Site Key</label>
+							<input id="turnstile_site_key" name="turnstile_site_key" oninput={() => markEdited('turnstile_site_key')} value={data.settings?.turnstile_site_key || ''} class="w-full bg-secondary dark:bg-slate-800 border-none rounded-xl p-3 text-xs font-bold text-main" placeholder="1x000..." />
+						</div>
+						<div class="space-y-2">
+							<label for="turnstile_secret_key" class="text-[10px] font-black text-muted uppercase">Secret Key</label>
+							<input id="turnstile_secret_key" name="turnstile_secret_key" type="password" oninput={() => markEdited('turnstile_secret_key')} value={data.settings?.turnstile_secret_key || ''} class="w-full bg-secondary dark:bg-slate-800 border-none rounded-xl p-3 text-xs font-bold text-main" placeholder="••••••••" />
+						</div>
 					</div>
 				</div>
 			</section>
@@ -421,7 +443,7 @@
 				<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
 					<label class="flex items-center justify-between p-4 bg-secondary dark:bg-slate-800 rounded-2xl cursor-pointer text-main">
 						<span class="text-xs font-bold">ログインを強制する (非公開サイト)</span>
-						<input type="checkbox" name="is_site_public" checked={data.settings?.is_site_public === 'false'} class="w-6 h-6 accent-psan-pink" />
+						<input type="checkbox" name="is_site_public" checked={data.settings?.is_site_public === 'false'} onchange={() => markEdited('is_site_public')} class="w-6 h-6 accent-psan-pink" />
 					</label>
 					{#each [
 						{ id: 'allow_signup', label: '新規登録を許可' },
@@ -432,12 +454,12 @@
 					] as item}
 						<label class="flex items-center justify-between p-4 bg-secondary dark:bg-slate-800 rounded-2xl cursor-pointer text-main">
 							<span class="text-xs font-bold">{item.label}</span>
-							<input type="checkbox" name={item.id} checked={data.settings?.[item.id] === 'true'} class="w-5 h-5 accent-psan-green" />
+							<input type="checkbox" name={item.id} checked={data.settings?.[item.id] === 'true'} onchange={() => markEdited(item.id)} class="w-5 h-5 accent-psan-green" />
 						</label>
 					{/each}
 					<div class="p-4 bg-secondary dark:bg-slate-800 rounded-2xl space-y-2 text-main">
 						<label for="anonymous_name" class="text-[10px] font-black text-muted uppercase">匿名ユーザーの表示名</label>
-						<input id="anonymous_name" name="anonymous_name" value={data.settings?.anonymous_name || 'Anonymous'} class="w-full bg-white dark:bg-slate-900 border-none rounded-lg p-2 text-sm font-bold text-main" />
+						<input id="anonymous_name" name="anonymous_name" value={data.settings?.anonymous_name || 'Anonymous'} oninput={() => markEdited('anonymous_name')} class="w-full bg-white dark:bg-slate-900 border-none rounded-lg p-2 text-sm font-bold text-main" />
 					</div>
 				</div>
 			</section>

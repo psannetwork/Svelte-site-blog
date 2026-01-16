@@ -10,9 +10,7 @@ const config = {
 	kit: {
 		adapter: adapter({
 			precompress: true
-		}),
-		// Cloudflareからの正確なIPアドレスを取得
-		addressHeader: 'cf-connecting-ip'
+		})
 	}
 };
 

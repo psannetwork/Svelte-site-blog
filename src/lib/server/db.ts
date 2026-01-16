@@ -58,7 +58,16 @@ function initSchema(db: any) {
 	if (!db) return;
 	try {
 		db.exec(`
-			CREATE TABLE IF NOT EXISTS user (id TEXT PRIMARY KEY, username TEXT NOT NULL UNIQUE, nickname TEXT, password_hash TEXT NOT NULL, role TEXT NOT NULL DEFAULT 'user', is_protected INTEGER DEFAULT 0);
+			CREATE TABLE IF NOT EXISTS user (
+				id TEXT PRIMARY KEY, 
+				username TEXT NOT NULL UNIQUE, 
+				nickname TEXT, 
+				password_hash TEXT NOT NULL, 
+				role TEXT NOT NULL DEFAULT 'user', 
+				is_protected INTEGER DEFAULT 0,
+				avatar_url TEXT,
+				notification_enabled INTEGER DEFAULT 1
+			);
 			CREATE TABLE IF NOT EXISTS session (id TEXT PRIMARY KEY, expires_at INTEGER NOT NULL, user_id TEXT NOT NULL, FOREIGN KEY (user_id) REFERENCES user(id) ON DELETE CASCADE);
 			CREATE TABLE IF NOT EXISTS post (id TEXT PRIMARY KEY, title TEXT NOT NULL, summary TEXT, content TEXT NOT NULL, author_id TEXT NOT NULL, visibility TEXT NOT NULL DEFAULT 'public', created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL, FOREIGN KEY (author_id) REFERENCES user(id));
 			CREATE TABLE IF NOT EXISTS comment (id TEXT PRIMARY KEY, post_id TEXT NOT NULL, author_id TEXT, content TEXT NOT NULL, created_at INTEGER NOT NULL, FOREIGN KEY (post_id) REFERENCES post(id) ON DELETE CASCADE, FOREIGN KEY (author_id) REFERENCES user(id) ON DELETE CASCADE);
@@ -72,6 +81,10 @@ function initSchema(db: any) {
 			CREATE INDEX IF NOT EXISTS idx_comment_post ON comment(post_id);
 			CREATE INDEX IF NOT EXISTS idx_notification_user ON notification(user_id);
 		`);
+
+		// カラム追加（既存DB用）
+		try { db.exec("ALTER TABLE user ADD COLUMN avatar_url TEXT"); } catch(e) {}
+		try { db.exec("ALTER TABLE user ADD COLUMN notification_enabled INTEGER DEFAULT 1"); } catch(e) {}
 
 		const insertSetting = db.prepare("INSERT OR IGNORE INTO site_settings (key, value) VALUES (?, ?)");
 		

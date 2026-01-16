@@ -8,10 +8,18 @@ import type { Actions, PageServerLoad } from "./$types";
 
 export const load: PageServerLoad = async ({ locals }) => {
 	if (!locals.user) throw redirect(302, "/auth/login");
-	const user = db.prepare("SELECT notification_enabled FROM user WHERE id = ?").get(locals.user.id) as any;
+	
+	let notification_enabled = true;
+	try {
+		const user = db.prepare("SELECT notification_enabled FROM user WHERE id = ?").get(locals.user.id) as any;
+		notification_enabled = user?.notification_enabled !== 0;
+	} catch (e) {
+		console.warn("[ACCOUNT] Could not fetch notification status, likely column missing:", e);
+	}
+
 	return {
 		allow_deletion: getSetting("allow_account_deletion", "true") === "true",
-		notification_enabled: user?.notification_enabled === 1
+		notification_enabled
 	};
 };
 

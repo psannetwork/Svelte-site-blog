@@ -47,11 +47,6 @@
 		</div>
 		
 		<div class="flex items-center gap-4">
-			<!-- 検索アイコン -->
-			<button onclick={() => { /* 検索ページへ飛ばすか、モーダルを出す */ window.location.href = '/search'; }} class="p-3 rounded-2xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-all text-muted hover:text-psan-green" aria-label="検索">
-				<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-			</button>
-
 			<button onclick={() => theme.toggle()} class="p-3 rounded-2xl bg-slate-100 dark:bg-slate-800 hover:scale-110 transition-all text-slate-600 dark:text-yellow-400" aria-label="テーマ切替">
 				{#if theme.current === 'light'}
 					<svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"/></svg>

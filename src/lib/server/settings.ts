@@ -106,7 +106,13 @@ export const getSettings = () => {
 	}
 	
 	// DBから取得した時刻があればそれを使う（なければ0）
-	settings._updated = settings.settings_updated_at || "0";
+	const syncTime = settings.settings_updated_at || "0";
+	settings._updated = syncTime;
+	
+	if (syncTime !== "0") {
+		console.log(`[SETTINGS] Data sync time: ${new Date(parseInt(syncTime)).toLocaleString()}`);
+	}
+	
 	return settings;
 };
 
