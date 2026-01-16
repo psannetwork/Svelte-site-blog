@@ -100,7 +100,6 @@ export const getSettings = () => {
 			});
 			
 			settings = { ...settings, ...dbSettings };
-			console.log(`[SETTINGS] Loaded ${rows.length} settings from DB.`);
 		}
 	} catch (e) {
 		console.error("[SETTINGS] Error in getSettings, using defaults:", e);

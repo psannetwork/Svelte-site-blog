@@ -9,11 +9,10 @@
 	
 	let formElement: HTMLFormElement;
 	let isSaving = $state(false);
-	let isRefreshing = $state(false); // 保険の取得中フラグ
+	let isRefreshing = $state(false);
 	let showSuccess = $state(false);
 	let isUploadingIcon = $state(false);
 
-	// 設定項目のローカルステート
 	let siteTitle = $state(initialSettings?.site_title || '');
 	let siteDescription = $state(initialSettings?.site_description || '');
 	let accentColor = $state(initialSettings?.accent_color || '#00CC99');
@@ -21,12 +20,10 @@
 	let allowedExtensions = $state(initialSettings?.allowed_extensions || '.jpg,.jpeg,.png,.gif,.webp,.svg,.ico');
 	let siteIconUrl = $state(initialSettings?.site_icon_url || '');
 
-	// 最後に反映したデータのタイムスタンプを保持
 	let lastSyncTime = $state(parseInt(initialSettings?._updated || '0'));
 
-	// 【保険】API経由で最新の設定を取得して反映する関数
 	async function refreshSettings() {
-		if (isRefreshing) return;
+		if (isRefreshing || isSaving) return;
 		isRefreshing = true;
 		try {
 			const res = await fetch('/api/settings');
@@ -35,34 +32,57 @@
 				const s = result.settings;
 				const newTime = parseInt(s._updated || '0');
 				
-				// サーバー側のデータが現在の手元データより新しい場合のみ反映
 				if (newTime > lastSyncTime) {
-					siteTitle = s.site_title || '';
-					siteDescription = s.site_description || '';
-					accentColor = s.accent_color || '#00CC99';
-					siteLanguage = s.site_language || 'ja';
-					allowedExtensions = s.allowed_extensions || '.jpg,.jpeg,.png,.gif,.webp,.svg,.ico';
-					siteIconUrl = s.site_icon_url || '';
+					let changedCount = 0;
 					
-					// エディタの内容も更新
+					// ユーザーが変更していない場合のみAPIの値を反映
+					if (siteTitle === (initialSettings?.site_title || '')) {
+						siteTitle = s.site_title || '';
+						changedCount++;
+					}
+					if (siteDescription === (initialSettings?.site_description || '')) {
+						siteDescription = s.site_description || '';
+						changedCount++;
+					}
+					if (accentColor === (initialSettings?.accent_color || '#00CC99')) {
+						accentColor = s.accent_color || '#00CC99';
+						changedCount++;
+					}
+					if (siteLanguage === (initialSettings?.site_language || 'ja')) {
+						siteLanguage = s.site_language || 'ja';
+						changedCount++;
+					}
+					if (siteIconUrl === (initialSettings?.site_icon_url || '')) {
+						siteIconUrl = s.site_icon_url || '';
+						changedCount++;
+					}
+
 					Object.entries(editors).forEach(([id, e]) => {
 						const key = id === 'home' ? 'home_hero_content' : 
 						            id === 'about' ? 'about_page_content' : 
 						            id === 'error404' ? 'error_404_content' : 'error_500_content';
 						const content = s[key];
-						if (e.instance && content) {
+						
+						// エディタがフォーカスされておらず、かつ内容が異なる場合のみ再描画
+						if (e.instance && content && !e.instance.isFocused) {
 							try {
 								const parsed = JSON.parse(content);
-								e.instance.isReady.then(() => e.instance.render(parsed));
+								e.instance.isReady.then(async () => {
+									const current = await e.instance.save();
+									if (JSON.stringify(current.blocks) !== JSON.stringify(parsed.blocks)) {
+										await e.instance.render(parsed);
+										changedCount++;
+									}
+								});
 							} catch (err) {}
 						}
 					});
+					
 					lastSyncTime = newTime;
-					console.log('[SETTINGS] Insurance: Data refreshed from API.');
+					if (changedCount > 0) console.log(`[SETTINGS] synced ${changedCount} items.`);
 				}
 			}
 		} catch (err) {
-			console.error('[SETTINGS] Refresh failed', err);
 		} finally {
 			isRefreshing = false;
 		}

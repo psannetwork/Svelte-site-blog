@@ -30,16 +30,23 @@
 	let searchTimeout: any;
 </script>
 
+<svelte:head>
+	<title>Search | {data.settings?.site_title || 'Blog'}</title>
+	{#if data.settings.enable_turnstile === 'true'}
+		<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+	{/if}
+</svelte:head>
+
 <div class="max-w-4xl mx-auto px-4 py-20">
 	<div class="mb-12">
 		<h2 class="text-4xl font-black tracking-tighter uppercase mb-8">Search Posts</h2>
-		<div class="relative group">
+		<form onsubmit={(e) => e.preventDefault()} class="relative group">
 			<input 
 				type="text" 
 				placeholder="キーワードを入力..." 
 				bind:value={query}
 				oninput={handleInput}
-				class="w-full bg-secondary dark:bg-slate-800 border-none rounded-[32px] p-8 text-xl font-bold focus:ring-4 ring-psan-green/20 transition-all shadow-xl"
+				class="w-full bg-secondary dark:bg-slate-800 border-none rounded-[32px] p-8 text-xl font-bold focus:ring-4 ring-psan-green/20 transition-all shadow-xl text-main"
 			/>
 			<div class="absolute right-8 top-1/2 -translate-y-1/2 text-muted">
 				{#if isSearching}
@@ -48,7 +55,7 @@
 					<svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
 				{/if}
 			</div>
-		</div>
+		</form>
 	</div>
 
 	<div class="space-y-6">
