@@ -84,6 +84,9 @@ export const getSettings = () => {
 		if (rows && rows.length > 0) {
 			const dbSettings = rows.reduce((acc, row) => ({ ...acc, [row.key]: row.value }), {} as Record<string, string>);
 			settings = { ...settings, ...dbSettings };
+			console.log(`[SETTINGS] Loaded ${rows.length} settings from DB.`);
+		} else {
+			console.warn("[SETTINGS] No settings found in DB, using defaults.");
 		}
 	} catch (e) {
 		console.error("[SETTINGS] Error in getSettings, using defaults:", e);

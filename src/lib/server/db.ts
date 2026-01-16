@@ -124,16 +124,51 @@ export function resetDb() {
 
 export function getDbStatus() { return _dbStatus; }
 
+// LuciaのSQLiteアダプターや既存のコードと互換性のあるように、prepareメソッドをラップ
+function createPreparedStatement(sql: string, dbInstance: any) {
+	const stmt = dbInstance.prepare(sql);
+	
+	// 各メソッドをラップして引数処理を統一
+	return {
+		run: (...params: any[]) => {
+			const args = (params.length === 1 && Array.isArray(params[0])) ? params[0] : params;
+			return stmt.run(args);
+		},
+		all: (...params: any[]) => {
+			const args = (params.length === 1 && Array.isArray(params[0])) ? params[0] : params;
+			const result = stmt.all(args);
+			// ResultSetオブジェクトが返ってきた場合への対応
+			return Array.isArray(result) ? result : (result.rows || []);
+		},
+		get: (...params: any[]) => {
+			const args = (params.length === 1 && Array.isArray(params[0])) ? params[0] : params;
+			const result = stmt.get(args);
+			// ResultSetの場合への対応
+			if (result && !Array.isArray(result) && result.rows && result.rows.length > 0) {
+				return result.rows[0];
+			}
+			return result;
+		},
+		// 内部のstmtオブジェクトへのアクセスを許可
+		_raw: stmt,
+		// その他必要なプロパティがあれば委譲
+		...stmt
+	};
+}
+
 // 標準の Proxy を使用して、既存の db.prepare 等の呼び出しを透過的に扱う
 const dbProxy = new Proxy({}, {
 	get(target, prop) {
 		const instance = getDb();
 		if (!instance) {
-			// DB接続がない場合、関数呼び出しに対してはダミーの関数を返すなどしてクラッシュを防ぐ
 			return (...args: any[]) => {
 				console.error(`[DB] Database not connected. Cannot execute: ${String(prop)}`);
 				throw new Error("Database connection is not established.");
 			};
+		}
+
+		if (prop === 'prepare') {
+			return (sql: string) => createPreparedStatement(sql, instance);
 		}
 
 		const value = instance[prop];
