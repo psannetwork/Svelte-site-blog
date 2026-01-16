@@ -50,6 +50,12 @@ export const setSetting = (key: string, value: string) => {
 
 export const setSettings = (settings: Record<string, string>) => {
 	console.log(`[SETTINGS] Updating ${Object.keys(settings).length} settings...`);
+	
+	// 更新時刻をデータに含める
+	const updatedSettings = { 
+		...settings, 
+		"settings_updated_at": Date.now().toString() 
+	};
 
 	try {
 		// トランザクションを試行
@@ -60,14 +66,14 @@ export const setSettings = (settings: Record<string, string>) => {
 			}
 		});
 
-		updateTransaction(settings);
+		updateTransaction(updatedSettings);
 		console.log("[SETTINGS] Transaction committed successfully.");
 
 	} catch (e) {
 		console.warn("[SETTINGS] Transaction failed, falling back to sequential updates:", e);
 		
 		const stmt = db.prepare("INSERT OR REPLACE INTO site_settings (key, value) VALUES (?, ?)");
-		for (const [key, value] of Object.entries(settings)) {
+		for (const [key, value] of Object.entries(updatedSettings)) {
 			try {
 				stmt.run(key, value);
 			} catch (err) {
@@ -87,7 +93,6 @@ export const getSettings = () => {
 			const dbSettings: Record<string, string> = {};
 			rows.forEach((row: any) => {
 				if (row && typeof row === 'object') {
-					// 複数のカラム形式（オブジェクトまたは配列）に対応
 					const k = row.key ?? row[0];
 					const v = row.value ?? row[1];
 					if (k !== undefined) dbSettings[k] = v ?? "";
@@ -95,14 +100,14 @@ export const getSettings = () => {
 			});
 			
 			settings = { ...settings, ...dbSettings };
-			console.log(`[SETTINGS] Loaded ${rows.length} settings from DB. Keys: ${Object.keys(dbSettings).join(', ').substring(0, 100)}...`);
-		} else {
-			console.warn("[SETTINGS] No settings found in DB rows, using defaults.");
+			console.log(`[SETTINGS] Loaded ${rows.length} settings from DB.`);
 		}
 	} catch (e) {
 		console.error("[SETTINGS] Error in getSettings, using defaults:", e);
 	}
-	settings._updated = Date.now().toString();
+	
+	// DBから取得した時刻があればそれを使う（なければ0）
+	settings._updated = settings.settings_updated_at || "0";
 	return settings;
 };
 

@@ -54,13 +54,9 @@ export const actions: Actions = {
 			console.log("[SETTINGS] Saving to DB:", settingsToUpdate);
 			setSettings(settingsToUpdate);
 			
-			// 同期ラグ対策: 保存したデータをベースにしつつ、DBからの最新（かもしれない）データをマージ
-			const dbSettings = getSettings();
-			const updatedSettings = { 
-				...dbSettings, 
-				...settingsToUpdate, 
-				_updated: Date.now().toString() 
-			};
+			// 最新の設定データを取得
+			// (setSettings内でタイムスタンプが更新され、getSettingsでそれが返る)
+			const updatedSettings = getSettings();
 
 			return { success: true, message: "設定を保存しました。", settings: updatedSettings };
 		} catch (e) {
