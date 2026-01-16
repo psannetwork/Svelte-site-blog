@@ -80,13 +80,24 @@ export const setSettings = (settings: Record<string, string>) => {
 export const getSettings = () => {
 	let settings = { ...DEFAULT_SETTINGS };
 	try {
-		const rows = db.prepare("SELECT key, value FROM site_settings").all() as { key: string; value: string }[];
+		const result = db.prepare("SELECT key, value FROM site_settings").all();
+		const rows = Array.isArray(result) ? result : (result && typeof result === 'object' && 'rows' in result ? (result as any).rows : []);
+		
 		if (rows && rows.length > 0) {
-			const dbSettings = rows.reduce((acc, row) => ({ ...acc, [row.key]: row.value }), {} as Record<string, string>);
+			const dbSettings: Record<string, string> = {};
+			rows.forEach((row: any) => {
+				if (row && typeof row === 'object') {
+					// 複数のカラム形式（オブジェクトまたは配列）に対応
+					const k = row.key ?? row[0];
+					const v = row.value ?? row[1];
+					if (k !== undefined) dbSettings[k] = v ?? "";
+				}
+			});
+			
 			settings = { ...settings, ...dbSettings };
-			console.log(`[SETTINGS] Loaded ${rows.length} settings from DB.`);
+			console.log(`[SETTINGS] Loaded ${rows.length} settings from DB. Keys: ${Object.keys(dbSettings).join(', ').substring(0, 100)}...`);
 		} else {
-			console.warn("[SETTINGS] No settings found in DB, using defaults.");
+			console.warn("[SETTINGS] No settings found in DB rows, using defaults.");
 		}
 	} catch (e) {
 		console.error("[SETTINGS] Error in getSettings, using defaults:", e);

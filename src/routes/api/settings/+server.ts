@@ -10,6 +10,7 @@ export const GET: RequestHandler = async ({ locals }) => {
 
 	try {
 		const settings = getSettings();
+		console.log(`[API SETTINGS] Serving ${Object.keys(settings).length} settings.`);
 		return json({ success: true, settings });
 	} catch (e) {
 		console.error('[API SETTINGS] Failed to fetch:', e);

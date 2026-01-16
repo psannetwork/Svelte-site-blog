@@ -111,6 +111,7 @@ function setupDb(): any {
 // 初期化済みのデータベースを取得（なければ作成）
 function getDb(): any {
 	if (!_db) {
+		console.log('[DB] No active instance found. Initializing setup...');
 		_db = setupDb();
 	}
 	return _db;

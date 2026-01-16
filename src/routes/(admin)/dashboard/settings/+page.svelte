@@ -21,6 +21,9 @@
 	let allowedExtensions = $state(initialSettings?.allowed_extensions || '.jpg,.jpeg,.png,.gif,.webp,.svg,.ico');
 	let siteIconUrl = $state(initialSettings?.site_icon_url || '');
 
+	// 最後に反映したデータのタイムスタンプを保持
+	let lastSyncTime = $state(parseInt(initialSettings?._updated || '0'));
+
 	// 【保険】API経由で最新の設定を取得して反映する関数
 	async function refreshSettings() {
 		if (isRefreshing) return;
@@ -30,28 +33,33 @@
 			const result = await res.json();
 			if (result.success && result.settings) {
 				const s = result.settings;
-				// 取得したデータでステートを上書き
-				siteTitle = s.site_title || '';
-				siteDescription = s.site_description || '';
-				accentColor = s.accent_color || '#00CC99';
-				siteLanguage = s.site_language || 'ja';
-				allowedExtensions = s.allowed_extensions || '.jpg,.jpeg,.png,.gif,.webp,.svg,.ico';
-				siteIconUrl = s.site_icon_url || '';
+				const newTime = parseInt(s._updated || '0');
 				
-				// エディタの内容も必要に応じて更新
-				Object.entries(editors).forEach(([id, e]) => {
-					const key = id === 'home' ? 'home_hero_content' : 
-					            id === 'about' ? 'about_page_content' : 
-					            id === 'error404' ? 'error_404_content' : 'error_500_content';
-					const content = s[key];
-					if (e.instance && content) {
-						try {
-							const parsed = JSON.parse(content);
-							e.instance.isReady.then(() => e.instance.render(parsed));
-						} catch (err) {}
-					}
-				});
-				console.log('[SETTINGS] Insurance: Data refreshed from API.');
+				// サーバー側のデータが現在の手元データより新しい場合のみ反映
+				if (newTime > lastSyncTime) {
+					siteTitle = s.site_title || '';
+					siteDescription = s.site_description || '';
+					accentColor = s.accent_color || '#00CC99';
+					siteLanguage = s.site_language || 'ja';
+					allowedExtensions = s.allowed_extensions || '.jpg,.jpeg,.png,.gif,.webp,.svg,.ico';
+					siteIconUrl = s.site_icon_url || '';
+					
+					// エディタの内容も更新
+					Object.entries(editors).forEach(([id, e]) => {
+						const key = id === 'home' ? 'home_hero_content' : 
+						            id === 'about' ? 'about_page_content' : 
+						            id === 'error404' ? 'error_404_content' : 'error_500_content';
+						const content = s[key];
+						if (e.instance && content) {
+							try {
+								const parsed = JSON.parse(content);
+								e.instance.isReady.then(() => e.instance.render(parsed));
+							} catch (err) {}
+						}
+					});
+					lastSyncTime = newTime;
+					console.log('[SETTINGS] Insurance: Data refreshed from API.');
+				}
 			}
 		} catch (err) {
 			console.error('[SETTINGS] Refresh failed', err);
@@ -72,43 +80,48 @@
 
 	// サーバーからのデータ（data.settings）が更新されたら、ローカルステートとエディタを更新
 	$effect(() => {
-		if (data.settings && Object.keys(data.settings).length > 1) {
-			siteTitle = data.settings.site_title || '';
-			siteDescription = data.settings.site_description || '';
-			accentColor = data.settings.accent_color || '#00CC99';
-			siteLanguage = data.settings.site_language || 'ja';
-			allowedExtensions = data.settings.allowed_extensions || '.jpg,.jpeg,.png,.gif,.webp,.svg,.ico';
-			siteIconUrl = data.settings.site_icon_url || '';
+		const s = data.settings;
+		if (s && Object.keys(s).length > 1) {
+			const newTime = parseInt(s._updated || '0');
+			
+			// サーバー側のデータが現在の手元データより新しい場合のみ反映
+			if (newTime > lastSyncTime) {
+				siteTitle = s.site_title || '';
+				siteDescription = s.site_description || '';
+				accentColor = s.accent_color || '#00CC99';
+				siteLanguage = s.site_language || 'ja';
+				allowedExtensions = s.allowed_extensions || '.jpg,.jpeg,.png,.gif,.webp,.svg,.ico';
+				siteIconUrl = s.site_icon_url || '';
 
-			// 各エディタに最新データを再描画
-			Object.entries(editors).forEach(([id, e]) => {
-				const key = id === 'home' ? 'home_hero_content' : 
-				            id === 'about' ? 'about_page_content' : 
-				            id === 'error404' ? 'error_404_content' : 'error_500_content';
-				const content = data.settings[key];
-				
-				if (e.instance && content && !isRendering.has(id)) {
-					try {
-						const parsed = JSON.parse(content);
-						if (!parsed.blocks || parsed.blocks.length === 0) return;
+				// 各エディタに最新データを再描画
+				Object.entries(editors).forEach(([id, e]) => {
+					const key = id === 'home' ? 'home_hero_content' : 
+					            id === 'about' ? 'about_page_content' : 
+					            id === 'error404' ? 'error_404_content' : 'error_500_content';
+					const content = s[key];
+					
+					if (e.instance && content && !isRendering.has(id)) {
+						try {
+							const parsed = JSON.parse(content);
+							if (!parsed.blocks || parsed.blocks.length === 0) return;
 
-						isRendering.add(id);
-						e.instance.isReady.then(async () => {
-							// 現在の内容と同じならレンダリングをスキップ（不整合防止）
-							const currentData = await e.instance.save();
-							if (JSON.stringify(currentData.blocks) !== JSON.stringify(parsed.blocks)) {
-								await e.instance.render(parsed);
-							}
-						}).catch((err: any) => {
-							console.warn(`[EDITOR] Render failed for ${id}:`, err);
-						}).finally(() => {
+							isRendering.add(id);
+							e.instance.isReady.then(async () => {
+								const currentData = await e.instance.save();
+								if (JSON.stringify(currentData.blocks) !== JSON.stringify(parsed.blocks)) {
+									await e.instance.render(parsed);
+								}
+							}).catch((err: any) => {}).finally(() => {
+								isRendering.delete(id);
+							});
+						} catch (err) {
 							isRendering.delete(id);
-						});
-					} catch (err) {
-						isRendering.delete(id);
+						}
 					}
-				}
-			});
+				});
+				
+				lastSyncTime = newTime;
+			}
 		}
 	});
 
