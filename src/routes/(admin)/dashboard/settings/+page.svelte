@@ -26,6 +26,9 @@
 		error500: { data: '', instance: null as any, holder: 'editor-500' }
 	});
 
+	// レンダリング中の排他制御用フラグ
+	const isRendering = new Set<string>();
+
 	// サーバーからのデータ（data.settings）が更新されたら、ローカルステートとエディタを更新
 	$effect(() => {
 		if (data.settings && Object.keys(data.settings).length > 1) {
@@ -36,19 +39,33 @@
 			allowedExtensions = data.settings.allowed_extensions || '.jpg,.jpeg,.png,.gif,.webp,.svg,.ico';
 			siteIconUrl = data.settings.site_icon_url || '';
 
-			// 各エディタに最新データを再描画（リアクティブではないため手動でrender）
+			// 各エディタに最新データを再描画
 			Object.entries(editors).forEach(([id, e]) => {
 				const key = id === 'home' ? 'home_hero_content' : 
 				            id === 'about' ? 'about_page_content' : 
 				            id === 'error404' ? 'error_404_content' : 'error_500_content';
 				const content = data.settings[key];
-				if (e.instance && e.instance.isReady && content) {
+				
+				if (e.instance && content && !isRendering.has(id)) {
 					try {
 						const parsed = JSON.parse(content);
-						if (parsed.blocks && parsed.blocks.length > 0) {
-							e.instance.isReady.then(() => e.instance.render(parsed));
-						}
-					} catch (err) {}
+						if (!parsed.blocks || parsed.blocks.length === 0) return;
+
+						isRendering.add(id);
+						e.instance.isReady.then(async () => {
+							// 現在の内容と同じならレンダリングをスキップ（不整合防止）
+							const currentData = await e.instance.save();
+							if (JSON.stringify(currentData.blocks) !== JSON.stringify(parsed.blocks)) {
+								await e.instance.render(parsed);
+							}
+						}).catch((err: any) => {
+							console.warn(`[EDITOR] Render failed for ${id}:`, err);
+						}).finally(() => {
+							isRendering.delete(id);
+						});
+					} catch (err) {
+						isRendering.delete(id);
+					}
 				}
 			});
 		}
@@ -159,7 +176,14 @@
 		window.addEventListener('keydown', handleKeydown);
 		return () => {
 			window.removeEventListener('keydown', handleKeydown);
-			Object.values(editors).forEach(e => e.instance?.destroy?.());
+			Object.values(editors).forEach(e => {
+				if (e.instance) {
+					const inst = e.instance;
+					if (typeof inst.destroy === 'function') {
+						inst.isReady.then(() => inst.destroy()).catch(() => {});
+					}
+				}
+			});
 		};
 	});
 </script>

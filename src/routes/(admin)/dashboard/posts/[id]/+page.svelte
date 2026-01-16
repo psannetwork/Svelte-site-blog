@@ -140,9 +140,14 @@
 		window.addEventListener('keydown', handleKeydown);
 		return () => {
 			window.removeEventListener('keydown', handleKeydown);
-			if (editor && typeof editor.destroy === 'function') {
-				editor.destroy();
+			if (editor) {
+				const currentEditor = editor;
 				editor = null;
+				if (typeof currentEditor.destroy === 'function') {
+					currentEditor.isReady.then(() => {
+						currentEditor.destroy();
+					}).catch(() => {});
+				}
 			}
 		};
 	});
