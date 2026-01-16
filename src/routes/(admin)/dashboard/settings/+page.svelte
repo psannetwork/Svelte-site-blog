@@ -9,6 +9,7 @@
 	
 	let formElement: HTMLFormElement;
 	let isSaving = $state(false);
+	let isRefreshing = $state(false); // 保険の取得中フラグ
 	let showSuccess = $state(false);
 	let isUploadingIcon = $state(false);
 
@@ -19,6 +20,45 @@
 	let siteLanguage = $state(initialSettings?.site_language || 'ja');
 	let allowedExtensions = $state(initialSettings?.allowed_extensions || '.jpg,.jpeg,.png,.gif,.webp,.svg,.ico');
 	let siteIconUrl = $state(initialSettings?.site_icon_url || '');
+
+	// 【保険】API経由で最新の設定を取得して反映する関数
+	async function refreshSettings() {
+		if (isRefreshing) return;
+		isRefreshing = true;
+		try {
+			const res = await fetch('/api/settings');
+			const result = await res.json();
+			if (result.success && result.settings) {
+				const s = result.settings;
+				// 取得したデータでステートを上書き
+				siteTitle = s.site_title || '';
+				siteDescription = s.site_description || '';
+				accentColor = s.accent_color || '#00CC99';
+				siteLanguage = s.site_language || 'ja';
+				allowedExtensions = s.allowed_extensions || '.jpg,.jpeg,.png,.gif,.webp,.svg,.ico';
+				siteIconUrl = s.site_icon_url || '';
+				
+				// エディタの内容も必要に応じて更新
+				Object.entries(editors).forEach(([id, e]) => {
+					const key = id === 'home' ? 'home_hero_content' : 
+					            id === 'about' ? 'about_page_content' : 
+					            id === 'error404' ? 'error_404_content' : 'error_500_content';
+					const content = s[key];
+					if (e.instance && content) {
+						try {
+							const parsed = JSON.parse(content);
+							e.instance.isReady.then(() => e.instance.render(parsed));
+						} catch (err) {}
+					}
+				});
+				console.log('[SETTINGS] Insurance: Data refreshed from API.');
+			}
+		} catch (err) {
+			console.error('[SETTINGS] Refresh failed', err);
+		} finally {
+			isRefreshing = false;
+		}
+	}
 
 	let editors = $state({
 		home: { data: '', instance: null as any, holder: 'editor-home' },
@@ -173,6 +213,9 @@
 			initEditor('about', data.settings?.about_page_content || '');
 			initEditor('error404', data.settings?.error_404_content || '');
 			initEditor('error500', data.settings?.error_500_content || '');
+			
+			// 初回読み込み時の保険: 1秒後に最新設定を再取得
+			setTimeout(refreshSettings, 1000);
 		}, 200);
 		window.addEventListener('keydown', handleKeydown);
 		return () => {
@@ -252,6 +295,8 @@
 					showSuccess = true;
 					await invalidate('app:settings');
 					await invalidateAll();
+					// 保存から少し遅らせて最新データを再取得（保険）
+					setTimeout(refreshSettings, 2000);
 					setTimeout(() => showSuccess = false, 3000);
 					await update({ reset: false });
 				} else {
