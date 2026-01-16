@@ -16,7 +16,7 @@
 </script>
 
 <svelte:head>
-	<title>{data.settings?.site_title || 'Svelte Site Blog'}</title>
+	<title>{data.pageTitle ? `${data.pageTitle} | ` : ''}{data.settings?.site_title || 'Svelte Site Blog'}</title>
 	{#if data.settings?.site_description}
 		<meta name="description" content={data.settings.site_description} />
 	{/if}

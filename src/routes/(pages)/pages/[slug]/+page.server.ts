@@ -30,6 +30,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 
 	return {
 		post,
+		pageTitle: post.title,
 		comments,
 		user: locals.user,
 		settings: {
