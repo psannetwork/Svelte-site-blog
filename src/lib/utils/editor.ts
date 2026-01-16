@@ -18,7 +18,7 @@ export function editorJsToHtml(blocks: any[]) {
 				html += `<h${level} class="${sizes[level]} font-black mt-16 mb-8 tracking-tighter">${text}</h${level}>`;
 				break;
 			case 'paragraph':
-				// textが未定義またはnullの場合に空文字を保証
+				
 				const pText = block.data?.text ?? '';
 				html += `<p class="leading-relaxed mb-8 opacity-80 font-medium text-lg">${pText}</p>`;
 				break;
@@ -34,14 +34,15 @@ export function editorJsToHtml(blocks: any[]) {
 				html += `<pre class="bg-slate-900 text-psan-green p-10 rounded-[32px] overflow-x-auto my-10 font-mono text-sm shadow-2xl border border-white/5"><code>${block.data.code}</code></pre>`;
 				break;
 			case 'image':
+				const customWidth = block.data.width ? `max-width: ${block.data.width}%;` : '';
 				const classes = [
 					'mx-auto rounded-[40px] transition-all duration-700 shadow-2xl',
-					block.data.stretched ? 'w-full' : 'max-w-[90%] md:max-w-[70%]',
+					block.data.stretched ? 'w-full' : '',
 					block.data.withBorder ? 'border-8 border-slate-100 dark:border-slate-800' : '',
 					block.data.withBackground ? 'bg-slate-100 dark:bg-slate-800 p-6 md:p-16' : ''
 				].join(' ');
 				const caption = block.data.caption ? `<figcaption class="text-center text-xs mt-6 font-black opacity-30 uppercase tracking-widest">${block.data.caption}</figcaption>` : '';
-				html += `<figure class="my-20 overflow-hidden"><img src="${block.data.file.url}" alt="${block.data.caption || ''}" class="${classes}">${caption}</figure>`;
+				html += `<figure class="my-20 overflow-hidden flex flex-col items-center"><img src="${block.data.file.url}" alt="${block.data.caption || ''}" class="${classes}" style="${customWidth} height: auto;">${caption}</figure>`;
 				break;
 			case 'table':
 				let tableHtml = '<div class="overflow-x-auto my-10"><table class="w-full border-collapse border border-slate-200 dark:border-slate-700">';

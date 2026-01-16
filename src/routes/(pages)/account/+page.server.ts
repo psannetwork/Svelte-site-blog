@@ -50,7 +50,7 @@ export const actions: Actions = {
 		if (!locals.user || !locals.session) throw redirect(302, "/auth/login");
 		if (getSetting("allow_account_deletion", "true") !== "true") return fail(403);
 		
-		// システム保護されているアカウント（最初のAdmin）は削除不可
+		
 		const user = db.prepare("SELECT is_protected FROM user WHERE id = ?").get(locals.user.id) as any;
 		if (user?.is_protected) return fail(400, { message: "このアカウントはシステムによって保護されており、削除できません。" });
 
@@ -62,7 +62,7 @@ export const actions: Actions = {
 		const sessionCookie = lucia.createBlankSessionCookie();
 		cookies.set(sessionCookie.name, sessionCookie.value, { path: ".", ...sessionCookie.attributes });
 
-		// DBから削除
+		
 		db.prepare("DELETE FROM user WHERE id = ?").run(locals.user.id);
 
 		throw redirect(302, "/");

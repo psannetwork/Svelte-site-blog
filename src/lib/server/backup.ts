@@ -26,12 +26,12 @@ export function performBackup() {
 	const backupPath = join(BACKUP_DIR, `backup-${timestamp}.db`);
 	
 	try {
-		// `libsql` のクライアント実装によっては `backup` メソッドがない場合がある
+		
 		if (typeof (db as any).backup === 'function') {
 			(db as any).backup(backupPath);
 		} else {
-			// backupメソッドがない場合のフォールバック（ファイルコピー）
-			// WALモードの場合、チェックポイントが必要だが簡易的なバックアップとしてコピー
+			
+			
 			copyFileSync(DB_PATH, backupPath);
 		}
 

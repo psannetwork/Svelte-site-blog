@@ -112,9 +112,16 @@
 							customPicker: true
 						}
 					},
-					image: { class: Image, config: { endpoints: { byFile: '/api/upload' } } },
-					embed: { class: Embed, config: { services: { youtube: true, vimeo: true, twitter: true } } }
-				},
+									image: { 
+										class: Image, 
+										config: { 
+											endpoints: { byFile: '/api/upload' },
+											field: 'image',
+											types: 'image/*',
+											captionPlaceholder: 'キャプションを入力...'
+										} 
+									},
+									embed: { class: Embed, config: { services: { youtube: true, vimeo: true, twitter: true } } }				},
 				onReady: () => {
 					new Undo({ editor });
 				},

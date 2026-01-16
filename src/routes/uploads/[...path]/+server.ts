@@ -11,7 +11,7 @@ import type { RequestHandler } from './$types';
 export const GET: RequestHandler = async ({ params }) => {
 	const relativePath = `uploads/${params.path}`;
 	
-	// DBからパスで検索
+	
 	const file = db.prepare("SELECT * FROM file_storage WHERE path = ?").get(relativePath) as {
 		data: Buffer;
 		mime_type: string;
@@ -22,7 +22,7 @@ export const GET: RequestHandler = async ({ params }) => {
 		throw error(404, 'File not found in database');
 	}
 
-	// ディスクにキャッシュ（次回からは static 配信されるようになる）
+	
 	const fullPath = join(process.cwd(), 'static', relativePath);
 	try {
 		const dir = dirname(fullPath);

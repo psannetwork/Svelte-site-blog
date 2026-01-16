@@ -9,12 +9,12 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 	const post = db.prepare("SELECT * FROM post WHERE id = ?").get(params.slug) as any;
 	if (!post) throw error(404, "Post not found");
 
-	// 内容をHTML化
+	
 	try {
 		const parsed = JSON.parse(post.content);
 		if (parsed.blocks) post.content = editorJsToHtml(parsed.blocks);
 	} catch (e) {
-		// すでにHTMLの場合はそのまま
+		
 	}
 
 	const user = locals.user;

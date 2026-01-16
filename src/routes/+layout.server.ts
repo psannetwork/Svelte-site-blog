@@ -10,7 +10,7 @@ export const load: LayoutServerLoad = async ({ locals, depends }) => {
 	
 	const settings = getSettings();
 	
-	// HTML変換
+	
 	const error404Html = editorJsToHtml(JSON.parse(settings.error_404_content || '{"blocks":[]}').blocks);
 	const error500Html = editorJsToHtml(JSON.parse(settings.error_500_content || '{"blocks":[]}').blocks);
 

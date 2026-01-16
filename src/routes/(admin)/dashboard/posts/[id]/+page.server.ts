@@ -12,7 +12,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 
 	if (!post) throw error(404, "Post not found");
 
-	// 権限チェック: 編集者ロールの場合、自分の記事以外は編集不可（管理者はOK）
+	
 	if (locals.user.role === 'editor' && post.author_id !== locals.user.id) {
 		throw error(403, "You do not have permission to edit this post");
 	}

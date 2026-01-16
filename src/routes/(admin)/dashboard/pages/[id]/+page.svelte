@@ -11,7 +11,7 @@
 	let editor: any;
 	let formElement: HTMLFormElement;
 	
-	// 初期データをローカル変数に退避して "state_referenced_locally" 警告を回避
+	
 	let title = $state(initialPage.title);
 	let editorData = $state(initialPage.raw_json || initialPage.content || '');
 	let isSaving = $state(false);

@@ -39,7 +39,7 @@ export async function saveFile(file: File, type: 'avatar' | 'post' | 'icon' | 'm
 			filename,
 			mime_type: mimeType,
 			size,
-			url: `/${relativePath}` // DB保存時も /uploads/... のURLを返すように変更
+			url: `/${relativePath}` 
 		};
 	} else {
 		// ローカル保存
@@ -106,7 +106,7 @@ export function deleteFile(id: string) {
  * ここではDBベースの削除を優先的に実装します)
  */
 export function cleanupPostImages(postId: string) {
-	// 投稿IDに紐づくファイルの追跡が必要な場合は、file_storage に post_id を持たせる必要がありますが、
+	
 	// 現在のスキーマでは難しいため、スタブとして残すか、将来的な拡張に備えます。
 	console.log(`Cleanup for post ${postId} requested.`);
 }

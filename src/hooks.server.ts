@@ -6,7 +6,7 @@ import { redirect, type Handle } from "@sveltejs/kit";
 import { existsSync, writeFileSync } from 'fs';
 import { join } from 'path';
 
-// .envが存在しない場合に自動作成（開発環境や初回セットアップの利便性のため）
+
 try {
 	const envPath = join(process.cwd(), '.env');
 	if (!existsSync(envPath)) {
@@ -20,7 +20,7 @@ try {
 		console.log('✅ Created .env file with default settings.');
 	}
 } catch (e) {
-	// 書き込み権限がない場合などは無視（Docker環境などでは環境変数で制御するため）
+	
 	console.warn('⚠️ Could not create .env file automatically (using defaults/environment variables).');
 }
 

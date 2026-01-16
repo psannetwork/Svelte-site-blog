@@ -7,7 +7,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 		throw redirect(302, "/dashboard");
 	}
 
-	// 特殊なページ (home, about) がなければ作成
+	
 	const ensurePage = (id: string, title: string) => {
 		const exists = db.prepare("SELECT 1 FROM pages WHERE id = ?").get(id);
 		if (!exists) {

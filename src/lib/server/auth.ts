@@ -20,7 +20,8 @@ export const lucia = new Lucia(adapter, {
 			nickname: attributes.nickname,
 			avatar_url: attributes.avatar_url,
 			role: attributes.role,
-			is_protected: attributes.is_protected
+			is_protected: attributes.is_protected,
+			notification_enabled: attributes.notification_enabled
 		};
 	}
 });
@@ -35,7 +36,8 @@ declare module "lucia" {
 interface DatabaseUserAttributes {
 	username: string;
 	nickname: string;
-	avatar_url: string;
+	avatar_url: string | null;
 	role: string;
 	is_protected: number;
+	notification_enabled: number;
 }

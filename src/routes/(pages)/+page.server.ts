@@ -8,7 +8,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 	let posts;
 
 	const homePage = db.prepare("SELECT content, raw_json FROM pages WHERE id = 'home'").get() as any;
-	// JSONをHTMLに変換
+	
 	const homeHtml = homePage?.raw_json ? editorJsToHtml(JSON.parse(homePage.raw_json).blocks) : (homePage?.content || '');
 
 	if (user?.role === 'admin' || user?.role === 'editor') {
@@ -28,7 +28,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 			ORDER BY created_at DESC
 		`).all() as any[];
 	} else {
-		// 一般ユーザーや未ログインはPublicのみ
+		
 		posts = db.prepare(`
 			SELECT post.*, COALESCE(user.nickname, user.username) as author_name 
 			FROM post 

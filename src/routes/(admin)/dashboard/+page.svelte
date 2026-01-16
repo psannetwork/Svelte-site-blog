@@ -5,7 +5,7 @@
 	const chartHeight = 120;
 	const chartWidth = 600;
 
-	// data全体をリアクティブに追従させるための計算
+	
 	const stats = $derived(data.stats);
 	const weekly = $derived([...stats.weekly].reverse());
 	const maxHits = $derived(Math.max(...weekly.map(d => d.hits), 10));

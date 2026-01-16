@@ -51,7 +51,10 @@
 					syncField('accent_color', accentColor, s.accent_color, v => accentColor = v);
 					syncField('site_language', siteLanguage, s.site_language, v => siteLanguage = v);
 					syncField('site_icon_url', siteIconUrl, s.site_icon_url, v => siteIconUrl = v);
-
+					
+					// Turnstile等のスイッチ系も同期対象に含める（ユーザーが触っていない場合のみ）
+					// ※スイッチ系はステートとして管理していないため、必要に応じて追加
+					
 					Object.entries(editors).forEach(([id, e]) => {
 						const key = id === 'home' ? 'home_hero_content' : 
 						            id === 'about' ? 'about_page_content' : 

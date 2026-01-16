@@ -51,13 +51,8 @@ export const actions: Actions = {
 		}
 
 		try {
-			console.log("[SETTINGS] Saving to DB:", settingsToUpdate);
 			setSettings(settingsToUpdate);
-			
-			// 最新の設定データを取得
-			// (setSettings内でタイムスタンプが更新され、getSettingsでそれが返る)
 			const updatedSettings = getSettings();
-
 			return { success: true, message: "設定を保存しました。", settings: updatedSettings };
 		} catch (e) {
 			console.error("Save settings error:", e);
