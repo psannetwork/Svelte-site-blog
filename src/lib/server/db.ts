@@ -68,10 +68,12 @@ function initSchema(db: any) {
 			CREATE TABLE IF NOT EXISTS analytics (date TEXT PRIMARY KEY, hits INTEGER DEFAULT 0, unique_visitors INTEGER DEFAULT 0);
 			CREATE TABLE IF NOT EXISTS file_storage (id TEXT PRIMARY KEY, filename TEXT NOT NULL, mime_type TEXT NOT NULL, size INTEGER NOT NULL, data BLOB, path TEXT, storage_type TEXT NOT NULL, created_at INTEGER NOT NULL);
 			CREATE TABLE IF NOT EXISTS pages (id TEXT PRIMARY KEY, title TEXT NOT NULL, content TEXT NOT NULL, raw_json TEXT, updated_at INTEGER NOT NULL);
+			CREATE TABLE IF NOT EXISTS notification (id TEXT PRIMARY KEY, user_id TEXT NOT NULL, type TEXT NOT NULL, content TEXT NOT NULL, link TEXT, is_read INTEGER DEFAULT 0, created_at INTEGER NOT NULL, FOREIGN KEY (user_id) REFERENCES user(id) ON DELETE CASCADE);
 			
 			-- 高速化のためのインデックス
 			CREATE INDEX IF NOT EXISTS idx_post_author ON post(author_id);
 			CREATE INDEX IF NOT EXISTS idx_comment_post ON comment(post_id);
+			CREATE INDEX IF NOT EXISTS idx_notification_user ON notification(user_id);
 		`);
 
 		// 初期設定の投入 (IGNOREにより既存データは保護される)

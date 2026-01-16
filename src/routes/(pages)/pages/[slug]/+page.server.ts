@@ -34,7 +34,9 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		user: locals.user,
 		settings: {
 			allow_comments: getSetting("allow_comments", "true") === "true",
-			allow_anonymous_comments: getSetting("allow_anonymous_comments", "false") === "true"
+			allow_anonymous_comments: getSetting("allow_anonymous_comments", "false") === "true",
+			enable_turnstile: getSetting("enable_turnstile", "false"),
+			turnstile_site_key: getSetting("turnstile_site_key", "")
 		}
 	};
 };
@@ -47,8 +49,14 @@ export const actions: Actions = {
 		const formData = await request.formData();
 		const content = formData.get("content") as string;
 		const parentId = formData.get("parentId") as string | null;
+		const turnstileToken = formData.get("cf-turnstile-response") as string;
 
-		if (!content || content.length < 1) return fail(400);
+		// スパムチェック
+		if (!(await verifyTurnstile(turnstileToken))) {
+			return fail(400, { message: "セキュリティ検証に失敗しました。再試行してください。" });
+		}
+
+		if (!content || content.length < 1) return fail(400, { message: "コメントを入力してください。" });
 
 		const commentId = generateIdFromEntropySize(10);
 		db.prepare("INSERT INTO comment (id, post_id, author_id, parent_id, content, created_at) VALUES (?, ?, ?, ?, ?, ?)")
@@ -56,13 +64,17 @@ export const actions: Actions = {
 
 		// リプライ通知の作成
 		if (parentId) {
-			const parentComment = db.prepare("SELECT author_id FROM comment WHERE id = ?").get(parentId) as any;
-			if (parentComment?.author_id && parentComment.author_id !== locals.user?.id) {
-				const user = db.prepare("SELECT notification_enabled FROM user WHERE id = ?").get(parentComment.author_id) as any;
-				if (user?.notification_enabled) {
-					db.prepare("INSERT INTO notification (id, user_id, type, content, link, created_at) VALUES (?, ?, ?, ?, ?, ?)")
-						.run(generateIdFromEntropySize(10), parentComment.author_id, 'reply', 'あなたのコメントにリプライが届きました。', `/pages/${params.slug}#comments`, Date.now());
+			try {
+				const parentComment = db.prepare("SELECT author_id FROM comment WHERE id = ?").get(parentId) as any;
+				if (parentComment?.author_id && parentComment.author_id !== locals.user?.id) {
+					const user = db.prepare("SELECT notification_enabled FROM user WHERE id = ?").get(parentComment.author_id) as any;
+					if (user?.notification_enabled) {
+						db.prepare("INSERT INTO notification (id, user_id, type, content, link, created_at) VALUES (?, ?, ?, ?, ?, ?)")
+							.run(generateIdFromEntropySize(10), parentComment.author_id, 'reply', 'あなたのコメントにリプライが届きました。', `/pages/${params.slug}#comments`, Date.now());
+					}
 				}
+			} catch (err) {
+				console.error('[NOTIFICATION ERROR]', err);
 			}
 		}
 

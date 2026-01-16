@@ -24,6 +24,12 @@
 	});
 </script>
 
+<svelte:head>
+	{#if data.settings.enable_turnstile === 'true'}
+		<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+	{/if}
+</svelte:head>
+
 {#snippet commentItem(comment: any, depth = 0)}
 	<!-- depth に応じてインデント -->
 	<div class="flex gap-4 group {depth > 0 && depth <= 2 ? 'ml-6 md:ml-10 mt-6 pt-6 border-t border-slate-200 dark:border-slate-800/50 relative before:absolute before:left-[-20px] before:top-0 before:bottom-0 before:w-0.5 before:bg-slate-200 dark:before:bg-slate-800/50 before:content-[\'\']' : 'mt-10'} {depth > 2 ? 'mt-6 pt-6 border-t border-slate-200 dark:border-slate-800/50' : ''}">
@@ -85,6 +91,11 @@
 						class="w-full bg-secondary dark:bg-slate-900 border-none rounded-2xl p-4 text-sm font-medium focus:ring-2 focus:ring-psan-green"
 						placeholder="リプライを入力..."
 					></textarea>
+					
+					{#if data.settings.enable_turnstile === 'true'}
+						<div class="cf-turnstile" data-sitekey={data.settings.turnstile_site_key} data-theme={theme.current}></div>
+					{/if}
+
 					<button type="submit" class="btn-psan-primary py-2 px-6 text-xs uppercase tracking-widest">Send Reply</button>
 				</form>
 			{/if}
@@ -127,6 +138,11 @@
 						class="w-full bg-secondary dark:bg-slate-900 border-none rounded-2xl p-6 text-base font-medium focus:ring-2 focus:ring-psan-green transition-all"
 						placeholder="Write something..."
 					></textarea>
+
+					{#if data.settings.enable_turnstile === 'true'}
+						<div class="cf-turnstile" data-sitekey={data.settings.turnstile_site_key} data-theme={theme.current}></div>
+					{/if}
+
 					<div class="flex justify-end">
 						<button type="submit" class="btn-psan-primary px-12">Post Comment</button>
 					</div>
