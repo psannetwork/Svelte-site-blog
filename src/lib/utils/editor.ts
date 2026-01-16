@@ -1,6 +1,13 @@
 export function editorJsToHtml(blocks: any[]) {
 	let html = '';
+	let lastBlockJson = '';
+
 	blocks.forEach((block) => {
+		// 重複防止: 直前のブロックと全く同じ内容ならスキップ
+		const currentBlockJson = JSON.stringify(block.data);
+		if (currentBlockJson === lastBlockJson) return;
+		lastBlockJson = currentBlockJson;
+
 		// インラインタグの許可（脆弱性対策として本来はサニタイズが必要ですが、一旦機能優先で構成します）
 		let text = block.data.text || '';
 		
