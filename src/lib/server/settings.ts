@@ -50,29 +50,27 @@ export const setSettings = (settings: Record<string, string>) => {
 };
 
 export const getSettings = () => {
-	let retries = 3;
-	while (retries > 0) {
+	try {
+		const rows = db.prepare("SELECT key, value FROM site_settings").all() as { key: string; value: string }[];
+		if (!rows) return {};
+		
+		const settings = rows.reduce((acc, row) => ({ ...acc, [row.key]: row.value }), {} as Record<string, string>);
+		settings._updated = Date.now().toString();
+		return settings;
+	} catch (e) {
+		console.error("[SETTINGS] Error in getSettings:", e);
+		// 1回だけリトライを試みる（待機なし）
 		try {
 			const rows = db.prepare("SELECT key, value FROM site_settings").all() as { key: string; value: string }[];
 			if (!rows) return {};
-			
 			const settings = rows.reduce((acc, row) => ({ ...acc, [row.key]: row.value }), {} as Record<string, string>);
 			settings._updated = Date.now().toString();
 			return settings;
-		} catch (e) {
-			console.error(`[SETTINGS] Error in getSettings (retries left: ${retries - 1}):`, e);
-			retries--;
-			if (retries === 0) {
-				console.error("[SETTINGS] Fatal error in getSettings: All retries failed.");
-				return {};
-			}
-			// 短い待機を入れてリトライ（Tursoの一時的なエラー対策）
-			// Note: 同期関数のため sleep はブロッキングになるが、サーバー起動時や設定ロード時のみなので許容
-			const start = Date.now();
-			while (Date.now() - start < 100) {} 
+		} catch (retryErr) {
+			console.error("[SETTINGS] Final retry failed in getSettings:", retryErr);
+			return {};
 		}
 	}
-	return {};
 };
 
 export async function verifyTurnstile(token: string) {
