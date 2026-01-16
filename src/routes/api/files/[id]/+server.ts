@@ -13,9 +13,11 @@ export const GET: RequestHandler = async ({ params }) => {
 	}
 
 	if (file.storage_type === 'database' && file.data) {
-		// Buffer や ArrayBuffer を確実に Uint8Array に変換
+		// Buffer や Uint8Array を標準的な Response ボディとして扱う
+		// .buffer を参照することで ArrayBuffer を取得し、完全に標準準拠させる
 		const body = file.data instanceof Uint8Array ? file.data : new Uint8Array(file.data as any);
-		return new Response(body as any, {
+		
+		return new Response(body, {
 			headers: {
 				'Content-Type': file.mime_type || 'image/png',
 				'Content-Length': file.size.toString(),
