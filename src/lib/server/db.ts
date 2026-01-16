@@ -68,22 +68,28 @@ function initSchema(db: any) {
 			CREATE TABLE IF NOT EXISTS analytics (date TEXT PRIMARY KEY, hits INTEGER DEFAULT 0, unique_visitors INTEGER DEFAULT 0);
 			CREATE TABLE IF NOT EXISTS file_storage (id TEXT PRIMARY KEY, filename TEXT NOT NULL, mime_type TEXT NOT NULL, size INTEGER NOT NULL, data BLOB, path TEXT, storage_type TEXT NOT NULL, created_at INTEGER NOT NULL);
 			CREATE TABLE IF NOT EXISTS pages (id TEXT PRIMARY KEY, title TEXT NOT NULL, content TEXT NOT NULL, raw_json TEXT, updated_at INTEGER NOT NULL);
+			
+			-- 高速化のためのインデックス
+			CREATE INDEX IF NOT EXISTS idx_post_author ON post(author_id);
+			CREATE INDEX IF NOT EXISTS idx_comment_post ON comment(post_id);
 		`);
 
 		// 初期設定の投入 (IGNOREにより既存データは保護される)
 		const insertSetting = db.prepare("INSERT OR IGNORE INTO site_settings (key, value) VALUES (?, ?)");
 		
-		// 効率的な投入のためにトランザクションを検討（libsql remoteでは性能に寄与）
+		// 効率的な投入のためにトランザクションを試行
 		try {
-			db.transaction(() => {
-				for (const [key, value] of Object.entries(DEFAULT_SETTINGS)) {
+			// Proxy経由ではなく直接のメソッドがあるか確認
+			const transaction = db.transaction((data: any) => {
+				for (const [key, value] of Object.entries(data)) {
 					insertSetting.run(key, value);
 				}
-			})();
+			});
+			transaction(DEFAULT_SETTINGS);
 		} catch (err) {
-			// トランザクション失敗時は逐次実行
+			// トランザクション失敗時は逐次実行（Proxy経由のフォールバック）
 			for (const [key, value] of Object.entries(DEFAULT_SETTINGS)) {
-				insertSetting.run(key, value);
+				try { insertSetting.run(key, value); } catch(e) {}
 			}
 		}
 	} catch (e) {

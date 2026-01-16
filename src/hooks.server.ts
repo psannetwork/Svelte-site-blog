@@ -63,24 +63,27 @@ export const handle: Handle = async ({ event, resolve }) => {
 	event.locals.session = session;
 
 	// アクセスカウントの記録
-	if (!event.url.pathname.startsWith("/api") && !event.url.pathname.startsWith("/dashboard")) {
+	if (!event.url.pathname.startsWith("/api") && !event.url.pathname.startsWith("/dashboard") && !event.url.pathname.startsWith("/uploads")) {
 		const today = new Date().toISOString().split('T')[0];
 		const isNewVisit = !event.cookies.get('visited_today');
+		const visitorIncr = isNewVisit ? 1 : 0;
 		
 		try {
+			// バインド引数を変数に受けて確実に渡す
 			db.prepare(`
 				INSERT INTO analytics (date, hits, unique_visitors) 
 				VALUES (?, 1, ?) 
 				ON CONFLICT(date) DO UPDATE SET 
 					hits = hits + 1,
 					unique_visitors = unique_visitors + ?
-			`).run(today, isNewVisit ? 1 : 0, isNewVisit ? 1 : 0);
+			`).run(today, visitorIncr, visitorIncr);
 
 			if (isNewVisit) {
-				event.cookies.set('visited_today', 'true', { path: '/', maxAge: 60 * 60 * 24 });
+				event.cookies.set('visited_today', 'true', { path: '/', maxAge: 60 * 60 * 24, httpOnly: true });
 			}
 		} catch (e) {
-			console.error('Analytics error:', e);
+			// 解析エラーはログ出力のみに留め、リクエスト処理は続行する
+			console.error('[ANALYTICS ERROR]', e);
 		}
 	}
 
