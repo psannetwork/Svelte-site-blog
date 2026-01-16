@@ -7,6 +7,26 @@
 	let nickname = $state('');
 	let notificationEnabled = $state(false);
 	let isUploading = $state(false);
+	
+	// 通知管理
+	let notifications = $state<any[]>([]);
+	let isLoadingNotifications = $state(false);
+
+	async function fetchNotifications() {
+		try {
+			isLoadingNotifications = true;
+			const res = await fetch('/api/notifications');
+			const result = await res.json();
+			if (result.success) notifications = result.notifications;
+		} finally {
+			isLoadingNotifications = false;
+		}
+	}
+
+	async function markAllAsRead() {
+		await fetch('/api/notifications', { method: 'POST' });
+		notifications = notifications.map(n => ({ ...n, is_read: 1 }));
+	}
 
 	// サーバーからのデータが更新されたらローカルステートに同期
 	$effect(() => {
@@ -14,6 +34,7 @@
 			avatarUrl = data.user.avatar_url || '';
 			nickname = data.user.nickname || '';
 			notificationEnabled = data.notification_enabled;
+			fetchNotifications();
 		}
 	});
 
@@ -83,9 +104,33 @@
 				</div>
 			</section>
 
-			<section class="card-psan p-8 space-y-6">
-				<h3 class="font-black text-sm tracking-widest text-muted uppercase">Identity</h3>
-				<div>
+					<section class="card-psan p-8 space-y-6">
+						<div class="flex items-center justify-between">
+							<h3 class="font-black text-sm tracking-widest text-muted uppercase">Notifications</h3>
+							{#if notifications.some(n => !n.is_read)}
+								<button onclick={markAllAsRead} class="text-[10px] font-black text-psan-green uppercase hover:underline">Mark all as read</button>
+							{/if}
+						</div>
+						
+						<div class="space-y-3">
+							{#each notifications as n}
+								<a href={n.link || '#'} class="block p-4 rounded-2xl border transition-all {n.is_read ? 'bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-800 opacity-60' : 'bg-psan-green/5 border-psan-green/20 ring-1 ring-psan-green/10'} hover:scale-[1.01]">
+									<div class="flex items-start gap-3">
+										<div class="w-2 h-2 rounded-full mt-1.5 shrink-0 {n.is_read ? 'bg-slate-300' : 'bg-psan-green animate-pulse'}"></div>
+										<div class="flex-1 min-w-0">
+											<p class="text-sm font-bold text-main leading-tight">{n.content}</p>
+											<p class="text-[9px] font-black text-muted uppercase mt-1">{new Date(n.created_at).toLocaleString()}</p>
+										</div>
+									</div>
+								</a>
+							{:else}
+								<p class="text-center py-10 text-[10px] font-black text-muted uppercase tracking-[0.2em]">No notifications yet.</p>
+							{/each}
+						</div>
+					</section>
+			
+					<section class="card-psan p-8 space-y-6">
+						<h3 class="font-black text-sm tracking-widest text-muted uppercase">Identity</h3>				<div>
 					<div class="text-[10px] font-black text-muted uppercase tracking-widest mb-1">User ID</div>
 					<p class="text-xl font-black text-main dark:text-white">{data.user.username}</p>
 				</div>
