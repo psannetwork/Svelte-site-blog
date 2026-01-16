@@ -9,6 +9,14 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 	const post = db.prepare("SELECT * FROM post WHERE id = ?").get(params.slug) as any;
 	if (!post) throw error(404, "Post not found");
 
+	// 内容をHTML化
+	try {
+		const parsed = JSON.parse(post.content);
+		if (parsed.blocks) post.content = editorJsToHtml(parsed.blocks);
+	} catch (e) {
+		// すでにHTMLの場合はそのまま
+	}
+
 	const user = locals.user;
 	if (post.visibility === 'draft' && user?.id !== post.author_id && user?.role !== 'admin') throw error(403, "Forbidden");
 	if (post.visibility === 'vip' && (!user || !['vip', 'editor', 'admin'].includes(user.role))) throw error(403, "VIP required");

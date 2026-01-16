@@ -7,8 +7,9 @@ export const load: PageServerLoad = async ({ locals }) => {
 	const user = locals.user;
 	let posts;
 
-	const homePage = db.prepare("SELECT content FROM pages WHERE id = 'home'").get() as any;
-	const homeHtml = homePage?.content || '';
+	const homePage = db.prepare("SELECT content, raw_json FROM pages WHERE id = 'home'").get() as any;
+	// JSONをHTMLに変換
+	const homeHtml = homePage?.raw_json ? editorJsToHtml(JSON.parse(homePage.raw_json).blocks) : (homePage?.content || '');
 
 	if (user?.role === 'admin' || user?.role === 'editor') {
 		posts = db.prepare(`
