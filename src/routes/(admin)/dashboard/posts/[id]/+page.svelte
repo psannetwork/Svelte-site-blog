@@ -6,11 +6,12 @@
 	import type { ActionData, PageData } from './$types';
 
 	let { data, form } = $props<{ data: PageData, form: ActionData }>();
+	const { post: initialPost } = data;
+	
 	let editor: any;
 	let formElement: HTMLFormElement;
 	
 	// 初期データをローカル変数に退避して "state_referenced_locally" 警告を回避
-	const initialPost = data.post;
 	let title = $state(initialPost.title);
 	let summary = $state(initialPost.summary || '');
 	let visibility = $state(initialPost.visibility);

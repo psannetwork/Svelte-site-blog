@@ -5,22 +5,20 @@
 	import { editorI18n } from '$lib/utils/editor_i18n';
 	
 	let { data, form } = $props();
+	const { settings: initialSettings, dbStatus } = data;
+	
 	let formElement: HTMLFormElement;
 	let isSaving = $state(false);
 	let showSuccess = $state(false);
 	let isUploadingIcon = $state(false);
 
-	// 初期データをローカル変数に退避して "state_referenced_locally" 警告を回避
-	const initialSettings = data.settings || {};
-	const dbStatus = data.dbStatus;
-
 	// 設定項目のローカルステート
-	let siteTitle = $state(initialSettings.site_title || '');
-	let siteDescription = $state(initialSettings.site_description || '');
-	let accentColor = $state(initialSettings.accent_color || '#00CC99');
-	let siteLanguage = $state(initialSettings.site_language || 'ja');
-	let allowedExtensions = $state(initialSettings.allowed_extensions || '.jpg,.jpeg,.png,.gif,.webp,.svg,.ico');
-	let siteIconUrl = $state(initialSettings.site_icon_url || '');
+	let siteTitle = $state(initialSettings?.site_title || '');
+	let siteDescription = $state(initialSettings?.site_description || '');
+	let accentColor = $state(initialSettings?.accent_color || '#00CC99');
+	let siteLanguage = $state(initialSettings?.site_language || 'ja');
+	let allowedExtensions = $state(initialSettings?.allowed_extensions || '.jpg,.jpeg,.png,.gif,.webp,.svg,.ico');
+	let siteIconUrl = $state(initialSettings?.site_icon_url || '');
 
 	let editors = $state({
 		home: { data: '', instance: null as any, holder: 'editor-home' },
@@ -114,7 +112,7 @@
 		const ColorPlugin = (await import('editorjs-text-color-plugin')).default;
 		const Undo = (await import('editorjs-undo')).default;
 
-		let parsedData = { blocks: [] };
+		let parsedData: { blocks: any[] } = { blocks: [] };
 		try {
 			if (initialData) {
 				const data = JSON.parse(initialData);
