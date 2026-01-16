@@ -2,6 +2,7 @@ import Database from 'libsql';
 import { env } from '$env/dynamic/private';
 import { mkdirSync, existsSync } from 'fs';
 import { dirname } from 'path';
+import { DEFAULT_SETTINGS } from './settings';
 
 let _db: any | null = null;
 let _dbStatus = {
@@ -39,7 +40,17 @@ function initializeDb(): any {
 		return db;
 	} catch (e) {
 		console.error('[DB] Local SQLite connection failed', e);
-		return null;
+		
+		// 最終手段: インメモリデータベース
+		console.warn('[DB] Using in-memory database as fallback. Data will NOT be persisted.');
+		try {
+			const db = new Database(':memory:');
+			_dbStatus = { type: 'memory', path: ':memory:', url: '' };
+			return db;
+		} catch (memErr) {
+			console.error('[DB] In-memory database also failed!', memErr);
+			return null;
+		}
 	}
 }
 
@@ -60,34 +71,20 @@ function initSchema(db: any) {
 		`);
 
 		// 初期設定の投入 (IGNOREにより既存データは保護される)
-		const initialSettings = [
-			["site_title", "PSANBLOG"],
-			["is_site_public", "true"],
-			["allow_signup", "true"],
-			["allow_comments", "true"],
-			["allow_anonymous_comments", "false"],
-			["anonymous_name", "Anonymous"],
-			["allow_account_deletion", "true"],
-			["require_email_verification", "false"],
-			["enable_turnstile", "false"],
-			["home_hero_content", JSON.stringify({ blocks: [{ type: "header", data: { text: "CREATE BETTER CONTENT.", level: 1 } }] })],
-			["about_page_content", JSON.stringify({ blocks: [] })],
-			["error_404_content", JSON.stringify({ blocks: [{ type: "header", data: { text: "404 Not Found", level: 2 } }] })],
-			["error_500_content", JSON.stringify({ blocks: [{ type: "header", data: { text: "500 Server Error", level: 2 } }] })],
-			["accent_color", "#00CC99"],
-			["enable_backup", "false"],
-			["backup_interval", "24"],
-			["backup_keep_count", "5"],
-			["last_backup_at", "0"],
-			["is_setup_completed", "false"],
-			["allowed_extensions", '["jpg","jpeg","png","gif","webp","svg","ico"]'],
-			["storage_type", "local"],
-			["site_language", "ja"]
-		];
-
 		const insertSetting = db.prepare("INSERT OR IGNORE INTO site_settings (key, value) VALUES (?, ?)");
-		for (const [k, v] of initialSettings) {
-			insertSetting.run(k, v);
+		
+		// 効率的な投入のためにトランザクションを検討（libsql remoteでは性能に寄与）
+		try {
+			db.transaction(() => {
+				for (const [key, value] of Object.entries(DEFAULT_SETTINGS)) {
+					insertSetting.run(key, value);
+				}
+			})();
+		} catch (err) {
+			// トランザクション失敗時は逐次実行
+			for (const [key, value] of Object.entries(DEFAULT_SETTINGS)) {
+				insertSetting.run(key, value);
+			}
 		}
 	} catch (e) {
 		console.error('[DB] Schema initialization failed', e);
