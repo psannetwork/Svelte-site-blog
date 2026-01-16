@@ -3,15 +3,26 @@
 	let query = $state('');
 	let results = $state<any[]>([]);
 	let isSearching = $state(false);
+	let turnstileToken = '';
+
+	// Turnstile成功時のコールバック
+	(window as any).onTurnstileSuccess = (token: string) => {
+		turnstileToken = token;
+		if (query.trim()) doSearch();
+	};
 
 	async function doSearch() {
 		if (!query.trim()) {
 			results = [];
 			return;
 		}
+		
+		// Turnstileが有効な場合はトークンが必要
+		const tsParam = turnstileToken ? `&t=${encodeURIComponent(turnstileToken)}` : '';
+		
 		isSearching = true;
 		try {
-			const res = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
+			const res = await fetch(`/api/search?q=${encodeURIComponent(query)}${tsParam}`);
 			const data = await res.json();
 			results = data.posts || [];
 		} finally {
@@ -56,6 +67,12 @@
 				{/if}
 			</div>
 		</form>
+
+		{#if data.settings.enable_turnstile === 'true'}
+			<div class="mt-4 flex justify-center">
+				<div class="cf-turnstile" data-sitekey={data.settings.turnstile_site_key} data-theme="auto" data-callback="onTurnstileSuccess"></div>
+			</div>
+		{/if}
 	</div>
 
 	<div class="space-y-6">

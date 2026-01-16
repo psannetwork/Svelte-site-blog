@@ -1,10 +1,19 @@
 import { json } from '@sveltejs/kit';
 import db from '$lib/server/db';
+import { getSetting, verifyTurnstile } from '$lib/server/settings';
 import type { RequestHandler } from './$types';
 
 export const GET: RequestHandler = async ({ url, locals }) => {
 	const query = url.searchParams.get('q') || '';
+	const token = url.searchParams.get('t') || '';
+	
 	if (!query) return json({ posts: [] });
+
+	// Turnstile検証
+	if (getSetting('enable_turnstile') === 'true') {
+		const valid = await verifyTurnstile(token);
+		if (!valid) return json({ posts: [], error: 'Verification failed' }, { status: 400 });
+	}
 
 	const user = locals.user;
 	let posts;
