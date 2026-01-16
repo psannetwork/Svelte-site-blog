@@ -51,71 +51,73 @@
 		}
 	}
 
-	onMount(async () => {
-		if (editor) return;
+	onMount(() => {
+		(async () => {
+			if (editor) return;
 
-		const EditorJS = (await import('@editorjs/editorjs')).default;
-		const Header = (await import('@editorjs/header')).default;
-		const List = (await import('@editorjs/list')).default;
-		const Quote = (await import('@editorjs/quote')).default;
-		const Code = (await import('@editorjs/code')).default;
-		const Image = (await import('@editorjs/image')).default;
-		const Marker = (await import('@editorjs/marker')).default;
-		const Table = (await import('@editorjs/table')).default;
-		const Checklist = (await import('@editorjs/checklist')).default;
-		const Warning = (await import('@editorjs/warning')).default;
-		const Delimiter = (await import('@editorjs/delimiter')).default;
-		const InlineCode = (await import('@editorjs/inline-code')).default;
-		const Underline = (await import('@editorjs/underline')).default;
-		const ColorPlugin = (await import('editorjs-text-color-plugin')).default;
-		const Undo = (await import('editorjs-undo')).default;
+			const EditorJS = (await import('@editorjs/editorjs')).default;
+			const Header = (await import('@editorjs/header')).default;
+			const List = (await import('@editorjs/list')).default;
+			const Quote = (await import('@editorjs/quote')).default;
+			const Code = (await import('@editorjs/code')).default;
+			const Image = (await import('@editorjs/image')).default;
+			const Marker = (await import('@editorjs/marker')).default;
+			const Table = (await import('@editorjs/table')).default;
+			const Checklist = (await import('@editorjs/checklist')).default;
+			const Warning = (await import('@editorjs/warning')).default;
+			const Delimiter = (await import('@editorjs/delimiter')).default;
+			const InlineCode = (await import('@editorjs/inline-code')).default;
+			const Underline = (await import('@editorjs/underline')).default;
+			const ColorPlugin = (await import('editorjs-text-color-plugin')).default;
+			const Undo = (await import('editorjs-undo')).default;
 
-		let parsedData = { blocks: [] };
-		try {
-			if (editorData) {
-				const data = JSON.parse(editorData);
-				if (data && data.blocks) parsedData = data;
+			let parsedData: { blocks: any[] } = { blocks: [] };
+			try {
+				if (editorData) {
+					const data = JSON.parse(editorData);
+					if (data && data.blocks) parsedData = data;
+				}
+			} catch (e) {
+				console.error('Invalid page data', e);
 			}
-		} catch (e) {
-			console.error('Invalid page data', e);
-		}
 
-		if (parsedData.blocks.length === 0) {
-			parsedData.blocks.push({ type: 'paragraph', data: { text: '' } });
-		}
+			if (parsedData.blocks.length === 0) {
+				parsedData.blocks.push({ type: 'paragraph', data: { text: '' } });
+			}
 
-		editor = new EditorJS({
-			holder: 'editorjs',
-			i18n: data?.settings?.site_language === 'ja' ? editorI18n : undefined,
-			tools: {
-				header: Header,
-				list: List,
-				quote: Quote,
-				code: Code,
-				marker: Marker,
-				table: Table,
-				checklist: Checklist,
-				warning: Warning,
-				delimiter: Delimiter,
-				inlineCode: InlineCode,
-				underline: Underline,
-				color: {
-					class: ColorPlugin,
-					config: {
-						colorCollections: ['#00CC99', '#EB2D8C', '#1A1A1A', '#FF1313', '#2388FF', '#FFD300'],
-						type: 'text',
-						customPicker: true
-					}
+			editor = new EditorJS({
+				holder: 'editorjs',
+				i18n: data?.settings?.site_language === 'ja' ? editorI18n : undefined,
+				tools: {
+					header: Header,
+					list: List,
+					quote: Quote,
+					code: Code,
+					marker: Marker,
+					table: Table,
+					checklist: Checklist,
+					warning: Warning,
+					delimiter: Delimiter,
+					inlineCode: InlineCode,
+					underline: Underline,
+					color: {
+						class: ColorPlugin,
+						config: {
+							colorCollections: ['#00CC99', '#EB2D8C', '#1A1A1A', '#FF1313', '#2388FF', '#FFD300'],
+							type: 'text',
+							customPicker: true
+						}
+					},
+					image: { class: Image, config: { endpoints: { byFile: '/api/upload' } } }
 				},
-				image: { class: Image, config: { endpoints: { byFile: '/api/upload' } } }
-			},
-			onReady: () => {
-				new Undo({ editor });
-			},
-			data: parsedData,
-			placeholder: 'Build your page content...',
-			defaultBlock: 'paragraph'
-		});
+				onReady: () => {
+					new Undo({ editor });
+				},
+				data: parsedData,
+				placeholder: 'Build your page content...',
+				defaultBlock: 'paragraph'
+			});
+		})();
 
 		window.addEventListener('keydown', handleKeydown);
 		return () => {

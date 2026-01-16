@@ -10,9 +10,11 @@
 
 	// サーバーからのデータが更新されたらローカルステートに同期
 	$effect(() => {
-		avatarUrl = data.user?.avatar_url || '';
-		nickname = data.user?.nickname || '';
-		notificationEnabled = data.notification_enabled;
+		if (data.user) {
+			avatarUrl = data.user.avatar_url || '';
+			nickname = data.user.nickname || '';
+			notificationEnabled = data.notification_enabled;
+		}
 	});
 
 	async function handleAvatarUpload(e: Event) {
@@ -40,82 +42,90 @@
 <div class="max-w-2xl mx-auto px-4 py-20">
 	<h2 class="text-4xl font-black tracking-tighter mb-10 uppercase text-main">Account Settings</h2>
 
-	<div class="space-y-12 pb-20">
-		<section class="card-psan p-8 space-y-8 border-psan-green/30 border-2 shadow-psan-green/5">
-			<h3 class="font-black text-sm tracking-widest text-psan-green uppercase">Profile</h3>
-			<div class="flex flex-col items-center sm:flex-row gap-8">
-				<div class="relative group">
-					<div class="w-32 h-32 rounded-[40px] bg-secondary dark:bg-slate-800 overflow-hidden shadow-xl">
-						{#if avatarUrl}
-							<img src={avatarUrl} alt="Avatar" class="w-full h-full object-cover" />
-						{:else}
-							<div class="w-full h-full flex items-center justify-center text-4xl font-black text-slate-300 uppercase">
-								{(data.user?.nickname || data.user?.username).substring(0,1)}
-							</div>
-						{/if}
+	{#if data.user}
+		<div class="space-y-12 pb-20">
+			<section class="card-psan p-8 space-y-8 border-psan-green/30 border-2 shadow-psan-green/5">
+				<h3 class="font-black text-sm tracking-widest text-psan-green uppercase">Profile</h3>
+				<div class="flex flex-col items-center sm:flex-row gap-8">
+					<div class="relative group">
+						<div class="w-32 h-32 rounded-[40px] bg-secondary dark:bg-slate-800 overflow-hidden shadow-xl">
+							{#if avatarUrl}
+								<img src={avatarUrl} alt="Avatar" class="w-full h-full object-cover" />
+							{:else}
+								<div class="w-full h-full flex items-center justify-center text-4xl font-black text-slate-300 uppercase">
+									{(data.user.nickname || data.user.username).substring(0,1)}
+								</div>
+							{/if}
+						</div>
+						<label class="absolute inset-0 flex items-center justify-center bg-black/50 text-white text-[10px] font-black opacity-0 group-hover:opacity-100 cursor-pointer transition-opacity rounded-[40px] uppercase tracking-widest text-center px-4">
+							{isUploading ? 'Uploading...' : 'Change Icon'}
+							<input type="file" accept="image/*" class="hidden" onchange={handleAvatarUpload} disabled={isUploading} />
+						</label>
 					</div>
-					<label class="absolute inset-0 flex items-center justify-center bg-black/50 text-white text-[10px] font-black opacity-0 group-hover:opacity-100 cursor-pointer transition-opacity rounded-[40px] uppercase tracking-widest text-center px-4">
-						{isUploading ? 'Uploading...' : 'Change Icon'}
-						<input type="file" accept="image/*" class="hidden" onchange={handleAvatarUpload} disabled={isUploading} />
-					</label>
-				</div>
-				<form method="POST" action="?/updateNickname" use:enhance={() => {
-					return async ({ result }) => {
-						if (result.type === 'success') await invalidateAll();
-					};
-				}} class="flex-1 space-y-4">
-					<input type="hidden" name="avatar_url" value={avatarUrl} />
-					<div class="space-y-2">
-						<label for="nickname" class="text-[10px] font-black text-muted uppercase tracking-widest">Nickname</label>
-						<input id="nickname" name="nickname" bind:value={nickname} placeholder="未設定（IDが表示されます）" class="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-none rounded-xl p-4 font-bold text-main" />
-					</div>
-					
-					<label class="flex items-center justify-between p-4 bg-secondary dark:bg-slate-800 rounded-xl cursor-pointer text-main">
-						<span class="text-[10px] font-black uppercase tracking-widest text-muted">Notifications (Replies)</span>
-						<input type="checkbox" name="notification_enabled" checked={notificationEnabled} class="w-5 h-5 accent-psan-green" />
-					</label>
-
-					<button class="btn-psan-primary w-full">Save Profile</button>
-				</form>
-			</div>
-		</section>
-
-		<section class="card-psan p-8 space-y-6">
-			<h3 class="font-black text-sm tracking-widest text-muted uppercase">Identity</h3>
-			<div>
-				<div class="text-[10px] font-black text-muted uppercase tracking-widest mb-1">User ID</div>
-				<p class="text-xl font-black text-main dark:text-white">{data.user?.username}</p>
-			</div>
-		</section>
-
-		<section class="card-psan p-8 space-y-6">
-			<h3 class="font-black text-sm tracking-widest text-psan-pink uppercase text-main">Security</h3>
-			<form method="POST" action="?/updatePassword" use:enhance class="space-y-4">
-				<input name="current_password" type="password" placeholder="Current Password" class="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-none rounded-xl p-4 font-bold text-main" />
-				<input name="new_password" type="password" placeholder="New Password" class="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-none rounded-xl p-4 font-bold text-main" />
-				<div class="flex justify-end">
-					<button class="btn-psan bg-psan-pink text-white py-4 px-8 rounded-2xl font-black hover:opacity-90 transition-all">Change Password</button>
-				</div>
-			</form>
-		</section>
-
-		{#if data.allow_deletion && !data.user.is_protected}
-			<section class="pt-12 border-t border-slate-100 dark:border-slate-800">
-				<div class="p-8 bg-red-50 dark:bg-red-950/20 rounded-[32px] border border-red-100 dark:border-red-900/30">
-					<h3 class="text-red-600 font-black tracking-tighter text-xl mb-2 uppercase">Danger Zone</h3>
-					<p class="text-red-500/70 text-sm font-medium mb-6">アカウントを削除すると、これまでの投稿やコメント、画像などはすべて完全に削除されます。</p>
-					<form method="POST" action="?/deleteAccount" use:enhance={() => {
-						return ({ confirm }) => {
-							if (!confirm("本当にアカウントを削除しますか？ この操作は取り消せません。")) return;
+					<form method="POST" action="?/updateNickname" use:enhance={() => {
+						return async ({ result }) => {
+							if (result.type === 'success') await invalidateAll();
 						};
-					}}>
-						<button class="btn-psan-danger w-full sm:w-auto">Delete My Account</button>
+					}} class="flex-1 space-y-4">
+						<input type="hidden" name="avatar_url" value={avatarUrl} />
+						<div class="space-y-2">
+							<label for="nickname" class="text-[10px] font-black text-muted uppercase tracking-widest">Nickname</label>
+							<input id="nickname" name="nickname" bind:value={nickname} placeholder="未設定（IDが表示されます）" class="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-none rounded-xl p-4 font-bold text-main" />
+						</div>
+						
+						<label class="flex items-center justify-between p-4 bg-secondary dark:bg-slate-800 rounded-xl cursor-pointer text-main">
+							<span class="text-[10px] font-black uppercase tracking-widest text-muted">Notifications (Replies)</span>
+							<input type="checkbox" name="notification_enabled" checked={notificationEnabled} class="w-5 h-5 accent-psan-green" />
+						</label>
+
+						<button class="btn-psan-primary w-full">Save Profile</button>
 					</form>
 				</div>
 			</section>
-		{/if}
 
-		{#if form?.success}<p class="text-center font-black text-psan-green animate-pulse uppercase tracking-widest text-xs">Settings Updated!</p>{/if}
-		{#if form?.message}<p class="text-center font-black text-psan-pink text-xs">{form.message}</p>{/if}
-	</div>
+			<section class="card-psan p-8 space-y-6">
+				<h3 class="font-black text-sm tracking-widest text-muted uppercase">Identity</h3>
+				<div>
+					<div class="text-[10px] font-black text-muted uppercase tracking-widest mb-1">User ID</div>
+					<p class="text-xl font-black text-main dark:text-white">{data.user.username}</p>
+				</div>
+			</section>
+
+			<section class="card-psan p-8 space-y-6">
+				<h3 class="font-black text-sm tracking-widest text-psan-pink uppercase text-main">Security</h3>
+				<form method="POST" action="?/updatePassword" use:enhance class="space-y-4">
+					<input name="current_password" type="password" placeholder="Current Password" class="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-none rounded-xl p-4 font-bold text-main" />
+					<input name="new_password" type="password" placeholder="New Password" class="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-none rounded-xl p-4 font-bold text-main" />
+					<div class="flex justify-end">
+						<button class="btn-psan bg-psan-pink text-white py-4 px-8 rounded-2xl font-black hover:opacity-90 transition-all">Change Password</button>
+					</div>
+				</form>
+			</section>
+
+			{#if data.allow_deletion && !data.user.is_protected}
+				<section class="pt-12 border-t border-slate-100 dark:border-slate-800">
+					<div class="p-8 bg-red-50 dark:bg-red-950/20 rounded-[32px] border border-red-100 dark:border-red-900/30">
+						<h3 class="text-red-600 font-black tracking-tighter text-xl mb-2 uppercase">Danger Zone</h3>
+						<p class="text-red-500/70 text-sm font-medium mb-6">アカウントを削除すると、これまでの投稿やコメント、画像などはすべて完全に削除されます。</p>
+						<form method="POST" action="?/deleteAccount" use:enhance={({ cancel }) => {
+							if (!confirm("本当にアカウントを削除しますか？ この操作は取り消せません。")) return cancel();
+							return async ({ update }) => {
+								await update();
+							};
+						}}>
+							<button class="btn-psan-danger w-full sm:w-auto">Delete My Account</button>
+						</form>
+					</div>
+				</section>
+			{/if}
+
+			{#if form?.success}<p class="text-center font-black text-psan-green animate-pulse uppercase tracking-widest text-xs">Settings Updated!</p>{/if}
+			{#if form?.message}<p class="text-center font-black text-psan-pink text-xs">{form.message}</p>{/if}
+		</div>
+	{:else}
+		<div class="text-center py-20">
+			<p class="text-muted font-bold">ログインが必要です。</p>
+			<a href="/auth/login" class="btn-psan-primary mt-4 inline-block">Login</a>
+		</div>
+	{/if}
 </div>

@@ -1,19 +1,20 @@
 <script lang="ts">
 	let { data } = $props();
 
-	const weekly = [...data.stats.weekly].reverse();
-	const maxHits = Math.max(...weekly.map(d => d.hits), 10);
 	const chartHeight = 120;
 	const chartWidth = 600;
+
+	const weekly = $derived([...data.stats.weekly].reverse());
+	const maxHits = $derived(Math.max(...weekly.map(d => d.hits), 10));
 	
-	const points = weekly.map((day, i) => {
+	const points = $derived(weekly.map((day, i) => {
 		const x = (i / (weekly.length - 1)) * chartWidth;
 		const y = chartHeight - (day.hits / maxHits) * chartHeight;
 		return { x, y, hits: day.hits, date: day.date };
-	});
+	}));
 
-	const linePath = points.map(p => `${p.x},${p.y}`).join(' ');
-	const areaPath = `0,${chartHeight} ${linePath} ${chartWidth},${chartHeight}`;
+	const linePath = $derived(points.map(p => `${p.x},${p.y}`).join(' '));
+	const areaPath = $derived(`0,${chartHeight} ${linePath} ${chartWidth},${chartHeight}`);
 </script>
 
 <svelte:head>

@@ -7,12 +7,12 @@
 
 	// コメントをツリー構造に変換
 	const commentTree = $derived.by(() => {
-		const map = new Map();
+		const map = new Map<string, any>();
 		const roots: any[] = [];
-		data.comments.forEach(c => {
+		data.comments.forEach((c: any) => {
 			map.set(c.id, { ...c, replies: [] });
 		});
-		data.comments.forEach(c => {
+		data.comments.forEach((c: any) => {
 			const node = map.get(c.id);
 			if (c.parent_id && map.has(c.parent_id)) {
 				map.get(c.parent_id).replies.push(node);
@@ -24,7 +24,7 @@
 	});
 </script>
 
-{#snippet commentItem(comment, depth = 0)}
+{#snippet commentItem(comment: any, depth = 0)}
 	<!-- depth に応じてインデント -->
 	<div class="flex gap-4 group {depth > 0 && depth <= 2 ? 'ml-6 md:ml-10 mt-6 pt-6 border-t border-slate-200 dark:border-slate-800/50 relative before:absolute before:left-[-20px] before:top-0 before:bottom-0 before:w-0.5 before:bg-slate-200 dark:before:bg-slate-800/50 before:content-[\'\']' : 'mt-10'} {depth > 2 ? 'mt-6 pt-6 border-t border-slate-200 dark:border-slate-800/50' : ''}">
 		<div class="{depth > 0 ? 'w-8 h-8' : 'w-10 h-10'} rounded-2xl bg-slate-100 dark:bg-slate-800 overflow-hidden shrink-0 shadow-sm">

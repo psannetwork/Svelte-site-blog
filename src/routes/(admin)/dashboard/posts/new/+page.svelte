@@ -49,76 +49,78 @@
 		}
 	}
 
-	onMount(async () => {
-		if (editor) return;
+	onMount(() => {
+		(async () => {
+			if (editor) return;
 
-		const EditorJS = (await import('@editorjs/editorjs')).default;
-		const Header = (await import('@editorjs/header')).default;
-		const List = (await import('@editorjs/list')).default;
-		const Quote = (await import('@editorjs/quote')).default;
-		const Code = (await import('@editorjs/code')).default;
-		const Image = (await import('@editorjs/image')).default;
-		const Embed = (await import('@editorjs/embed')).default;
-		const Marker = (await import('@editorjs/marker')).default;
-		const Table = (await import('@editorjs/table')).default;
-		const Checklist = (await import('@editorjs/checklist')).default;
-		const Warning = (await import('@editorjs/warning')).default;
-		const Delimiter = (await import('@editorjs/delimiter')).default;
-		const InlineCode = (await import('@editorjs/inline-code')).default;
-		const Underline = (await import('@editorjs/underline')).default;
-		const ColorPlugin = (await import('editorjs-text-color-plugin')).default;
-		const Undo = (await import('editorjs-undo')).default;
-				
-		editor = new EditorJS({
-			holder: 'editorjs',
-			i18n: data?.settings?.site_language === 'ja' ? editorI18n : undefined,
-			onReady: () => {
-				new Undo({ editor });
-			},
-			tools: {
-				header: Header,
-				list: List,
-				quote: Quote,
-				code: Code,
-				marker: Marker,
-				table: Table,
-				checklist: Checklist,
-				warning: Warning,
-				delimiter: Delimiter,
-				inlineCode: InlineCode,
-				underline: Underline,
-				color: {
-					class: ColorPlugin,
-					config: {
-						colorCollections: ['#00CC99', '#EB2D8C', '#1A1A1A', '#FF1313', '#2388FF', '#FFD300'],
-						defaultColor: '#1A1A1A',
-						type: 'text',
-						customPicker: true
-					}
+			const EditorJS = (await import('@editorjs/editorjs')).default;
+			const Header = (await import('@editorjs/header')).default;
+			const List = (await import('@editorjs/list')).default;
+			const Quote = (await import('@editorjs/quote')).default;
+			const Code = (await import('@editorjs/code')).default;
+			const Image = (await import('@editorjs/image')).default;
+			const Embed = (await import('@editorjs/embed')).default;
+			const Marker = (await import('@editorjs/marker')).default;
+			const Table = (await import('@editorjs/table')).default;
+			const Checklist = (await import('@editorjs/checklist')).default;
+			const Warning = (await import('@editorjs/warning')).default;
+			const Delimiter = (await import('@editorjs/delimiter')).default;
+			const InlineCode = (await import('@editorjs/inline-code')).default;
+			const Underline = (await import('@editorjs/underline')).default;
+			const ColorPlugin = (await import('editorjs-text-color-plugin')).default;
+			const Undo = (await import('editorjs-undo')).default;
+					
+			editor = new EditorJS({
+				holder: 'editorjs',
+				i18n: data?.settings?.site_language === 'ja' ? editorI18n : undefined,
+				onReady: () => {
+					new Undo({ editor });
 				},
-				image: {
-					class: Image,
-					config: { 
-						endpoints: { byFile: '/api/upload' },
-						field: 'image',
-						types: 'image/*'
-					}
-				},
-				embed: {
-					class: Embed,
-					config: {
-						services: {
-							youtube: true,
-							vimeo: true,
-							twitter: true
+				tools: {
+					header: Header,
+					list: List,
+					quote: Quote,
+					code: Code,
+					marker: Marker,
+					table: Table,
+					checklist: Checklist,
+					warning: Warning,
+					delimiter: Delimiter,
+					inlineCode: InlineCode,
+					underline: Underline,
+					color: {
+						class: ColorPlugin,
+						config: {
+							colorCollections: ['#00CC99', '#EB2D8C', '#1A1A1A', '#FF1313', '#2388FF', '#FFD300'],
+							defaultColor: '#1A1A1A',
+							type: 'text',
+							customPicker: true
+						}
+					},
+					image: {
+						class: Image,
+						config: { 
+							endpoints: { byFile: '/api/upload' },
+							field: 'image',
+							types: 'image/*'
+						}
+					},
+					embed: {
+						class: Embed,
+						config: {
+							services: {
+								youtube: true,
+								vimeo: true,
+								twitter: true
+							}
 						}
 					}
-				}
-			},
-			data: { blocks: [{ type: 'paragraph', data: { text: '' } }] },
-			placeholder: 'Start writing...',
-			defaultBlock: 'paragraph'
-		});
+				},
+				data: { blocks: [{ type: 'paragraph', data: { text: '' } }] },
+				placeholder: 'Start writing...',
+				defaultBlock: 'paragraph'
+			});
+		})();
 
 		window.addEventListener('keydown', handleKeydown);
 		return () => {

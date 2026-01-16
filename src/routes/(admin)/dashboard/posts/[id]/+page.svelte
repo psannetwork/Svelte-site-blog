@@ -55,85 +55,87 @@
 		}
 	}
 
-	onMount(async () => {
-		if (editor) return; 
+	onMount(() => {
+		(async () => {
+			if (editor) return; 
 
-		const EditorJS = (await import('@editorjs/editorjs')).default;
-		const Header = (await import('@editorjs/header')).default;
-		const List = (await import('@editorjs/list')).default;
-		const Quote = (await import('@editorjs/quote')).default;
-		const Code = (await import('@editorjs/code')).default;
-		const Image = (await import('@editorjs/image')).default;
-		const Embed = (await import('@editorjs/embed')).default;
-		const Marker = (await import('@editorjs/marker')).default;
-		const Table = (await import('@editorjs/table')).default;
-		const Checklist = (await import('@editorjs/checklist')).default;
-		const Warning = (await import('@editorjs/warning')).default;
-		const Delimiter = (await import('@editorjs/delimiter')).default;
-		const InlineCode = (await import('@editorjs/inline-code')).default;
-		const Underline = (await import('@editorjs/underline')).default;
-		const ColorPlugin = (await import('editorjs-text-color-plugin')).default;
-		const Undo = (await import('editorjs-undo')).default;
-		
-		let parsedData = { blocks: [] };
-		try {
-			if (editorData) {
-				const data = JSON.parse(editorData);
-				if (data && data.blocks) parsedData = data;
-			}
-		} catch (e) {}
-
-		if (parsedData.blocks.length === 0) {
-			parsedData.blocks.push({ type: 'paragraph', data: { text: '' } });
-		}
-
-		editor = new EditorJS({
-			holder: 'editorjs',
-			i18n: data?.settings?.site_language === 'ja' ? editorI18n : undefined,
-			tools: {
-				header: Header,
-				list: List,
-				quote: Quote,
-				code: Code,
-				marker: Marker,
-				table: Table,
-				checklist: Checklist,
-				warning: Warning,
-				delimiter: Delimiter,
-				inlineCode: InlineCode,
-				underline: Underline,
-				color: {
-					class: ColorPlugin,
-					config: {
-						colorCollections: ['#00CC99', '#EB2D8C', '#1A1A1A', '#FF1313', '#2388FF', '#FFD300'],
-						type: 'text',
-						customPicker: true
-					}
-				},
-				image: { class: Image, config: { endpoints: { byFile: '/api/upload' } } },
-				embed: { class: Embed, config: { services: { youtube: true, vimeo: true, twitter: true } } }
-			},
-			onReady: () => {
-				new Undo({ editor });
-			},
-			data: parsedData,
-			placeholder: 'Start writing...',
-			defaultBlock: 'paragraph'
-		});
-
-		const editorContainer = document.getElementById('editorjs');
-		editorContainer?.addEventListener('contextmenu', (e) => {
-			e.preventDefault();
-			const target = e.target as HTMLElement;
-			const block = target.closest('.ce-block');
-			if (block) {
-				// ブロックの右側にある設定ボタン (⋮) を探して擬似的にクリック
-				const settingsBtn = block.querySelector('.ce-toolbar__settings-btn') as HTMLElement;
-				if (settingsBtn) {
-					settingsBtn.click();
+			const EditorJS = (await import('@editorjs/editorjs')).default;
+			const Header = (await import('@editorjs/header')).default;
+			const List = (await import('@editorjs/list')).default;
+			const Quote = (await import('@editorjs/quote')).default;
+			const Code = (await import('@editorjs/code')).default;
+			const Image = (await import('@editorjs/image')).default;
+			const Embed = (await import('@editorjs/embed')).default;
+			const Marker = (await import('@editorjs/marker')).default;
+			const Table = (await import('@editorjs/table')).default;
+			const Checklist = (await import('@editorjs/checklist')).default;
+			const Warning = (await import('@editorjs/warning')).default;
+			const Delimiter = (await import('@editorjs/delimiter')).default;
+			const InlineCode = (await import('@editorjs/inline-code')).default;
+			const Underline = (await import('@editorjs/underline')).default;
+			const ColorPlugin = (await import('editorjs-text-color-plugin')).default;
+			const Undo = (await import('editorjs-undo')).default;
+			
+			let parsedData: { blocks: any[] } = { blocks: [] };
+			try {
+				if (editorData) {
+					const data = JSON.parse(editorData);
+					if (data && data.blocks) parsedData = data;
 				}
+			} catch (e) {}
+
+			if (parsedData.blocks.length === 0) {
+				parsedData.blocks.push({ type: 'paragraph', data: { text: '' } });
 			}
-		});
+
+			editor = new EditorJS({
+				holder: 'editorjs',
+				i18n: data?.settings?.site_language === 'ja' ? editorI18n : undefined,
+				tools: {
+					header: Header,
+					list: List,
+					quote: Quote,
+					code: Code,
+					marker: Marker,
+					table: Table,
+					checklist: Checklist,
+					warning: Warning,
+					delimiter: Delimiter,
+					inlineCode: InlineCode,
+					underline: Underline,
+					color: {
+						class: ColorPlugin,
+						config: {
+							colorCollections: ['#00CC99', '#EB2D8C', '#1A1A1A', '#FF1313', '#2388FF', '#FFD300'],
+							type: 'text',
+							customPicker: true
+						}
+					},
+					image: { class: Image, config: { endpoints: { byFile: '/api/upload' } } },
+					embed: { class: Embed, config: { services: { youtube: true, vimeo: true, twitter: true } } }
+				},
+				onReady: () => {
+					new Undo({ editor });
+				},
+				data: parsedData,
+				placeholder: 'Start writing...',
+				defaultBlock: 'paragraph'
+			});
+
+			const editorContainer = document.getElementById('editorjs');
+			editorContainer?.addEventListener('contextmenu', (e) => {
+				e.preventDefault();
+				const target = e.target as HTMLElement;
+				const block = target.closest('.ce-block');
+				if (block) {
+					// ブロックの右側にある設定ボタン (⋮) を探して擬似的にクリック
+					const settingsBtn = block.querySelector('.ce-toolbar__settings-btn') as HTMLElement;
+					if (settingsBtn) {
+						settingsBtn.click();
+					}
+				}
+			});
+		})();
 
 		window.addEventListener('keydown', handleKeydown);
 		return () => {

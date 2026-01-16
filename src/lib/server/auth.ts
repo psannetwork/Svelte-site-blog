@@ -19,7 +19,8 @@ export const lucia = new Lucia(adapter, {
 			username: attributes.username,
 			nickname: attributes.nickname,
 			avatar_url: attributes.avatar_url,
-			role: attributes.role
+			role: attributes.role,
+			is_protected: attributes.is_protected
 		};
 	}
 });
@@ -36,4 +37,5 @@ interface DatabaseUserAttributes {
 	nickname: string;
 	avatar_url: string;
 	role: string;
+	is_protected: number;
 }
