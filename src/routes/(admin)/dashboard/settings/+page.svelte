@@ -9,15 +9,18 @@
 	let isSaving = $state(false);
 	let showSuccess = $state(false);
 	let isUploadingIcon = $state(false);
+
+	// 初期データをローカル変数に退避して "state_referenced_locally" 警告を回避
+	const initialSettings = data.settings || {};
+	const dbStatus = data.dbStatus;
+
 	// 設定項目のローカルステート
-	// data.settings を直接 $state に渡すと "state_referenced_locally" 警告が出るため、一度変数に受ける
-	const s = data.settings || {};
-	let siteTitle = $state(s.site_title || '');
-	let siteDescription = $state(s.site_description || '');
-	let accentColor = $state(s.accent_color || '#00CC99');
-	let siteLanguage = $state(s.site_language || 'ja');
-	let allowedExtensions = $state(s.allowed_extensions || '.jpg,.jpeg,.png,.gif,.webp,.svg,.ico');
-	let siteIconUrl = $state(s.site_icon_url || '');
+	let siteTitle = $state(initialSettings.site_title || '');
+	let siteDescription = $state(initialSettings.site_description || '');
+	let accentColor = $state(initialSettings.accent_color || '#00CC99');
+	let siteLanguage = $state(initialSettings.site_language || 'ja');
+	let allowedExtensions = $state(initialSettings.allowed_extensions || '.jpg,.jpeg,.png,.gif,.webp,.svg,.ico');
+	let siteIconUrl = $state(initialSettings.site_icon_url || '');
 
 	let editors = $state({
 		home: { data: '', instance: null as any, holder: 'editor-home' },
@@ -208,21 +211,21 @@
 
 	<div class="space-y-12 pb-32">
 		<!-- Database Status -->
-		<section class="card-psan p-8 space-y-4 border-2 {data.dbStatus.type === 'turso' ? 'border-psan-green/30' : 'border-slate-200'} shadow-sm">
+		<section class="card-psan p-8 space-y-4 border-2 {dbStatus.type === 'turso' ? 'border-psan-green/30' : 'border-slate-200'} shadow-sm">
 			<div class="flex items-center justify-between">
 				<h3 class="text-xl font-black text-main uppercase tracking-tighter italic">Database Status</h3>
 				<span class="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest 
-					{data.dbStatus.type === 'turso' ? 'bg-psan-green text-white' : 'bg-slate-100 dark:bg-slate-800 text-muted'}">
-					{data.dbStatus.type}
+					{dbStatus.type === 'turso' ? 'bg-psan-green text-white' : 'bg-slate-100 dark:bg-slate-800 text-muted'}">
+					{dbStatus.type}
 				</span>
 			</div>
 			<div class="flex flex-col md:flex-row md:items-center gap-4 text-xs font-bold">
 				<div class="flex-1 p-4 bg-slate-50 dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800">
 					<span class="text-[10px] text-muted uppercase block mb-1">Connection Details</span>
-					<code class="text-psan-green break-all">{data.dbStatus.type === 'turso' ? data.dbStatus.url : data.dbStatus.path}</code>
+					<code class="text-psan-green break-all">{dbStatus.type === 'turso' ? dbStatus.url : dbStatus.path}</code>
 				</div>
 				<div class="flex-none text-muted leading-relaxed">
-					{#if data.dbStatus.type === 'turso'}
+					{#if dbStatus.type === 'turso'}
 						<p>✅ リモートデータベース (Turso) に正常に接続されています。</p>
 					{:else}
 						<p>🏠 ローカルの SQLite データベースを使用中です。</p>
@@ -325,7 +328,7 @@
 			<section class="card-psan p-8 space-y-6">
 				<h3 class="text-xl font-black text-psan-green italic uppercase">Storage Strategy</h3>
 				<div class="p-6 bg-psan-green/5 border border-psan-green/20 rounded-[32px] space-y-6">
-					{#if data.dbStatus.type === 'turso'}
+					{#if dbStatus.type === 'turso'}
 						<div class="p-4 bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 rounded-2xl border border-amber-200 dark:border-amber-800 text-xs font-bold mb-4">
 							<p>💡 **Turso を使用中の方へ**: 保存先を **"SQLite Database"** に設定することを強くおすすめします。</p>
 						</div>
@@ -398,7 +401,7 @@
 
 			<section class="card-psan p-8 space-y-6 border-psan-green/20 border-2">
 				<h3 class="text-xl font-black text-psan-green italic uppercase">Backup Settings</h3>
-				{#if data.dbStatus.type === 'turso'}
+				{#if dbStatus.type === 'turso'}
 					<div class="p-4 bg-psan-green/10 text-psan-green rounded-2xl border border-psan-green/20 text-xs font-bold">
 						<p>ℹ️ 現在 Turso (リモートDB) を使用中のため、バックアップは Turso のダッシュボード側で管理されます。</p>
 					</div>

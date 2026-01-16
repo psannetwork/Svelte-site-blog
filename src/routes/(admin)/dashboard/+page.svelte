@@ -1,10 +1,13 @@
 <script lang="ts">
+	import { untrack } from 'svelte';
 	let { data } = $props();
 
 	const chartHeight = 120;
 	const chartWidth = 600;
 
-	const weekly = $derived([...data.stats.weekly].reverse());
+	// data全体をリアクティブに追従させるための計算
+	const stats = $derived(data.stats);
+	const weekly = $derived([...stats.weekly].reverse());
 	const maxHits = $derived(Math.max(...weekly.map(d => d.hits), 10));
 	
 	const points = $derived(weekly.map((day, i) => {
@@ -35,16 +38,16 @@
 			</div>
 			<div class="relative z-10">
 				<div class="text-[10px] font-black tracking-[0.2em] uppercase opacity-60 mb-2">Total Access</div>
-				<div class="text-4xl md:text-6xl font-black tracking-tighter">{data.stats.totalHits.toLocaleString()}</div>
+				<div class="text-4xl md:text-6xl font-black tracking-tighter">{stats.totalHits.toLocaleString()}</div>
 			</div>
 		</div>
 		<div class="card-psan p-6 md:p-8">
 			<div class="text-[10px] font-black tracking-[0.2em] uppercase text-psan-green mb-2">Today's Hits</div>
-			<div class="text-4xl md:text-5xl font-black text-main tracking-tighter">{data.stats.todayHits.toLocaleString()}</div>
+			<div class="text-4xl md:text-5xl font-black text-main tracking-tighter">{stats.todayHits.toLocaleString()}</div>
 		</div>
 		<div class="card-psan p-6 md:p-8">
 			<div class="text-[10px] font-black tracking-[0.2em] uppercase text-psan-pink mb-2">Today's Uniques</div>
-			<div class="text-4xl md:text-5xl font-black text-main tracking-tighter">{data.stats.todayUniques.toLocaleString()}</div>
+			<div class="text-4xl md:text-5xl font-black text-main tracking-tighter">{stats.todayUniques.toLocaleString()}</div>
 		</div>
 	</div>
 
