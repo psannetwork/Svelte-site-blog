@@ -43,7 +43,7 @@ export const actions: Actions = {
 				settingsToUpdate[key] = val === "on" ? "false" : "true"; 
 			}
 			else if (checkboxKeys.includes(key)) { 
-				settingsToUpdate[key] = val === "on" ? "true" : "false"; 
+				settingsToUpdate[key] = (val === "on" || val === "true") ? "true" : "false"; 
 			}
 			else if (val !== null) { 
 				settingsToUpdate[key] = val.toString(); 

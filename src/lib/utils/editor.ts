@@ -42,7 +42,7 @@ export function editorJsToHtml(blocks: any[]) {
 					block.data.withBackground ? 'bg-slate-100 dark:bg-slate-800 p-6 md:p-16' : ''
 				].join(' ');
 				const caption = block.data.caption ? `<figcaption class="text-center text-xs mt-6 font-black opacity-30 uppercase tracking-widest">${block.data.caption}</figcaption>` : '';
-				html += `<figure class="my-20 overflow-hidden flex flex-col items-center"><img src="${block.data.file.url}" alt="${block.data.caption || ''}" class="${classes}" style="${customWidth} height: auto;">${caption}</figure>`;
+				html += `<figure class="my-20 overflow-hidden flex flex-col items-center"><img src="${block.data.file.url}" alt="${block.data.caption || ''}" class="${classes}" style="${customWidth} height: auto; aspect-ratio: auto;">${caption}</figure>`;
 				break;
 			case 'table':
 				let tableHtml = '<div class="overflow-x-auto my-10"><table class="w-full border-collapse border border-slate-200 dark:border-slate-700">';

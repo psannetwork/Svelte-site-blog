@@ -82,7 +82,7 @@ function initSchema(db: any) {
 			CREATE INDEX IF NOT EXISTS idx_notification_user ON notification(user_id);
 		`);
 
-		// カラム追加（既存DB用）
+		
 		try { db.exec("ALTER TABLE user ADD COLUMN avatar_url TEXT"); } catch(e) {}
 		try { db.exec("ALTER TABLE user ADD COLUMN notification_enabled INTEGER DEFAULT 1"); } catch(e) {}
 

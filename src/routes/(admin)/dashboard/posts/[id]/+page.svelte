@@ -11,7 +11,7 @@
 	let editor: any;
 	let formElement: HTMLFormElement;
 	
-	// 初期データをローカル変数に退避して "state_referenced_locally" 警告を回避
+	
 	let title = $state(initialPost.title);
 	let summary = $state(initialPost.summary || '');
 	let visibility = $state(initialPost.visibility);
@@ -112,21 +112,22 @@
 							customPicker: true
 						}
 					},
-									image: { 
-										class: Image, 
-										config: { 
-											endpoints: { byFile: '/api/upload' },
-											field: 'image',
-											types: 'image/*',
-											captionPlaceholder: 'キャプションを入力...'
-										} 
-									},
-									embed: { class: Embed, config: { services: { youtube: true, vimeo: true, twitter: true } } }				},
+					image: { 
+						class: Image, 
+						config: { 
+							endpoints: { byFile: '/api/upload' },
+							field: 'image',
+							types: 'image/*',
+							captionPlaceholder: 'キャプションを入力...'
+						} 
+					},
+					embed: { class: Embed, config: { services: { youtube: true, vimeo: true, twitter: true } } }
+				},
 				onReady: () => {
 					new Undo({ editor });
 				},
 				data: parsedData,
-				placeholder: 'Start writing...',
+				placeholder: '執筆を開始...',
 				defaultBlock: 'paragraph'
 			});
 

@@ -3,7 +3,7 @@ import { getFile } from '$lib/server/files';
 import type { RequestHandler } from './$types';
 
 export const GET: RequestHandler = async ({ params }) => {
-	// 拡張子がついている場合（.png等）を考慮してIDを抽出
+	
 	const id = params.id.split('.')[0];
 	const file = getFile(id);
 
@@ -13,7 +13,7 @@ export const GET: RequestHandler = async ({ params }) => {
 	}
 
 	if (file.storage_type === 'database' && file.data) {
-		// Buffer/Uint8Array を Blob に変換して型安全に配信
+		
 		const blob = new Blob([file.data as any], { type: file.mime_type || 'image/png' });
 		
 		return new Response(blob, {
@@ -24,7 +24,7 @@ export const GET: RequestHandler = async ({ params }) => {
 			}
 		});
 	} else if (file.storage_type === 'local' && file.path) {
-		// ローカル保存の場合は本来 static フォルダから直接配信されますが、
+		
 		// 万が一ここが呼ばれた場合のリダイレクトやフォールバック
 		return new Response(null, {
 			status: 302,
