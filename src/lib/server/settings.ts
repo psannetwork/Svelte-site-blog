@@ -77,26 +77,18 @@ export const getSettings = () => {
 	
 	try {
 		const result = db.prepare("SELECT key, value FROM site_settings").all();
-		
-		
-		console.log(`[SETTINGS DB] Source: ${dbStatus.type}, Type: ${typeof result}, Array: ${Array.isArray(result)}`);
-		
 		const rows = Array.isArray(result) ? result : (result && typeof result === 'object' && 'rows' in result ? (result as any).rows : []);
 		
 		if (rows && rows.length > 0) {
 			const dbSettings: Record<string, string> = {};
 			rows.forEach((row: any) => {
 				if (row && typeof row === 'object') {
-					
 					const k = row.key ?? row.KEY ?? row[0];
 					const v = row.value ?? row.VALUE ?? row[1];
 					if (k !== undefined) dbSettings[String(k)] = v !== null ? String(v) : "";
 				}
 			});
 			settings = { ...settings, ...dbSettings };
-			console.log(`[SETTINGS OK] Loaded ${Object.keys(dbSettings).length} keys.`);
-		} else {
-			console.warn("[SETTINGS EMPTY] Using defaults.");
 		}
 	} catch (e) {
 		console.error(`[SETTINGS ERROR] ${dbStatus.type}:`, e);

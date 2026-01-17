@@ -6,7 +6,6 @@
 	import { theme } from '$lib/theme.svelte';
 	
 	let { data, form } = $props();
-	const { settings: initialSettings, dbStatus } = data;
 	
 	let formElement: HTMLFormElement;
 	let isSaving = $state(false);
@@ -14,15 +13,18 @@
 	let showSuccess = $state(false);
 	let isUploadingIcon = $state(false);
 
-	let siteTitle = $state(initialSettings?.site_title || '');
-	let siteDescription = $state(initialSettings?.site_description || '');
-	let accentColor = $state(initialSettings?.accent_color || '#00CC99');
-	let siteLanguage = $state(initialSettings?.site_language || 'ja');
-	let allowedExtensions = $state(initialSettings?.allowed_extensions || '.jpg,.jpeg,.png,.gif,.webp,.svg,.ico');
-	let siteIconUrl = $state(initialSettings?.site_icon_url || '');
+	// 初期値を保持（ユーザーの変更検知用）
+	const baseSettings = { ...data.settings };
+
+	let siteTitle = $state(data.settings?.site_title || '');
+	let siteDescription = $state(data.settings?.site_description || '');
+	let accentColor = $state(data.settings?.accent_color || '#00CC99');
+	let siteLanguage = $state(data.settings?.site_language || 'ja');
+	let allowedExtensions = $state(data.settings?.allowed_extensions || '.jpg,.jpeg,.png,.gif,.webp,.svg,.ico');
+	let siteIconUrl = $state(data.settings?.site_icon_url || '');
 
 	let userEdited = $state<Record<string, boolean>>({});
-	let lastSyncTime = $state(parseInt(initialSettings?._updated || '0'));
+	let lastSyncTime = $state(parseInt(data.settings?._updated || '0'));
 
 	function markEdited(key: string) {
 		userEdited[key] = true;
@@ -40,9 +42,11 @@
 				
 				if (newTime > lastSyncTime) {
 					let changed = false;
-					const sync = (key: string, cur: any, val: any, set: (v: any) => void) => {
-						if (!userEdited[key] && cur !== val) {
-							set(val);
+					
+					const sync = (key: string, current: any, remote: any, setter: (v: any) => void) => {
+						// ユーザーが一度も触っておらず、かつ現在の値が初期ロード時と同じなら更新
+						if (!userEdited[key] && current === (baseSettings[key] || '')) {
+							setter(remote);
 							changed = true;
 						}
 					};
@@ -56,6 +60,7 @@
 					Object.entries(editors).forEach(([id, e]) => {
 						const key = id === 'home' ? 'home_hero_content' : id === 'about' ? 'about_page_content' : id === 'error404' ? 'error_404_content' : 'error_500_content';
 						const content = s[key];
+						
 						if (e.instance && content && !e.instance.isFocused && !isSaving) {
 							try {
 								const parsed = JSON.parse(content);
@@ -69,11 +74,12 @@
 							} catch (err) {}
 						}
 					});
+					
 					lastSyncTime = newTime;
-					if (changed) console.log('[SETTINGS] synced.');
+					if (changed) console.log('[SETTINGS] Data synced.');
 				}
 			}
-		} catch (e) {
+		} catch (err) {
 		} finally {
 			isRefreshing = false;
 		}
