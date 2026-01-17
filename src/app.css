@@ -110,27 +110,28 @@
 }
 
 /* エディタ内での画像表示調整 */
+.ce-block .ce-block__content img {
+  border-radius: 20px;
+  transition: all 0.3s ease;
+  max-width: 70%; /* 標準は少し小さく */
+  margin: 0 auto;
+  display: block;
+}
+
 .ce-block--stretched .ce-block__content {
   max-width: 100% !important;
 }
 
 .ce-block--stretched img {
+  max-width: 100% !important;
   width: 100% !important;
 }
 
 .image-tool__image {
   border-radius: 20px;
   overflow: hidden;
-  transition: all 0.3s ease;
-  display: inline-block;
-  max-width: 100%;
-}
-
-.image-tool__image-picture img {
-  display: block;
-  max-width: 100%;
-  height: auto !important;
-  object-fit: contain;
+  display: flex;
+  justify-content: center;
 }
 
 /* 選択時のハイライト */

@@ -9,7 +9,15 @@ export const load: PageServerLoad = async ({ locals }) => {
 
 	const homePage = db.prepare("SELECT content, raw_json FROM pages WHERE id = 'home'").get() as any;
 	
-	const homeHtml = homePage?.raw_json ? editorJsToHtml(JSON.parse(homePage.raw_json).blocks) : (homePage?.content || '');
+	let homeHtml = homePage?.content || '';
+	if (homePage?.raw_json) {
+		try {
+			const parsed = JSON.parse(homePage.raw_json);
+			if (parsed && parsed.blocks) homeHtml = editorJsToHtml(parsed.blocks);
+		} catch (e) {
+			console.error('[HOME LOAD ERROR] JSON parse failed:', e);
+		}
+	}
 
 	if (user?.role === 'admin' || user?.role === 'editor') {
 		posts = db.prepare(`
