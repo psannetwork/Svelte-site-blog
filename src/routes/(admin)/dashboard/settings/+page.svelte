@@ -204,11 +204,21 @@
 	}
 
 	async function runMigration(target: 'local' | 'database') {
+		if (!confirm(`全ての画像を ${target === 'local' ? 'ローカル' : 'データベース'} へ移動しますか？この操作には時間がかかる場合があります。`)) return;
+		
 		migrationStatus.active = true;
 		migrationStatus.progress = 10;
-		migrationStatus.message = '移行準備中...';
+		migrationStatus.message = '設定を保存中...';
 
 		try {
+			// 先に設定を保存して、storage_typeを確定させる
+			const fd = new FormData(formElement);
+			fd.set('storage_type', target);
+			await saveAll(); 
+
+			migrationStatus.progress = 30;
+			migrationStatus.message = 'ファイル移動を開始...';
+
 			const res = await fetch('/api/settings/migrate-storage', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
@@ -217,11 +227,13 @@
 			const result = await res.json();
 			if (result.success) {
 				migrationStatus.progress = 100;
-				migrationStatus.message = `移行完了: ${result.migrated} 個のファイルを移動しました。`;
-				setTimeout(() => { migrationStatus.active = false; }, 3000);
+				migrationStatus.message = `移行完了: ${result.migrated}/${result.total} 個のファイルを移動しました。`;
+				await invalidateAll();
+				setTimeout(() => { migrationStatus.active = false; }, 5000);
 			}
 		} catch (e) {
-			migrationStatus.message = '移行中にエラーが発生しました。';
+			migrationStatus.message = 'エラーが発生しました。';
+			console.error(e);
 		}
 	}
 
