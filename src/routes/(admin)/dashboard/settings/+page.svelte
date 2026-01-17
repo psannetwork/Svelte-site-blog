@@ -21,6 +21,13 @@
 	let siteLanguage = $state(data.settings?.site_language || 'ja');
 	let allowedExtensions = $state(data.settings?.allowed_extensions || '.jpg,.jpeg,.png,.gif,.webp,.svg,.ico');
 	let siteIconUrl = $state(data.settings?.site_icon_url || '');
+	let storageType = $state(data.settings?.storage_type || 'local');
+
+	let migrationStatus = $state<{ active: boolean, progress: number, message: string }>({
+		active: false,
+		progress: 0,
+		message: ''
+	});
 
 	let userEdited = $state<Record<string, boolean>>({});
 	let lastSyncTime = $state(0);
@@ -194,6 +201,28 @@
 			defaultBlock: 'paragraph'
 		});
 		e.instance = inst;
+	}
+
+	async function runMigration(target: 'local' | 'database') {
+		migrationStatus.active = true;
+		migrationStatus.progress = 10;
+		migrationStatus.message = '移行準備中...';
+
+		try {
+			const res = await fetch('/api/settings/migrate-storage', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ target })
+			});
+			const result = await res.json();
+			if (result.success) {
+				migrationStatus.progress = 100;
+				migrationStatus.message = `移行完了: ${result.migrated} 個のファイルを移動しました。`;
+				setTimeout(() => { migrationStatus.active = false; }, 3000);
+			}
+		} catch (e) {
+			migrationStatus.message = '移行中にエラーが発生しました。';
+		}
 	}
 
 	async function saveAll() {
@@ -415,10 +444,40 @@
 							<p>💡 **Turso を使用中の方へ**: 保存先を **"SQLite Database"** に設定することを強くおすすめします。</p>
 						</div>
 					{/if}
-					<select name="storage_type" class="bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-500 rounded-xl text-xs font-black p-3 text-main dark:text-white">
-						<option value="local" selected={data.settings?.storage_type === 'local'}>Local Filesystem</option>
-						<option value="database" selected={data.settings?.storage_type === 'database'}>SQLite Database</option>
-					</select>
+					
+					<div class="flex flex-col gap-4">
+						<div class="flex flex-col md:flex-row md:items-center gap-6">
+							<select name="storage_type" bind:value={storageType} class="bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-500 rounded-xl text-xs font-black p-3 text-main dark:text-white" onchange={() => markEdited('storage_type')}>
+								<option value="local">Local Filesystem</option>
+								<option value="database">SQLite Database</option>
+							</select>
+
+							{#if storageType === 'database'}
+								<button type="button" onclick={() => runMigration('database')} class="text-[10px] font-black px-6 py-3 bg-psan-green text-white rounded-xl uppercase hover:scale-105 transition-all shadow-lg shadow-psan-green/20">
+									ローカルの画像をDBへ全て移動
+								</button>
+							{:else}
+								<button type="button" onclick={() => runMigration('local')} class="text-[10px] font-black px-6 py-3 bg-psan-pink text-white rounded-xl uppercase hover:scale-105 transition-all shadow-lg shadow-psan-pink/20">
+									DBの画像をローカルへ全て移動
+								</button>
+							{/if}
+						</div>
+						<p class="text-[10px] text-muted font-bold italic">
+							※ 保存先を切り替えただけでは画像は移動しません。ボタンを押してデータを同期してください。
+						</p>
+					</div>
+
+					{#if migrationStatus.active}
+						<div class="mt-4 space-y-2">
+							<div class="flex justify-between text-[10px] font-black uppercase tracking-widest text-muted">
+								<span>{migrationStatus.message}</span>
+								<span>{migrationStatus.progress}%</span>
+							</div>
+							<div class="w-full h-2 bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden">
+								<div class="h-full bg-psan-green transition-all duration-500" style="width: {migrationStatus.progress}%"></div>
+							</div>
+						</div>
+					{/if}
 				</div>
 			</section>
 

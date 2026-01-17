@@ -26,13 +26,13 @@ export async function saveFile(file: File, type: 'avatar' | 'post' | 'icon' | 'm
 
 	if (storageType === 'database') {
 		db.prepare(`INSERT INTO file_storage (id, filename, mime_type, size, data, path, storage_type, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`).run(id, filename, file.type, file.size, buffer, relativePath, 'database', Date.now());
-		return { id, filename, mime_type: file.type, size: file.size, url: `/${relativePath}` };
+		return { id, filename, mime_type: file.type, size: file.size, url: `/api/files/${id}` };
 	} else {
 		const uploadDir = join(process.cwd(), 'static', relativeDir);
 		if (!existsSync(uploadDir)) mkdirSync(uploadDir, { recursive: true });
 		writeFileSync(join(uploadDir, filename), buffer);
 		db.prepare(`INSERT INTO file_storage (id, filename, mime_type, size, path, storage_type, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)`).run(id, filename, file.type, file.size, relativePath, 'local', Date.now());
-		return { id, filename, mime_type: file.type, size: file.size, url: `/${relativePath}` };
+		return { id, filename, mime_type: file.type, size: file.size, url: `/api/files/${id}` };
 	}
 }
 

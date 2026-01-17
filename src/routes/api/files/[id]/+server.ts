@@ -1,36 +1,36 @@
 import { error } from '@sveltejs/kit';
 import { getFile } from '$lib/server/files';
+import { readFileSync, existsSync } from 'fs';
+import { join } from 'path';
 import type { RequestHandler } from './$types';
 
 export const GET: RequestHandler = async ({ params }) => {
-	
 	const id = params.id.split('.')[0];
 	const file = getFile(id);
 
-	if (!file) {
-		console.warn(`[FILES] File not found: ${id}`);
-		throw error(404, 'File not found');
-	}
+	if (!file) throw error(404);
 
 	if (file.storage_type === 'database' && file.data) {
-		
-		const blob = new Blob([file.data as any], { type: file.mime_type || 'image/png' });
-		
-		return new Response(blob, {
+		return new Response(file.data, {
 			headers: {
-				'Content-Type': file.mime_type || 'image/png',
+				'Content-Type': file.mime_type,
 				'Content-Length': file.size.toString(),
 				'Cache-Control': 'public, max-age=31536000, immutable'
 			}
 		});
 	} else if (file.storage_type === 'local' && file.path) {
-		
-		// 万が一ここが呼ばれた場合のリダイレクトやフォールバック
-		return new Response(null, {
-			status: 302,
-			headers: { 'Location': `/${file.path}` }
-		});
+		const fullPath = join(process.cwd(), 'static', file.path);
+		if (existsSync(fullPath)) {
+			const buffer = readFileSync(fullPath);
+			return new Response(buffer, {
+				headers: {
+					'Content-Type': file.mime_type,
+					'Content-Length': file.size.toString(),
+					'Cache-Control': 'public, max-age=31536000, immutable'
+				}
+			});
+		}
 	}
 
-	throw error(404, 'File data not available');
+	throw error(404);
 };
