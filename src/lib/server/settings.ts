@@ -83,36 +83,46 @@ export const setSettings = (settings: Record<string, string>) => {
 	}
 };
 
+import db, { getDbStatus } from "./db";
+
+export const DEFAULT_SETTINGS: Record<string, string> = {
+// ... (略)
+};
+
+// ... (getSetting, setSetting, setSettings はそのまま)
+
 export const getSettings = () => {
 	let settings = { ...DEFAULT_SETTINGS };
+	const dbStatus = getDbStatus();
+	
 	try {
 		const result = db.prepare("SELECT key, value FROM site_settings").all();
+		
+		// デバッグログ
+		console.log(`[SETTINGS DEBUG] Source: ${dbStatus.type}, Rows: ${Array.isArray(result) ? result.length : 'ResultSet'}`);
+		
 		const rows = Array.isArray(result) ? result : (result && typeof result === 'object' && 'rows' in result ? (result as any).rows : []);
 		
 		if (rows && rows.length > 0) {
 			const dbSettings: Record<string, string> = {};
 			rows.forEach((row: any) => {
-				if (row && typeof row === 'object') {
-					const k = row.key ?? row[0];
-					const v = row.value ?? row[1];
-					if (k !== undefined) dbSettings[k] = v ?? "";
-				}
+				// カラム名（key, value）でアクセスを試み、ダメなら添字でアクセス
+				const k = row.key !== undefined ? row.key : row[0];
+				const v = row.value !== undefined ? row.value : row[1];
+				if (k !== undefined) dbSettings[k] = v ?? "";
 			});
 			
 			settings = { ...settings, ...dbSettings };
+			console.log(`[SETTINGS] Keys found: ${Object.keys(dbSettings).join(', ').substring(0, 100)}...`);
+		} else {
+			console.warn(`[SETTINGS] No rows found in ${dbStatus.type} database.`);
 		}
 	} catch (e) {
-		console.error("[SETTINGS] Error in getSettings, using defaults:", e);
+		console.error(`[SETTINGS] Error fetching from ${dbStatus.type}:`, e);
 	}
 	
-	// DBから取得した時刻があればそれを使う（なければ0）
 	const syncTime = settings.settings_updated_at || "0";
 	settings._updated = syncTime;
-	
-	if (syncTime !== "0") {
-		console.log(`[SETTINGS] Data sync time: ${new Date(parseInt(syncTime)).toLocaleString()}`);
-	}
-	
 	return settings;
 };
 

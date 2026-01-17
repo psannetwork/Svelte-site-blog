@@ -141,16 +141,16 @@ function createPreparedStatement(sql: string, dbInstance: any) {
 	return {
 		run: (...params: any[]) => {
 			const args = (params.length === 1 && Array.isArray(params[0])) ? params[0] : params;
-			return stmt.run(args);
+			return args.length > 0 ? stmt.run(args) : stmt.run();
 		},
 		all: (...params: any[]) => {
 			const args = (params.length === 1 && Array.isArray(params[0])) ? params[0] : params;
-			const result = stmt.all(args);
-			return Array.isArray(result) ? result : (result.rows || []);
+			const result = args.length > 0 ? stmt.all(args) : stmt.all();
+			return Array.isArray(result) ? result : (result?.rows || []);
 		},
 		get: (...params: any[]) => {
 			const args = (params.length === 1 && Array.isArray(params[0])) ? params[0] : params;
-			const result = stmt.get(args);
+			const result = args.length > 0 ? stmt.get(args) : stmt.get();
 			if (result && !Array.isArray(result) && result.rows && result.rows.length > 0) {
 				return result.rows[0];
 			}
