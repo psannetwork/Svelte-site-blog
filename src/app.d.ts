@@ -7,6 +7,9 @@ declare global {
 			user: User | null;
 			session: Session | null;
 		}
+		interface PageData {
+			pageTitle?: string;
+		}
 		
 		
 		

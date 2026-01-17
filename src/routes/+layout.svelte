@@ -2,6 +2,7 @@
 	import "../app.css";
 	import { onMount } from "svelte";
 	import { theme } from "$lib/theme.svelte";
+	import { page } from "$app/state";
 	let { children, data } = $props();
 
 	onMount(() => {
@@ -16,7 +17,7 @@
 </script>
 
 <svelte:head>
-	<title>{data.pageTitle ? `${data.pageTitle} | ` : ''}{data.settings?.site_title || 'Svelte Site Blog'}</title>
+	<title>{page.data.pageTitle ? `${page.data.pageTitle} | ` : ''}{data.settings?.site_title || 'Svelte Site Blog'}</title>
 	{#if data.settings?.site_description}
 		<meta name="description" content={data.settings.site_description} />
 	{/if}
