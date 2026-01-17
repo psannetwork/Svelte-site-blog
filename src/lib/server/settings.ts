@@ -33,7 +33,7 @@ export const getSetting = (key: string, defaultValue: string = ""): string => {
 	try {
 		const result = db.prepare("SELECT value FROM site_settings WHERE key = ?").get(key);
 		const row = (result && typeof result === 'object') ? result : null;
-		// カラム名が小文字・大文字どちらでも動くように
+		
 		const val = row ? (row.value ?? row.VALUE ?? row[0]) : null;
 		return val !== null ? String(val) : (DEFAULT_SETTINGS[key] ?? defaultValue);
 	} catch (e) {
@@ -78,7 +78,7 @@ export const getSettings = () => {
 	try {
 		const result = db.prepare("SELECT key, value FROM site_settings").all();
 		
-		// 取得内容のデバッグ
+		
 		console.log(`[SETTINGS DB] Source: ${dbStatus.type}, Type: ${typeof result}, Array: ${Array.isArray(result)}`);
 		
 		const rows = Array.isArray(result) ? result : (result && typeof result === 'object' && 'rows' in result ? (result as any).rows : []);
@@ -87,7 +87,7 @@ export const getSettings = () => {
 			const dbSettings: Record<string, string> = {};
 			rows.forEach((row: any) => {
 				if (row && typeof row === 'object') {
-					// 柔軟なキー取得
+					
 					const k = row.key ?? row.KEY ?? row[0];
 					const v = row.value ?? row.VALUE ?? row[1];
 					if (k !== undefined) dbSettings[String(k)] = v !== null ? String(v) : "";
@@ -114,7 +114,7 @@ export async function verifyTurnstile(token: string) {
 	formData.append("secret", secret);
 	formData.append("response", token);
 	try {
-		const res = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", { body: formData, method: "POST" });
+		const res = await fetch("https:
 		const outcome = await res.json();
 		return outcome.success;
 	} catch {

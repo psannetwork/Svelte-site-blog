@@ -75,10 +75,10 @@ export async function restoreBackup(filename: string) {
 	if (!existsSync(backupPath)) return { success: false, error: 'Backup not found' };
 
 	try {
-		// 1. 現在の接続を閉じてリセット
+		
 		resetDb();
 
-		// 2. ファイルを上書きコピー
+		
 		copyFileSync(backupPath, DB_PATH);
 
 		console.log(`[RESTORE] Database restored from ${filename}. Connection reset.`);

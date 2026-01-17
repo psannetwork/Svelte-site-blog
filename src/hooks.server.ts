@@ -25,7 +25,7 @@ try {
 }
 
 export const handle: Handle = async ({ event, resolve }) => {
-	// 自動バックアップチェック
+	
 	const enableBackup = getSetting("enable_backup") === "true";
 	if (enableBackup) {
 		const interval = parseInt(getSetting("backup_interval", "24")) * 60 * 60 * 1000;
@@ -62,14 +62,14 @@ export const handle: Handle = async ({ event, resolve }) => {
 	event.locals.user = user;
 	event.locals.session = session;
 
-	// アクセスカウントの記録
+	
 	if (!event.url.pathname.startsWith("/api") && !event.url.pathname.startsWith("/dashboard") && !event.url.pathname.startsWith("/uploads")) {
 		const today = new Date().toISOString().split('T')[0];
 		const isNewVisit = !event.cookies.get('visited_today');
 		const visitorIncr = isNewVisit ? 1 : 0;
 		
 		try {
-			// バインド引数を変数に受けて確実に渡す
+			
 			db.prepare(`
 				INSERT INTO analytics (date, hits, unique_visitors) 
 				VALUES (?, 1, ?) 
@@ -82,12 +82,12 @@ export const handle: Handle = async ({ event, resolve }) => {
 				event.cookies.set('visited_today', 'true', { path: '/', maxAge: 60 * 60 * 24, httpOnly: true });
 			}
 		} catch (e) {
-			// 解析エラーはログ出力のみに留め、リクエスト処理は続行する
+			
 			console.error('[ANALYTICS ERROR]', e);
 		}
 	}
 
-	// サイト公開設定のチェック
+	
 	const isSitePublic = getSetting("is_site_public", "true") === "true";
 	const isAuthPage = event.url.pathname.startsWith("/auth");
 	const isSetupPage = event.url.pathname.startsWith("/setup");

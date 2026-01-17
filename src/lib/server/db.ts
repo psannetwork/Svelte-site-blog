@@ -11,7 +11,6 @@ let _dbStatus = {
 	url: ''
 };
 
-// 接続
 function initializeDb(): any {
 	const tursoUrl = env.TURSO_DB_URL;
 	const tursoToken = env.TURSO_DB_AUTH_TOKEN;
@@ -42,7 +41,6 @@ function initializeDb(): any {
 	}
 }
 
-// 初期化
 function initSchema(db: any) {
 	if (!db) return;
 	try {

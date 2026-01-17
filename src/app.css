@@ -109,29 +109,25 @@
   border-color: #334155 !important;
 }
 
-/* Editor.js 画像リサイズ対応 */
-.ce-block--selected .ce-block__content img {
-  outline: 3px solid var(--psan-green);
+/* エディタ内での画像リサイズ表示の強化 */
+.ce-block--stretched .ce-block__content {
+  max-width: 100% !important;
 }
 
-.cdx-image- record img {
-  max-width: 100%;
-  height: auto;
-  display: block;
+.ce-block--stretched img {
+  width: 100% !important;
+  border-radius: 20px;
 }
 
-/* エディタ内での画像サイズを調整可能にする（簡易版） */
-.image-tool__image-picture {
-  resize: both;
-  overflow: auto;
-  max-width: 100%;
-  display: inline-block;
+.image-tool__image {
+  border-radius: 20px;
+  overflow: hidden;
+  transition: all 0.3s ease;
 }
 
 .image-tool__image-picture img {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
+  max-width: 100%;
+  height: auto !important;
 }
 
 /* Editor.js 編集中の見出しスタイル */

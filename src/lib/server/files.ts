@@ -1,6 +1,6 @@
 import db from './db';
 import { getSetting } from './settings';
-import { writeFileSync, readFileSync, mkdirSync, existsSync, unlinkSync } from 'fs';
+import { writeFileSync, existsSync, mkdirSync, unlinkSync } from 'fs';
 import { join } from 'path';
 import { generateIdFromEntropySize } from 'lucia';
 
@@ -12,16 +12,12 @@ export interface FileInfo {
 	url: string;
 }
 
-/**
- * ファイルを保存する
- */
+// ファイル保存
 export async function saveFile(file: File, type: 'avatar' | 'post' | 'icon' | 'misc', userId: string): Promise<FileInfo> {
 	const storageType = getSetting('storage_type', 'local');
 	const id = generateIdFromEntropySize(15);
 	const ext = file.name.split('.').pop()?.toLowerCase();
 	const filename = `${Date.now()}-${generateIdFromEntropySize(5)}.${ext}`;
-	const mimeType = file.type;
-	const size = file.size;
 	const buffer = Buffer.from(await file.arrayBuffer());
 
 	const subDir = type === 'avatar' ? `avatars/${userId}` : type === 'icon' ? 'site' : `posts/${userId}`;
@@ -29,49 +25,18 @@ export async function saveFile(file: File, type: 'avatar' | 'post' | 'icon' | 'm
 	const relativePath = join(relativeDir, filename).replace(/\\/g, '/');
 
 	if (storageType === 'database') {
-		db.prepare(`
-			INSERT INTO file_storage (id, filename, mime_type, size, data, path, storage_type, created_at)
-			VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-		`).run(id, filename, mimeType, size, buffer, relativePath, 'database', Date.now());
-
-		return {
-			id,
-			filename,
-			mime_type: mimeType,
-			size,
-			url: `/${relativePath}` 
-		};
+		db.prepare(`INSERT INTO file_storage (id, filename, mime_type, size, data, path, storage_type, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`).run(id, filename, file.type, file.size, buffer, relativePath, 'database', Date.now());
+		return { id, filename, mime_type: file.type, size: file.size, url: `/${relativePath}` };
 	} else {
-		// ローカル保存
 		const uploadDir = join(process.cwd(), 'static', relativeDir);
-
-		if (!existsSync(uploadDir)) {
-			mkdirSync(uploadDir, { recursive: true });
-		}
-
-		const filePath = join(uploadDir, filename);
-		const relativePath = join(relativeDir, filename);
-		
-		writeFileSync(filePath, buffer);
-
-		db.prepare(`
-			INSERT INTO file_storage (id, filename, mime_type, size, path, storage_type, created_at)
-			VALUES (?, ?, ?, ?, ?, ?, ?)
-		`).run(id, filename, mimeType, size, relativePath, 'local', Date.now());
-
-		return {
-			id,
-			filename,
-			mime_type: mimeType,
-			size,
-			url: `/${relativePath}`
-		};
+		if (!existsSync(uploadDir)) mkdirSync(uploadDir, { recursive: true });
+		writeFileSync(join(uploadDir, filename), buffer);
+		db.prepare(`INSERT INTO file_storage (id, filename, mime_type, size, path, storage_type, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)`).run(id, filename, file.type, file.size, relativePath, 'local', Date.now());
+		return { id, filename, mime_type: file.type, size: file.size, url: `/${relativePath}` };
 	}
 }
 
-/**
- * ファイルを取得する (DB保存用)
- */
+// ファイル取得
 export function getFile(id: string) {
 	return db.prepare("SELECT * FROM file_storage WHERE id = ?").get(id) as {
 		id: string;
@@ -84,39 +49,23 @@ export function getFile(id: string) {
 	} | undefined;
 }
 
-/**
- * ファイルを削除する
- */
+// ファイル削除
 export function deleteFile(id: string) {
 	const file = getFile(id);
 	if (!file) return;
-
 	if (file.storage_type === 'local' && file.path) {
 		const filePath = join(process.cwd(), 'static', file.path);
-		if (existsSync(filePath)) {
-			unlinkSync(filePath);
-		}
+		if (existsSync(filePath)) unlinkSync(filePath);
 	}
-
 	db.prepare("DELETE FROM file_storage WHERE id = ?").run(id);
 }
 
-/**
- * 投稿に紐づく画像を削除する (現在は簡略化のため、ユーザー単位のフォルダごと削除するロジックなどは慎重に行う必要がありますが、
- * ここではDBベースの削除を優先的に実装します)
- */
 export function cleanupPostImages(postId: string) {
-	
-	// 現在のスキーマでは難しいため、スタブとして残すか、将来的な拡張に備えます。
-	console.log(`Cleanup for post ${postId} requested.`);
+	console.log(`Cleanup post ${postId}`);
 }
 
-/**
- * ユーザーに紐づく全ファイルを削除する
- */
+// ユーザーの全ファイル削除
 export function cleanupUserFiles(userId: string) {
 	const files = db.prepare("SELECT id FROM file_storage WHERE path LIKE ?").all(`%/${userId}/%`) as { id: string }[];
-	for (const file of files) {
-		deleteFile(file.id);
-	}
+	for (const file of files) deleteFile(file.id);
 }
