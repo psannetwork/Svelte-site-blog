@@ -9,14 +9,21 @@ import type { PageServerLoad, Actions } from "./$types";
 export const load: PageServerLoad = async ({ locals, depends }) => {
 	if (!locals.user || locals.user.role !== "admin") throw redirect(302, "/dashboard");
 	
-	// 設定更新時に再フェッチを強制するための登録
-	depends('app:settings');
+	try {
+		depends('app:settings');
+		const settings = getSettings();
+		const backups = listBackups();
+		const dbStatus = getDbStatus();
 
-	return { 
-		settings: getSettings(), 
-		backups: listBackups(),
-		dbStatus: getDbStatus()
-	};
+		return { 
+			settings, 
+			backups,
+			dbStatus
+		};
+	} catch (e) {
+		console.error('[SETTINGS LOAD ERROR]', e);
+		throw e;
+	}
 };
 
 export const actions: Actions = {

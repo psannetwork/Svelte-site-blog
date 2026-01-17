@@ -3,9 +3,9 @@
 	import { onMount } from 'svelte';
 	import { invalidateAll } from '$app/navigation';
 	import { editorI18n } from '$lib/utils/editor_i18n';
-	import { theme } from '$lib/theme.svelte';
 	
 	let { data, form } = $props();
+	const { dbStatus } = data;
 	
 	let formElement: HTMLFormElement;
 	let isSaving = $state(false);
@@ -13,7 +13,6 @@
 	let showSuccess = $state(false);
 	let isUploadingIcon = $state(false);
 
-	// 初期値を保持（ユーザーの変更検知用）
 	const baseSettings = { ...data.settings };
 
 	let siteTitle = $state(data.settings?.site_title || '');
@@ -42,9 +41,7 @@
 				
 				if (newTime > lastSyncTime) {
 					let changed = false;
-					
 					const sync = (key: string, current: any, remote: any, setter: (v: any) => void) => {
-						// ユーザーが一度も触っておらず、かつ現在の値が初期ロード時と同じなら更新
 						if (!userEdited[key] && current === (baseSettings[key] || '')) {
 							setter(remote);
 							changed = true;
@@ -60,8 +57,7 @@
 					Object.entries(editors).forEach(([id, e]) => {
 						const key = id === 'home' ? 'home_hero_content' : id === 'about' ? 'about_page_content' : id === 'error404' ? 'error_404_content' : 'error_500_content';
 						const content = s[key];
-						
-						if (e.instance && content && !e.instance.isFocused && !isSaving) {
+						if (e.instance && content && !isSaving) {
 							try {
 								const parsed = JSON.parse(content);
 								e.instance.isReady.then(async () => {
@@ -74,12 +70,10 @@
 							} catch (err) {}
 						}
 					});
-					
 					lastSyncTime = newTime;
-					if (changed) console.log('[SETTINGS] Data synced.');
+					if (changed) console.log('[SETTINGS] synced.');
 				}
 			}
-		} catch (err) {
 		} finally {
 			isRefreshing = false;
 		}
@@ -138,7 +132,6 @@
 			const res = await fetch('/api/upload?type=icon', { method: 'POST', body: formData });
 			const result = await res.json();
 			if (result.success) siteIconUrl = result.file.url;
-		} catch (err) {
 		} finally { isUploadingIcon = false; }
 	}
 
@@ -162,11 +155,11 @@
 		const ColorPlugin = (await import('editorjs-text-color-plugin')).default;
 		const Undo = (await import('editorjs-undo')).default;
 
-		let parsedData: { blocks: any[] } = { blocks: [] };
+		let parsedData = { blocks: [] };
 		try {
 			if (initialData) {
-				const data = JSON.parse(initialData);
-				if (data && data.blocks) parsedData = data;
+				const d = JSON.parse(initialData);
+				if (d && d.blocks) parsedData = d;
 			}
 		} catch (err) {}
 
@@ -174,7 +167,7 @@
 			parsedData.blocks.push({ type: 'paragraph', data: { text: '' } });
 		}
 
-		e.instance = new EditorJS({
+		const inst = new EditorJS({
 			holder: e.holder,
 			i18n: siteLanguage === 'ja' ? editorI18n : undefined,
 			tools: {
@@ -184,11 +177,12 @@
 				color: { class: ColorPlugin, config: { colorCollections: ['#00CC99', '#EB2D8C', '#1A1A1A', '#FF1313', '#2388FF', '#FFD300'], type: 'text', customPicker: true } },
 				image: { class: Image, config: { endpoints: { byFile: '/api/upload' } } }
 			},
-			onReady: () => { new Undo({ editor: e.instance }); },
+			onReady: () => { new Undo({ editor: inst }); },
 			data: parsedData,
-			placeholder: '構成中...',
+			placeholder: 'Start...',
 			defaultBlock: 'paragraph'
 		});
+		e.instance = inst;
 	}
 
 	async function saveAll() {
@@ -215,14 +209,13 @@
 				turnstile_secret_key: (document.getElementById('turnstile_secret_key') as HTMLInputElement)?.value || ''
 			};
 
-			const savePromises = Object.entries(editors).map(async ([id, e]) => {
+			for (const [id, e] of Object.entries(editors)) {
 				if (e.instance) {
 					const saved = await e.instance.save();
 					const key = id === 'home' ? 'home_hero_content' : id === 'about' ? 'about_page_content' : id === 'error404' ? 'error_404_content' : 'error_500_content';
 					updates[key] = JSON.stringify(saved);
 				}
-			});
-			await Promise.all(savePromises);
+			}
 
 			const res = await fetch('/api/settings', {
 				method: 'POST',
@@ -262,11 +255,8 @@
 		return () => {
 			window.removeEventListener('keydown', handleKeydown);
 			Object.values(editors).forEach(e => {
-				if (e.instance) {
-					const inst = e.instance;
-					if (typeof inst.destroy === 'function') {
-						inst.isReady.then(() => inst.destroy()).catch(() => {});
-					}
+				if (e.instance && typeof e.instance.destroy === 'function') {
+					e.instance.isReady.then(() => e.instance.destroy()).catch(() => {});
 				}
 			});
 		};
@@ -311,15 +301,9 @@
 			</div>
 		</section>
 
-		{#if form?.success && form?.message}
-			<div class="bg-psan-green/10 border-2 border-psan-green text-psan-green p-6 rounded-[32px] animate-in zoom-in duration-300">
-				<div class="flex items-center gap-4">
-					<svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-					<div>
-						<p class="font-black uppercase tracking-widest text-sm">Action Successful</p>
-						<p class="font-bold text-xs opacity-80">{form.message}</p>
-					</div>
-				</div>
+		{#if form?.message}
+			<div class="bg-psan-pink/10 border-2 border-psan-pink text-psan-pink p-6 rounded-[32px]">
+				<p class="font-bold text-xs">{form.message}</p>
 			</div>
 		{/if}
 
@@ -427,9 +411,59 @@
 			<div class="space-y-8">
 				<div class="card-psan p-8 space-y-6"><h3 class="text-xl font-black italic uppercase">Home Page</h3><div id="editor-home" class="text-main bg-white dark:bg-slate-900 rounded-[32px] p-4 border border-slate-200 dark:border-slate-800"></div></div>
 				<div class="card-psan p-8 space-y-6"><h3 class="text-xl font-black italic uppercase">About Page</h3><div id="editor-about" class="text-main bg-white dark:bg-slate-900 rounded-[32px] p-4 border border-slate-200 dark:border-slate-800"></div></div>
+				<div class="grid md:grid-cols-2 gap-8">
+					<div class="card-psan p-6 space-y-4">
+						<h3 class="text-[10px] font-black text-muted uppercase">404 Error</h3>
+						<div id="editor-404" class="text-main bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200 dark:border-slate-800"></div>
+					</div>
+					<div class="card-psan p-6 space-y-4">
+						<h3 class="text-[10px] font-black text-muted uppercase">500 Error</h3>
+						<div id="editor-500" class="text-main bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200 dark:border-slate-800"></div>
+					</div>
+				</div>
 			</div>
 		</form>
+
+		<section class="card-psan p-8 space-y-8">
+			<div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+				<h3 class="text-xl font-black text-muted uppercase tracking-tighter italic">Backup History</h3>
+				<div class="flex flex-wrap gap-2">
+					<form method="POST" action="?/uploadBackup" enctype="multipart/form-data" use:enhance class="flex items-center gap-2">
+						<input type="file" name="file" accept=".db" class="text-[10px] font-bold text-muted bg-secondary p-1 rounded" />
+						<button type="submit" class="text-[10px] font-black px-4 py-2 bg-psan-pink text-white rounded-xl uppercase">Upload</button>
+					</form>
+					<form method="POST" action="?/createBackup" use:enhance>
+						<button type="submit" class="text-[10px] font-black px-6 py-2 bg-psan-green text-white rounded-xl">CREATE NOW</button>
+					</form>
+				</div>
+			</div>
+			<div class="space-y-3">
+				{#each data.backups as backup}
+					<div class="flex items-center justify-between p-4 bg-white dark:bg-slate-800 border border-slate-100 dark:border-none rounded-2xl shadow-sm">
+						<div>
+							<div class="text-xs font-black text-main">{backup.name}</div>
+							<div class="text-[10px] font-bold text-muted uppercase">{(backup.size / 1024 / 1024).toFixed(2)} MB • {new Date(backup.time).toLocaleString()}</div>
+						</div>
+						<div class="flex gap-2">
+							<a href="?/downloadBackup&filename={backup.name}" class="p-2 text-psan-green hover:bg-psan-green/10 rounded-lg"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg></a>
+							<form method="POST" action="?/restoreBackup" use:enhance>
+								<input type="hidden" name="filename" value={backup.name} />
+								<button type="submit" class="p-2 text-psan-pink hover:bg-psan-pink/10 rounded-lg" onclick={(e) => !confirm("復元しますか？") && e.preventDefault()}><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.001 0 01-15.357-2m15.357 2H15"/></svg></button>
+							</form>
+						</div>
+					</div>
+				{:else}
+					<p class="text-center py-10 text-[10px] font-black text-muted uppercase tracking-[0.2em]">No backups found.</p>
+				{/each}
+			</div>
+		</section>
 	</div>
+
+	{#if showSuccess}
+		<div class="fixed top-24 left-1/2 -translate-x-1/2 bg-psan-green text-white px-10 py-4 rounded-full font-black shadow-2xl z-[101] animate-in fade-in slide-in-from-top-4">
+			SAVED!
+		</div>
+	{/if}
 </div>
 
 <style>

@@ -74,7 +74,12 @@ function initSchema(db: any) {
 
 		const insertSetting = db.prepare("INSERT OR IGNORE INTO site_settings (key, value) VALUES (?, ?)");
 		for (const [key, value] of Object.entries(DEFAULT_SETTINGS)) {
-			try { insertSetting.run(key, value); } catch(e) {}
+			try {
+				insertSetting.run(key, value);
+			} catch (e) {
+				// 個別の投入失敗はログ出力のみに留める
+				console.warn(`[DB] Failed to insert default setting ${key}:`, e);
+			}
 		}
 	} catch (e) {
 		console.error('[DB] Schema error:', e);
