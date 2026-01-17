@@ -1,4 +1,5 @@
 export function editorJsToHtml(blocks: any[]) {
+	if (!blocks || !Array.isArray(blocks)) return '';
 	let html = '';
 	let lastBlockJson = '';
 

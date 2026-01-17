@@ -2,7 +2,7 @@ import Database from 'libsql';
 import { env } from '$env/dynamic/private';
 import { mkdirSync, existsSync } from 'fs';
 import { dirname } from 'path';
-import { DEFAULT_SETTINGS } from './settings';
+import { DEFAULT_SETTINGS } from './constants';
 
 let _db: any | null = null;
 let _dbStatus = {
