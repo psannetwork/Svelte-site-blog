@@ -221,16 +221,56 @@
 		if (isSaving) return;
 		isSaving = true;
 		try {
+			// 各エディタのデータを取得
+			const updates: Record<string, string> = {
+				site_title: siteTitle,
+				site_description: siteDescription,
+				accent_color: accentColor,
+				site_language: siteLanguage,
+				allowed_extensions: allowedExtensions,
+				site_icon_url: siteIconUrl,
+				custom_css: (document.getElementById('custom_css') as HTMLTextAreaElement)?.value || '',
+				// スイッチ系
+				is_site_public: (formElement.querySelector('[name="is_site_public"]') as HTMLInputElement)?.checked ? 'false' : 'true',
+				allow_signup: (formElement.querySelector('[name="allow_signup"]') as HTMLInputElement)?.checked ? 'true' : 'false',
+				allow_comments: (formElement.querySelector('[name="allow_comments"]') as HTMLInputElement)?.checked ? 'true' : 'false',
+				allow_anonymous_comments: (formElement.querySelector('[name="allow_anonymous_comments"]') as HTMLInputElement)?.checked ? 'true' : 'false',
+				allow_account_deletion: (formElement.querySelector('[name="allow_account_deletion"]') as HTMLInputElement)?.checked ? 'true' : 'false',
+				show_footer_auth: (formElement.querySelector('[name="show_footer_auth"]') as HTMLInputElement)?.checked ? 'true' : 'false',
+				anonymous_name: (document.getElementById('anonymous_name') as HTMLInputElement)?.value || 'Anonymous',
+				enable_turnstile: (formElement.querySelector('[name="enable_turnstile"]') as HTMLInputElement)?.checked ? 'true' : 'false',
+				turnstile_site_key: (document.getElementById('turnstile_site_key') as HTMLInputElement)?.value || '',
+				turnstile_secret_key: (document.getElementById('turnstile_secret_key') as HTMLInputElement)?.value || ''
+			};
+
 			const savePromises = Object.entries(editors).map(async ([id, e]) => {
 				if (e.instance) {
 					const saved = await e.instance.save();
-					editors[id as keyof typeof editors].data = JSON.stringify(saved);
+					const key = id === 'home' ? 'home_hero_content' : id === 'about' ? 'about_page_content' : id === 'error404' ? 'error_404_content' : 'error_500_content';
+					updates[key] = JSON.stringify(saved);
 				}
 			});
 			await Promise.all(savePromises);
-			setTimeout(() => { formElement?.requestSubmit(); }, 100);
+
+			// APIで確実に保存
+			const res = await fetch('/api/settings', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify(updates)
+			});
+			
+			const result = await res.json();
+			if (result.success && result.settings) {
+				const s = result.settings;
+				lastSyncTime = parseInt(s._updated || '0');
+				userEdited = {}; // 保存に成功したので編集フラグをリセット
+				showSuccess = true;
+				setTimeout(() => showSuccess = false, 3000);
+				await invalidateAll();
+			}
 		} catch (e) {
-			console.error('Failed to save settings:', e);
+			console.error('[SETTINGS] Save failed:', e);
+		} finally {
 			isSaving = false;
 		}
 	}

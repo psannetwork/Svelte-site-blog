@@ -3,17 +3,26 @@ import { getSettings } from '$lib/server/settings';
 import type { RequestHandler } from './$types';
 
 export const GET: RequestHandler = async ({ locals }) => {
-	// 管理者以外には見せないガード
-	if (!locals.user || locals.user.role !== 'admin') {
-		throw error(403, 'Forbidden');
-	}
+	if (!locals.user || locals.user.role !== 'admin') throw error(403);
 
 	try {
 		const settings = getSettings();
-		console.log(`[API SETTINGS] Serving ${Object.keys(settings).length} settings.`);
 		return json({ success: true, settings });
 	} catch (e) {
-		console.error('[API SETTINGS] Failed to fetch:', e);
-		throw error(500, 'Failed to fetch settings');
+		throw error(500);
+	}
+};
+
+export const POST: RequestHandler = async ({ request, locals }) => {
+	if (!locals.user || locals.user.role !== 'admin') throw error(403);
+
+	try {
+		const settingsToUpdate = await request.json();
+		setSettings(settingsToUpdate);
+		const updatedSettings = getSettings();
+		return json({ success: true, settings: updatedSettings });
+	} catch (e) {
+		console.error('[API SETTINGS] Save failed:', e);
+		throw error(500);
 	}
 };
