@@ -17,39 +17,28 @@ function initializeDb(): any {
 	const tursoToken = env.TURSO_DB_AUTH_TOKEN;
 
 	if (tursoUrl && (tursoUrl.startsWith('libsql') || tursoUrl.startsWith('https')) && tursoToken) {
-		console.log(`[DB] Connecting to Turso: ${tursoUrl}`);
 		try {
 			const db = new Database(tursoUrl, { authToken: tursoToken } as any);
 			_dbStatus = { type: 'turso', path: '', url: tursoUrl };
 			return db;
 		} catch (e) {
-			console.error('[DB] Turso connection failed', e);
+			console.error('[DB] Turso failed:', e);
 		}
 	}
 
 	try {
 		const dbPath = env.DB_PATH || 'blog.db';
 		const dbDir = dirname(dbPath);
-		if (dbDir !== '.' && !existsSync(dbDir)) {
-			mkdirSync(dbDir, { recursive: true });
-		}
+		if (dbDir !== '.' && !existsSync(dbDir)) mkdirSync(dbDir, { recursive: true });
 		const db = new Database(dbPath);
 		_dbStatus = { type: 'local', path: dbPath, url: '' };
 		db.pragma('journal_mode = WAL');
 		return db;
 	} catch (e) {
-		console.error('[DB] Local SQLite connection failed', e);
-		
-		// フォールバック
-		console.warn('[DB] Using in-memory database.');
-		try {
-			const db = new Database(':memory:');
-			_dbStatus = { type: 'memory', path: ':memory:', url: '' };
-			return db;
-		} catch (memErr) {
-			console.error('[DB] In-memory database failed', memErr);
-			return null;
-		}
+		console.warn('[DB] Fallback to memory.');
+		const db = new Database(':memory:');
+		_dbStatus = { type: 'memory', path: ':memory:', url: '' };
+		return db;
 	}
 }
 
@@ -82,62 +71,40 @@ function initSchema(db: any) {
 			CREATE INDEX IF NOT EXISTS idx_notification_user ON notification(user_id);
 		`);
 
-		
 		try { db.exec("ALTER TABLE user ADD COLUMN avatar_url TEXT"); } catch(e) {}
 		try { db.exec("ALTER TABLE user ADD COLUMN notification_enabled INTEGER DEFAULT 1"); } catch(e) {}
 
 		const insertSetting = db.prepare("INSERT OR IGNORE INTO site_settings (key, value) VALUES (?, ?)");
-		
-		try {
-			const transaction = db.transaction((data: any) => {
-				for (const [key, value] of Object.entries(data)) {
-					insertSetting.run(key, value);
-				}
-			});
-			transaction(DEFAULT_SETTINGS);
-		} catch (err) {
-			for (const [key, value] of Object.entries(DEFAULT_SETTINGS)) {
-				try { insertSetting.run(key, value); } catch(e) {}
-			}
+		for (const [key, value] of Object.entries(DEFAULT_SETTINGS)) {
+			try { insertSetting.run(key, value); } catch(e) {}
 		}
 	} catch (e) {
-		console.error('[DB] Schema failed', e);
+		console.error('[DB] Schema error:', e);
 	}
 }
 
 function setupDb(): any {
 	const db = initializeDb();
-	if (db) {
-		initSchema(db);
-	}
+	initSchema(db);
 	return db;
 }
 
 function getDb(): any {
-	if (!_db) {
-		console.log('[DB] Initializing...');
-		_db = setupDb();
-	}
+	if (!_db) _db = setupDb();
 	return _db;
 }
 
 export function resetDb() {
 	if (_db) {
-		try {
-			_db.close();
-		} catch (e) {
-			console.error('[DB] Error closing:', e);
-		}
+		try { _db.close(); } catch (e) {}
 		_db = null;
 	}
 }
 
 export function getDbStatus() { return _dbStatus; }
 
-// ラッパー
 function createPreparedStatement(sql: string, dbInstance: any) {
 	const stmt = dbInstance.prepare(sql);
-	
 	return {
 		run: (...params: any[]) => {
 			const args = (params.length === 1 && Array.isArray(params[0])) ? params[0] : params;
@@ -164,21 +131,10 @@ function createPreparedStatement(sql: string, dbInstance: any) {
 const dbProxy = new Proxy({}, {
 	get(target, prop) {
 		const instance = getDb();
-		if (!instance) {
-			return (...args: any[]) => {
-				throw new Error("DB disconnected");
-			};
-		}
-
-		if (prop === 'prepare') {
-			return (sql: string) => createPreparedStatement(sql, instance);
-		}
-
+		if (!instance) return (...args: any[]) => { throw new Error("DB error"); };
+		if (prop === 'prepare') return (sql: string) => createPreparedStatement(sql, instance);
 		const value = instance[prop];
-		if (typeof value === 'function') {
-			return value.bind(instance);
-		}
-		return value;
+		return typeof value === 'function' ? value.bind(instance) : value;
 	}
 });
 

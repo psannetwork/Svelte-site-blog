@@ -1,4 +1,4 @@
-import db from "./db";
+import db, { getDbStatus } from "./db";
 
 export const DEFAULT_SETTINGS: Record<string, string> = {
 	"site_title": "PSANBLOG",
@@ -31,10 +31,12 @@ export const DEFAULT_SETTINGS: Record<string, string> = {
 
 export const getSetting = (key: string, defaultValue: string = ""): string => {
 	try {
-		const row = db.prepare("SELECT value FROM site_settings WHERE key = ?").get(key) as { value: string } | undefined;
-		return row ? row.value : (DEFAULT_SETTINGS[key] ?? defaultValue);
+		const result = db.prepare("SELECT value FROM site_settings WHERE key = ?").get(key);
+		const row = (result && typeof result === 'object') ? result : null;
+		// カラム名が小文字・大文字どちらでも動くように
+		const val = row ? (row.value ?? row.VALUE ?? row[0]) : null;
+		return val !== null ? String(val) : (DEFAULT_SETTINGS[key] ?? defaultValue);
 	} catch (e) {
-		console.error(`[SETTINGS] Error getting setting ${key}:`, e);
 		return DEFAULT_SETTINGS[key] ?? defaultValue;
 	}
 };
@@ -43,53 +45,31 @@ export const setSetting = (key: string, value: string) => {
 	try {
 		db.prepare("INSERT OR REPLACE INTO site_settings (key, value) VALUES (?, ?)").run(key, value);
 	} catch (e) {
-		console.error(`[SETTINGS] Error setting ${key}:`, e);
 		throw e;
 	}
 };
 
 export const setSettings = (settings: Record<string, string>) => {
-	console.log(`[SETTINGS] Updating ${Object.keys(settings).length} settings...`);
-	
-	// 更新時刻をデータに含める
 	const updatedSettings = { 
 		...settings, 
 		"settings_updated_at": Date.now().toString() 
 	};
 
 	try {
-		// トランザクションを試行
 		const updateTransaction = db.transaction((data: Record<string, string>) => {
 			const stmt = db.prepare("INSERT OR REPLACE INTO site_settings (key, value) VALUES (?, ?)");
 			for (const [key, value] of Object.entries(data)) {
 				stmt.run(key, value);
 			}
 		});
-
 		updateTransaction(updatedSettings);
-		console.log("[SETTINGS] Transaction committed successfully.");
-
 	} catch (e) {
-		console.warn("[SETTINGS] Transaction failed, falling back to sequential updates:", e);
-		
 		const stmt = db.prepare("INSERT OR REPLACE INTO site_settings (key, value) VALUES (?, ?)");
 		for (const [key, value] of Object.entries(updatedSettings)) {
-			try {
-				stmt.run(key, value);
-			} catch (err) {
-				console.error(`[SETTINGS] Failed to update ${key}:`, err);
-			}
+			try { stmt.run(key, value); } catch (err) {}
 		}
 	}
 };
-
-import db, { getDbStatus } from "./db";
-
-export const DEFAULT_SETTINGS: Record<string, string> = {
-// ... (略)
-};
-
-// ... (getSetting, setSetting, setSettings はそのまま)
 
 export const getSettings = () => {
 	let settings = { ...DEFAULT_SETTINGS };
@@ -98,31 +78,31 @@ export const getSettings = () => {
 	try {
 		const result = db.prepare("SELECT key, value FROM site_settings").all();
 		
-		// デバッグログ
-		console.log(`[SETTINGS DEBUG] Source: ${dbStatus.type}, Rows: ${Array.isArray(result) ? result.length : 'ResultSet'}`);
+		// 取得内容のデバッグ
+		console.log(`[SETTINGS DB] Source: ${dbStatus.type}, Type: ${typeof result}, Array: ${Array.isArray(result)}`);
 		
 		const rows = Array.isArray(result) ? result : (result && typeof result === 'object' && 'rows' in result ? (result as any).rows : []);
 		
 		if (rows && rows.length > 0) {
 			const dbSettings: Record<string, string> = {};
 			rows.forEach((row: any) => {
-				// カラム名（key, value）でアクセスを試み、ダメなら添字でアクセス
-				const k = row.key !== undefined ? row.key : row[0];
-				const v = row.value !== undefined ? row.value : row[1];
-				if (k !== undefined) dbSettings[k] = v ?? "";
+				if (row && typeof row === 'object') {
+					// 柔軟なキー取得
+					const k = row.key ?? row.KEY ?? row[0];
+					const v = row.value ?? row.VALUE ?? row[1];
+					if (k !== undefined) dbSettings[String(k)] = v !== null ? String(v) : "";
+				}
 			});
-			
 			settings = { ...settings, ...dbSettings };
-			console.log(`[SETTINGS] Keys found: ${Object.keys(dbSettings).join(', ').substring(0, 100)}...`);
+			console.log(`[SETTINGS OK] Loaded ${Object.keys(dbSettings).length} keys.`);
 		} else {
-			console.warn(`[SETTINGS] No rows found in ${dbStatus.type} database.`);
+			console.warn("[SETTINGS EMPTY] Using defaults.");
 		}
 	} catch (e) {
-		console.error(`[SETTINGS] Error fetching from ${dbStatus.type}:`, e);
+		console.error(`[SETTINGS ERROR] ${dbStatus.type}:`, e);
 	}
 	
-	const syncTime = settings.settings_updated_at || "0";
-	settings._updated = syncTime;
+	settings._updated = settings.settings_updated_at || "0";
 	return settings;
 };
 
