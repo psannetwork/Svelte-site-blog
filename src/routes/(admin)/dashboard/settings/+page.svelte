@@ -23,7 +23,14 @@
 	let siteIconUrl = $state(data.settings?.site_icon_url || '');
 
 	let userEdited = $state<Record<string, boolean>>({});
-	let lastSyncTime = $state(parseInt(data.settings?._updated || '0'));
+	let lastSyncTime = $state(0);
+
+	// 初期データの反映
+	onMount(() => {
+		if (data.settings) {
+			lastSyncTime = parseInt(data.settings._updated || '0');
+		}
+	});
 
 	function markEdited(key: string) {
 		userEdited[key] = true;
@@ -41,8 +48,9 @@
 				
 				if (newTime > lastSyncTime) {
 					let changed = false;
+					
 					const sync = (key: string, current: any, remote: any, setter: (v: any) => void) => {
-						if (!userEdited[key] && current === (baseSettings[key] || '')) {
+						if (!userEdited[key] && current !== remote) {
 							setter(remote);
 							changed = true;
 						}
@@ -57,6 +65,7 @@
 					Object.entries(editors).forEach(([id, e]) => {
 						const key = id === 'home' ? 'home_hero_content' : id === 'about' ? 'about_page_content' : id === 'error404' ? 'error_404_content' : 'error_500_content';
 						const content = s[key];
+						
 						if (e.instance && content && !isSaving) {
 							try {
 								const parsed = JSON.parse(content);
@@ -70,10 +79,12 @@
 							} catch (err) {}
 						}
 					});
+					
 					lastSyncTime = newTime;
-					if (changed) console.log('[SETTINGS] synced.');
+					if (changed) console.log('[SETTINGS] Data synced.');
 				}
 			}
+		} catch (e) {
 		} finally {
 			isRefreshing = false;
 		}
@@ -155,7 +166,7 @@
 		const ColorPlugin = (await import('editorjs-text-color-plugin')).default;
 		const Undo = (await import('editorjs-undo')).default;
 
-		let parsedData = { blocks: [] };
+		let parsedData: { blocks: any[] } = { blocks: [] };
 		try {
 			if (initialData) {
 				const d = JSON.parse(initialData);
@@ -495,10 +506,10 @@
 							<div class="text-[10px] font-bold text-muted uppercase">{(backup.size / 1024 / 1024).toFixed(2)} MB • {new Date(backup.time).toLocaleString()}</div>
 						</div>
 						<div class="flex gap-2">
-							<a href="?/downloadBackup&filename={backup.name}" class="p-2 text-psan-green hover:bg-psan-green/10 rounded-lg"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg></a>
+							<a href="?/downloadBackup&filename={backup.name}" aria-label="Download Backup" class="p-2 text-psan-green hover:bg-psan-green/10 rounded-lg"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg></a>
 							<form method="POST" action="?/restoreBackup" use:enhance>
 								<input type="hidden" name="filename" value={backup.name} />
-								<button type="submit" class="p-2 text-psan-pink hover:bg-psan-pink/10 rounded-lg" onclick={(e) => !confirm("復元しますか？") && e.preventDefault()}><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.001 0 01-15.357-2m15.357 2H15"/></svg></button>
+								<button type="submit" aria-label="Restore Backup" class="p-2 text-psan-pink hover:bg-psan-pink/10 rounded-lg" onclick={(e) => !confirm("復元しますか？") && e.preventDefault()}><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.001 0 01-15.357-2m15.357 2H15"/></svg></button>
 							</form>
 						</div>
 					</div>
