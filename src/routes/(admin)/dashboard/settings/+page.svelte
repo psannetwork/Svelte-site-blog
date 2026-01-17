@@ -189,26 +189,37 @@
 		if (isSaving) return;
 		isSaving = true;
 		try {
-			const updates: Record<string, string> = {
-				site_title: siteTitle,
-				site_description: siteDescription,
-				accent_color: accentColor,
-				site_language: siteLanguage,
-				allowed_extensions: allowedExtensions,
-				site_icon_url: siteIconUrl,
-				custom_css: (document.getElementById('custom_css') as HTMLTextAreaElement)?.value || '',
-				is_site_public: (formElement.querySelector('[name="is_site_public"]') as HTMLInputElement)?.checked ? 'false' : 'true',
-				allow_signup: (formElement.querySelector('[name="allow_signup"]') as HTMLInputElement)?.checked ? 'true' : 'false',
-				allow_comments: (formElement.querySelector('[name="allow_comments"]') as HTMLInputElement)?.checked ? 'true' : 'false',
-				allow_anonymous_comments: (formElement.querySelector('[name="allow_anonymous_comments"]') as HTMLInputElement)?.checked ? 'true' : 'false',
-				allow_account_deletion: (formElement.querySelector('[name="allow_account_deletion"]') as HTMLInputElement)?.checked ? 'true' : 'false',
-				show_footer_auth: (formElement.querySelector('[name="show_footer_auth"]') as HTMLInputElement)?.checked ? 'true' : 'false',
-				anonymous_name: (document.getElementById('anonymous_name') as HTMLInputElement)?.value || 'Anonymous',
-				enable_turnstile: (formElement.querySelector('[name="enable_turnstile"]') as HTMLInputElement)?.checked ? 'true' : 'false',
-				turnstile_site_key: (document.getElementById('turnstile_site_key') as HTMLInputElement)?.value || '',
-				turnstile_secret_key: (document.getElementById('turnstile_secret_key') as HTMLInputElement)?.value || ''
-			};
+			// FormDataから全ての値を取得
+			const fd = new FormData(formElement);
+			const updates: Record<string, string> = {};
+			
+			// 全てのキーを網羅するためのリスト（サーバー側と同期）
+			const allKeys = [
+				"site_title", "site_description", "accent_color", "is_site_public", "custom_css", 
+				"site_icon_url", "storage_type", "site_language", "allowed_extensions",
+				"allow_signup", "allow_comments", "allow_anonymous_comments", "allow_account_deletion", 
+				"anonymous_name", "show_footer_auth", "require_email_verification",
+				"enable_turnstile", "turnstile_site_key", "turnstile_secret_key",
+				"enable_backup", "backup_interval", "backup_keep_count"
+			];
 
+			const checkboxKeys = [
+				"allow_signup", "allow_comments", "allow_anonymous_comments", "allow_account_deletion",
+				"show_footer_auth", "enable_turnstile", "require_email_verification", "enable_backup"
+			];
+
+			for (const key of allKeys) {
+				const val = fd.get(key);
+				if (key === "is_site_public") {
+					updates[key] = val === "on" ? "false" : "true";
+				} else if (checkboxKeys.includes(key)) {
+					updates[key] = val === "on" ? "true" : "false";
+				} else if (val !== null) {
+					updates[key] = val.toString();
+				}
+			}
+
+			// エディタのデータをマージ
 			for (const [id, e] of Object.entries(editors)) {
 				if (e.instance) {
 					const saved = await e.instance.save();
