@@ -61,7 +61,7 @@
 								const parsed = JSON.parse(content);
 								e.instance.isReady.then(async () => {
 									const cur = await e.instance.save();
-									if (JSON.stringify(current.blocks) !== JSON.stringify(parsed.blocks)) {
+									if (JSON.stringify(cur.blocks) !== JSON.stringify(parsed.blocks)) {
 										await e.instance.render(parsed);
 										changed = true;
 									}

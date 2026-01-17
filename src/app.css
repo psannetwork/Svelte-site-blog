@@ -109,25 +109,34 @@
   border-color: #334155 !important;
 }
 
-/* エディタ内での画像リサイズ表示の強化 */
+/* エディタ内での画像表示調整 */
 .ce-block--stretched .ce-block__content {
   max-width: 100% !important;
 }
 
 .ce-block--stretched img {
   width: 100% !important;
-  border-radius: 20px;
 }
 
 .image-tool__image {
   border-radius: 20px;
   overflow: hidden;
   transition: all 0.3s ease;
+  display: inline-block;
+  max-width: 100%;
 }
 
 .image-tool__image-picture img {
+  display: block;
   max-width: 100%;
   height: auto !important;
+  object-fit: contain;
+}
+
+/* 選択時のハイライト */
+.ce-block--selected .ce-block__content {
+  background-color: var(--psan-green) !important;
+  border-radius: 1rem;
 }
 
 /* Editor.js 編集中の見出しスタイル */

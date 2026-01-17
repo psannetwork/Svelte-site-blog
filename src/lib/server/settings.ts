@@ -114,7 +114,7 @@ export async function verifyTurnstile(token: string) {
 	formData.append("secret", secret);
 	formData.append("response", token);
 	try {
-		const res = await fetch("https:
+		const res = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", { body: formData, method: "POST" });
 		const outcome = await res.json();
 		return outcome.success;
 	} catch {
