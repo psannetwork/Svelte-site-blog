@@ -5,7 +5,7 @@ import type { LayoutServerLoad } from "./$types";
 export const prerender = false;
 
 export const load: LayoutServerLoad = async ({ locals, depends }) => {
-	// 設定更新用の依存関係
+	
 	depends('app:settings');
 	
 	const settings = getSettings();

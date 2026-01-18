@@ -20,14 +20,14 @@
 	onMount(() => {
 		if (data.user) {
 			checkNotifications();
-			// 1分ごとにチェック
+			
 			const interval = setInterval(checkNotifications, 60000);
 			return () => clearInterval(interval);
 		}
 	});
 
 	$effect(() => {
-		// ページ遷移時にもチェック
+		
 		page.url.pathname;
 		if (data.user) checkNotifications();
 	});
@@ -83,12 +83,12 @@
 				{/if}
 			</div>
 
-			<button onclick={() => isMenuOpen = !isMenuOpen} class="md:hidden p-2" aria-label="メニュー"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16m-7 6h7"/></svg></button>
+			<button onclick={() => isMenuOpen = !isMenuOpen} class="md:hidden p-2 text-main" aria-label="メニュー"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16m-7 6h7"/></svg></button>
 		</div>
 	</nav>
 
 	{#if isMenuOpen}
-		<div class="md:hidden bg-[--bg-main] border-b border-[--border-color] p-6 space-y-6">
+		<div class="md:hidden bg-[--bg-main] border-b border-[--border-color] p-6 space-y-6 absolute top-20 left-0 w-full z-50 shadow-2xl">
 			<a href="/" class="block font-black text-xl">HOME</a>
 			<a href="/about" class="block font-black text-xl">ABOUT</a>
 			<hr class="opacity-10" />

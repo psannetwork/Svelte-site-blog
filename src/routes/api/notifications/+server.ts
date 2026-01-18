@@ -23,7 +23,7 @@ export const POST: RequestHandler = async ({ locals }) => {
 	if (!locals.user) throw error(401, 'Unauthorized');
 
 	try {
-		// 全て既読にする
+		
 		db.prepare("UPDATE notification SET is_read = 1 WHERE user_id = ?")
 			.run(locals.user.id);
 		return json({ success: true });

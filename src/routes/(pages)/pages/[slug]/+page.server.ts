@@ -9,7 +9,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 	const post = db.prepare("SELECT * FROM post WHERE id = ?").get(params.slug) as any;
 	if (!post) throw error(404, "Post not found");
 
-	// 内容をHTML化
+	
 	if (post.content && post.content.startsWith('{')) {
 		try {
 			const parsed = JSON.parse(post.content);
@@ -25,7 +25,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 
 	const anonymousName = getSetting("anonymous_name", "Anonymous");
 
-	// 全コメントを取得 (リプライ含む)
+	
 	const comments = db.prepare(`
 		SELECT 
 			comment.*, 
@@ -62,7 +62,7 @@ export const actions: Actions = {
 		const parentId = formData.get("parentId") as string | null;
 		const turnstileToken = formData.get("cf-turnstile-response") as string;
 
-		// スパムチェック
+		
 		if (!(await verifyTurnstile(turnstileToken))) {
 			return fail(400, { message: "セキュリティ検証に失敗しました。再試行してください。" });
 		}
@@ -73,7 +73,7 @@ export const actions: Actions = {
 		db.prepare("INSERT INTO comment (id, post_id, author_id, parent_id, content, created_at) VALUES (?, ?, ?, ?, ?, ?)")
 			.run(commentId, params.slug, locals.user?.id || null, parentId || null, content, Date.now());
 
-		// リプライ通知の作成
+		
 		if (parentId) {
 			try {
 				const parentComment = db.prepare("SELECT author_id FROM comment WHERE id = ?").get(parentId) as any;

@@ -54,10 +54,10 @@ export const actions: Actions = {
 		const user = db.prepare("SELECT is_protected FROM user WHERE id = ?").get(locals.user.id) as any;
 		if (user?.is_protected) return fail(400, { message: "このアカウントはシステムによって保護されており、削除できません。" });
 
-		// ファイルクリーンアップ
+		
 		cleanupUserFiles(locals.user.id);
 
-		// セッション無効化
+		
 		await lucia.invalidateSession(locals.session.id);
 		const sessionCookie = lucia.createBlankSessionCookie();
 		cookies.set(sessionCookie.name, sessionCookie.value, { path: ".", ...sessionCookie.attributes });

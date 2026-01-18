@@ -25,13 +25,13 @@
 		<button 
 			onclick={() => isSidebarOpen = false} 
 			aria-label="サイドバーを閉じる"
-			class="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] lg:hidden animate-in fade-in"
+			class="fixed inset-0 bg-black/50 backdrop-blur-sm z-[150] lg:hidden animate-in fade-in"
 		></button>
 	{/if}
 
 	<aside class="
 		fixed lg:static inset-y-0 left-0 w-72 bg-[--card-bg] border-r border-[--border-color]
-		z-[101] lg:z-0 transform transition-transform duration-300
+		z-[151] lg:z-0 transform transition-transform duration-300
 		{isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
 		flex flex-col
 	">

@@ -76,6 +76,7 @@
 			const Underline = (await import('@editorjs/underline')).default;
 			const ColorPlugin = (await import('editorjs-text-color-plugin')).default;
 			const Undo = (await import('editorjs-undo')).default;
+			const LinkTool = (await import('@editorjs/link')).default;
 			
 			let parsedData: { blocks: any[] } = { blocks: [] };
 			try {
@@ -121,6 +122,7 @@
 							captionPlaceholder: 'キャプションを入力...'
 						} 
 					},
+					linkTool: { class: LinkTool, config: { endpoint: '/api/link' } },
 					embed: { class: Embed, config: { services: { youtube: true, vimeo: true, twitter: true } } }
 				},
 				onReady: () => {
@@ -137,7 +139,7 @@
 				const target = e.target as HTMLElement;
 				const block = target.closest('.ce-block');
 				if (block) {
-					// ブロックの右側にある設定ボタン (⋮) を探して擬似的にクリック
+					
 					const settingsBtn = block.querySelector('.ce-toolbar__settings-btn') as HTMLElement;
 					if (settingsBtn) {
 						settingsBtn.click();

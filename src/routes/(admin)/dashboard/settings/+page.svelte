@@ -32,7 +32,7 @@
 	let userEdited = $state<Record<string, boolean>>({});
 	let lastSyncTime = $state(0);
 
-	// 初期データの反映
+	
 	onMount(() => {
 		if (data.settings) {
 			lastSyncTime = parseInt(data.settings._updated || '0');
@@ -88,7 +88,6 @@
 					});
 					
 					lastSyncTime = newTime;
-					if (changed) console.log('[SETTINGS] Data synced.');
 				}
 			}
 		} catch (e) {
@@ -211,7 +210,7 @@
 		migrationStatus.message = '設定を保存中...';
 
 		try {
-			// 先に設定を保存して、storage_typeを確定させる
+			
 			const fd = new FormData(formElement);
 			fd.set('storage_type', target);
 			await saveAll(); 
@@ -241,11 +240,11 @@
 		if (isSaving) return;
 		isSaving = true;
 		try {
-			// FormDataから全ての値を取得
+			
 			const fd = new FormData(formElement);
 			const updates: Record<string, string> = {};
 			
-			// 全てのキーを網羅するためのリスト（サーバー側と同期）
+			
 			const allKeys = [
 				"site_title", "site_description", "accent_color", "is_site_public", "custom_css", 
 				"site_icon_url", "storage_type", "site_language", "allowed_extensions",
@@ -271,7 +270,7 @@
 				}
 			}
 
-			// エディタのデータをマージ
+			
 			for (const [id, e] of Object.entries(editors)) {
 				if (e.instance) {
 					const saved = await e.instance.save();

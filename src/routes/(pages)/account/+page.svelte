@@ -8,7 +8,7 @@
 	let notificationEnabled = $state(false);
 	let isUploading = $state(false);
 	
-	// 通知管理
+	
 	let notifications = $state<any[]>([]);
 	let isLoadingNotifications = $state(false);
 
@@ -28,7 +28,7 @@
 		notifications = notifications.map(n => ({ ...n, is_read: 1 }));
 	}
 
-	// サーバーからのデータが更新されたらローカルステートに同期
+	
 	$effect(() => {
 		if (data.user) {
 			avatarUrl = data.user.avatar_url || '';

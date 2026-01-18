@@ -69,6 +69,7 @@
 			const Underline = (await import('@editorjs/underline')).default;
 			const ColorPlugin = (await import('editorjs-text-color-plugin')).default;
 			const Undo = (await import('editorjs-undo')).default;
+			const LinkTool = (await import('@editorjs/link')).default;
 					
 			editor = new EditorJS({
 				holder: 'editorjs',
@@ -105,6 +106,7 @@
 							types: 'image/*'
 						}
 					},
+					linkTool: { class: LinkTool, config: { endpoint: '/api/link' } },
 					embed: {
 						class: Embed,
 						config: {

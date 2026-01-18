@@ -17,7 +17,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 	
 	const settings = getSettings();
 
-	// アクセス統計の取得
+	
 	const totalHits = db.prepare("SELECT SUM(hits) as total FROM analytics").get() as { total: number };
 	const todayStats = db.prepare("SELECT hits, unique_visitors FROM analytics WHERE date = ?").get(new Date().toISOString().split('T')[0]) as { hits: number, unique_visitors: number };
 	const weeklyStats = db.prepare("SELECT * FROM analytics ORDER BY date DESC LIMIT 7").all() as any[];

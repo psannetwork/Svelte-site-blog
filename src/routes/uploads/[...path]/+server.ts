@@ -30,7 +30,6 @@ export const GET: RequestHandler = async ({ params }) => {
 			mkdirSync(dir, { recursive: true });
 		}
 		writeFileSync(fullPath, file.data);
-		console.log(`[FILES] Cached to disk: ${relativePath}`);
 	} catch (e) {
 		console.warn(`[FILES] Failed to cache file: ${relativePath}`, e);
 	}

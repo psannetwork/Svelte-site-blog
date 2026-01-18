@@ -56,8 +56,8 @@ function initSchema(db: any) {
 				notification_enabled INTEGER DEFAULT 1
 			);
 			CREATE TABLE IF NOT EXISTS session (id TEXT PRIMARY KEY, expires_at INTEGER NOT NULL, user_id TEXT NOT NULL, FOREIGN KEY (user_id) REFERENCES user(id) ON DELETE CASCADE);
-			CREATE TABLE IF NOT EXISTS post (id TEXT PRIMARY KEY, title TEXT NOT NULL, summary TEXT, content TEXT NOT NULL, author_id TEXT NOT NULL, visibility TEXT NOT NULL DEFAULT 'public', created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL, FOREIGN KEY (author_id) REFERENCES user(id));
-			CREATE TABLE IF NOT EXISTS comment (id TEXT PRIMARY KEY, post_id TEXT NOT NULL, author_id TEXT, content TEXT NOT NULL, created_at INTEGER NOT NULL, FOREIGN KEY (post_id) REFERENCES post(id) ON DELETE CASCADE, FOREIGN KEY (author_id) REFERENCES user(id) ON DELETE CASCADE);
+			CREATE TABLE IF NOT EXISTS post (id TEXT PRIMARY KEY, title TEXT NOT NULL, summary TEXT, content TEXT NOT NULL, raw_json TEXT, author_id TEXT NOT NULL, visibility TEXT NOT NULL DEFAULT 'public', created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL, FOREIGN KEY (author_id) REFERENCES user(id));
+			CREATE TABLE IF NOT EXISTS comment (id TEXT PRIMARY KEY, post_id TEXT NOT NULL, parent_id TEXT, author_id TEXT, content TEXT NOT NULL, created_at INTEGER NOT NULL, FOREIGN KEY (post_id) REFERENCES post(id) ON DELETE CASCADE, FOREIGN KEY (author_id) REFERENCES user(id) ON DELETE CASCADE);
 			CREATE TABLE IF NOT EXISTS site_settings (key TEXT PRIMARY KEY, value TEXT NOT NULL);
 			CREATE TABLE IF NOT EXISTS analytics (date TEXT PRIMARY KEY, hits INTEGER DEFAULT 0, unique_visitors INTEGER DEFAULT 0);
 			CREATE TABLE IF NOT EXISTS file_storage (id TEXT PRIMARY KEY, filename TEXT NOT NULL, mime_type TEXT NOT NULL, size INTEGER NOT NULL, data BLOB, path TEXT, storage_type TEXT NOT NULL, created_at INTEGER NOT NULL);
@@ -69,8 +69,10 @@ function initSchema(db: any) {
 			CREATE INDEX IF NOT EXISTS idx_notification_user ON notification(user_id);
 		`);
 
-		try { db.exec("ALTER TABLE user ADD COLUMN avatar_url TEXT"); } catch(e) {}
-		try { db.exec("ALTER TABLE user ADD COLUMN notification_enabled INTEGER DEFAULT 1"); } catch(e) {}
+		try { db.exec("ALTER TABLE user ADD COLUMN avatar_url TEXT"); } catch (e) { }
+		try { db.exec("ALTER TABLE user ADD COLUMN notification_enabled INTEGER DEFAULT 1"); } catch (e) { }
+		try { db.exec("ALTER TABLE post ADD COLUMN raw_json TEXT"); } catch (e) { }
+		try { db.exec("ALTER TABLE comment ADD COLUMN parent_id TEXT"); } catch (e) { }
 
 		const insertSetting = db.prepare("INSERT OR IGNORE INTO site_settings (key, value) VALUES (?, ?)");
 		for (const [key, value] of Object.entries(DEFAULT_SETTINGS)) {
@@ -99,7 +101,7 @@ function getDb(): any {
 
 export function resetDb() {
 	if (_db) {
-		try { _db.close(); } catch (e) {}
+		try { _db.close(); } catch (e) { }
 		_db = null;
 	}
 }

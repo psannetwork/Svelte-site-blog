@@ -6,7 +6,7 @@
 	let { data, form } = $props<{ data: PageData, form: ActionData }>();
 	let replyingTo = $state<string | null>(null);
 
-	// コメントをツリー構造に変換
+	
 	const commentTree = $derived.by(() => {
 		const map = new Map<string, any>();
 		const roots: any[] = [];
@@ -32,8 +32,9 @@
 </svelte:head>
 
 {#snippet commentItem(comment: any, depth = 0)}
-	<!-- depth に応じてインデント -->
-	<div class="flex gap-4 group {depth > 0 && depth <= 2 ? 'ml-6 md:ml-10 mt-6 pt-6 border-t border-slate-200 dark:border-slate-800/50 relative before:absolute before:left-[-20px] before:top-0 before:bottom-0 before:w-0.5 before:bg-slate-200 dark:before:bg-slate-800/50 before:content-[\'\']' : 'mt-10'} {depth > 2 ? 'mt-6 pt-6 border-t border-slate-200 dark:border-slate-800/50' : ''}">
+	<!-- depth に応じてインデント (最大レベル2まで) -->
+	{@const visualDepth = Math.min(depth, 3)}
+	<div class="flex gap-4 group {visualDepth > 0 ? (visualDepth < 3 ? 'ml-3 md:ml-10 mt-6 pt-6 border-t border-slate-200 dark:border-slate-800/50 relative before:absolute before:left-[-10px] md:before:left-[-20px] before:top-0 before:bottom-0 before:w-0.5 before:bg-slate-200 dark:before:bg-slate-800/50 before:content-[\'\']' : 'mt-4 pt-4 border-l-2 border-slate-200 dark:border-slate-800/50 pl-2 md:pl-4') : 'mt-10'}">
 		<div class="{depth > 0 ? 'w-8 h-8' : 'w-10 h-10'} rounded-2xl bg-slate-100 dark:bg-slate-800 overflow-hidden shrink-0 shadow-sm">
 			{#if comment.avatar_url}
 				<img src={comment.avatar_url} alt="" class="w-full h-full object-cover" />

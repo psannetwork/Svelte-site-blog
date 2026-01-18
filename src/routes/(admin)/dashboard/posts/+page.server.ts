@@ -35,7 +35,7 @@ export const actions: Actions = {
 		const formData = await request.formData();
 		const id = formData.get("id") as string;
 
-		// 削除前にコンテンツを取得して画像を特定
+		
 		const post = db.prepare("SELECT content FROM post WHERE id = ?").get(id) as { content: string } | undefined;
 		if (post) {
 			cleanupPostImages(post.content);

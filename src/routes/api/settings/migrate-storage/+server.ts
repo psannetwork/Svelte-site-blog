@@ -16,7 +16,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 	for (const file of files) {
 		try {
 			if (target === 'local') {
-				// DB -> Local
+				
 				if (file.data) {
 					const fullPath = join(process.cwd(), 'static', file.path);
 					const dir = dirname(fullPath);
@@ -25,12 +25,12 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 					db.prepare("UPDATE file_storage SET data = NULL, storage_type = 'local' WHERE id = ?").run(file.id);
 				}
 			} else {
-				// Local -> DB
+				
 				const fullPath = join(process.cwd(), 'static', file.path);
 				if (existsSync(fullPath)) {
 					const buffer = readFileSync(fullPath);
 					db.prepare("UPDATE file_storage SET data = ?, storage_type = 'database' WHERE id = ?").run(buffer, file.id);
-					// 移行成功後、ローカルファイルを削除
+					
 					try { unlinkSync(fullPath); } catch (e) {}
 				}
 			}

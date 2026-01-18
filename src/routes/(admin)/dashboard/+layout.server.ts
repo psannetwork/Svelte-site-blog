@@ -6,7 +6,7 @@ export const load: LayoutServerLoad = async ({ locals }) => {
 		throw redirect(302, "/auth/login");
 	}
 	
-	// エディター以上の権限が必要な場合はここでチェック
+	
 	if (locals.user.role !== 'admin' && locals.user.role !== 'editor') {
 		throw redirect(302, "/");
 	}

@@ -8,24 +8,16 @@ Svelte Site Blog に搭載されている主要な機能の使い方を解説し
 
 投稿や固定ページの作成には、直感的なブロック形式エディタを採用しています。
 
-### 利用可能なブロック
-*   **テキスト / 見出し (H1-H6)**
-*   **画像**: ドラッグ&ドロップやファイル選択でアップロード可能。エディタ内でリサイズもできます。
-*   **テーブル**: 行・列の追加・削除が可能な表作成。
-*   **チェックリスト**: To-Do形式のリスト。
-*   **警告ボックス**: 注意喚起のためのデザインブロック。
-*   **コード / 引用 / 区切り線**
-
-### ショートカット
-*   **Ctrl + S**: 編集内容を即座に保存します。
-*   **Ctrl + Z**: 元に戻します。
-*   **右クリック**: そのブロックのメニュー（削除・移動等）を即座に開きます。
+### Editor Features
+- **Rich Text**: Supports Header, List, Quote, Code, Image, Embeds, Table, Checklist, Warning, Delimiter, InlineCode, Underline, and **Link**.
+- **Multimedia**: Drag & drop image uploads, embed videos from YouTube/Vimeo/Twitter.
+- **Drafting**: Save as draft, preview mode, and publish scheduling options.
+- **Distraction Free**: Clean writing interface.
 
 ---
 
 ## 💬 コメントシステム
 
-読者との交流を促進する強力なコメント機能を備えています。
 
 *   **スレッド表示**: 誰が誰に返信したかが一目でわかる階層構造。
 *   **リプライ通知**: 自分のコメントに返信があった際、管理画面で通知を受け取れます。

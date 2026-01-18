@@ -14,7 +14,7 @@ export const POST: RequestHandler = async ({ request, locals, url }) => {
 
 	if (!file) throw error(400, 'No file uploaded');
 
-	// 設定から許可拡張子を取得
+	
 	const allowedExtensionsStr = getSetting('allowed_extensions', '["jpg","jpeg","png","gif","webp","svg","ico"]');
 	let allowedExtensions: string[] = [];
 	try {
