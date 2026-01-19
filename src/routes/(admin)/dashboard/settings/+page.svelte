@@ -67,22 +67,6 @@
 						sync('site_language', siteLanguage, s.site_language, v => siteLanguage = v);
 						sync('site_icon_url', siteIconUrl, s.site_icon_url, v => siteIconUrl = v);
 	
-						Object.entries(editors).forEach(([id, e]) => {
-							const key = id === 'home' ? 'home_hero_content' : id === 'about' ? 'about_page_content' : id === 'error404' ? 'error_404_content' : 'error_500_content';
-							const content = s[key];
-							if (e.instance && content && !isSaving) {
-								try {
-									const parsed = JSON.parse(content);
-									e.instance.isReady.then(async () => {
-										const cur = await e.instance.save();
-										if (JSON.stringify(cur.blocks) !== JSON.stringify(parsed.blocks)) {
-											await e.instance.render(parsed);
-											changed = true;
-										}
-									});
-								} catch (err) {}
-							}
-						});
 						lastSyncTime = newTime;
 						if (changed) console.log('[SETTINGS] Data synced.');
 					}
@@ -93,13 +77,6 @@
 			}
 		}
 	
-
-	let editors = $state({
-		home: { data: '', instance: null as any, holder: 'editor-home' },
-		about: { data: '', instance: null as any, holder: 'editor-about' },
-		error404: { data: '', instance: null as any, holder: 'editor-404' },
-		error500: { data: '', instance: null as any, holder: 'editor-500' }
-	});
 
 	const isRendering = new Set<string>();
 
@@ -115,34 +92,6 @@
 				allowedExtensions = s.allowed_extensions || '.jpg,.jpeg,.png,.gif,.webp,.svg,.ico';
 				siteIconUrl = s.site_icon_url || '';
 
-				Object.entries(editors).forEach(([id, e]) => {
-					const key =
-						id === 'home'
-							? 'home_hero_content'
-							: id === 'about'
-								? 'about_page_content'
-								: id === 'error404'
-									? 'error_404_content'
-									: 'error_500_content';
-					const content = s[key];
-					if (e.instance && content && !isRendering.has(id)) {
-						try {
-							const parsed = JSON.parse(content);
-							if (!parsed.blocks || parsed.blocks.length === 0) return;
-							isRendering.add(id);
-							e.instance.isReady
-								.then(async () => {
-									const cur = await e.instance.save();
-									if (JSON.stringify(cur.blocks) !== JSON.stringify(parsed.blocks)) {
-										await e.instance.render(parsed);
-									}
-								})
-								.finally(() => isRendering.delete(id));
-						} catch (err) {
-							isRendering.delete(id);
-						}
-					}
-				});
 				lastSyncTime = newTime;
 			}
 		}
@@ -161,73 +110,6 @@
 		} finally {
 			isUploadingIcon = false;
 		}
-	}
-
-	async function initEditor(id: keyof typeof editors, initialData: string) {
-		const e = editors[id];
-		if (!document.getElementById(e.holder) || e.instance) return;
-
-		const EditorJS = (await import('@editorjs/editorjs')).default;
-		const Header = (await import('@editorjs/header')).default;
-		const List = (await import('@editorjs/list')).default;
-		const Image = (await import('@editorjs/image')).default;
-		const Marker = (await import('@editorjs/marker')).default;
-		const Quote = (await import('@editorjs/quote')).default;
-		const Code = (await import('@editorjs/code')).default;
-		const Table = (await import('@editorjs/table')).default;
-		const Checklist = (await import('@editorjs/checklist')).default;
-		const Warning = (await import('@editorjs/warning')).default;
-		const Delimiter = (await import('@editorjs/delimiter')).default;
-		const InlineCode = (await import('@editorjs/inline-code')).default;
-		const Underline = (await import('@editorjs/underline')).default;
-		const ColorPlugin = (await import('editorjs-text-color-plugin')).default;
-		const Undo = (await import('editorjs-undo')).default;
-
-		let parsedData: { blocks: any[] } = { blocks: [] };
-		try {
-			if (initialData) {
-				const d = JSON.parse(initialData);
-				if (d && d.blocks) parsedData = d;
-			}
-		} catch (err) {}
-
-		if (parsedData.blocks.length === 0) {
-			parsedData.blocks.push({ type: 'paragraph', data: { text: '' } });
-		}
-
-		const inst = new EditorJS({
-			holder: e.holder,
-			i18n: siteLanguage === 'ja' ? editorI18n : undefined,
-			tools: {
-				header: Header,
-				list: List,
-				marker: Marker,
-				quote: Quote,
-				code: Code,
-				table: Table,
-				checklist: Checklist,
-				warning: Warning,
-				delimiter: Delimiter,
-				inlineCode: InlineCode,
-				underline: Underline,
-				color: {
-					class: ColorPlugin,
-					config: {
-						colorCollections: ['#00CC99', '#EB2D8C', '#1A1A1A', '#FF1313', '#2388FF', '#FFD300'],
-						type: 'text',
-						customPicker: true
-					}
-				},
-				image: { class: Image, config: { endpoints: { byFile: '/api/upload' } } }
-			},
-			onReady: () => {
-				new Undo({ editor: inst });
-			},
-			data: parsedData,
-			placeholder: 'Start...',
-			defaultBlock: 'paragraph'
-		});
-		e.instance = inst;
 	}
 
 	async function runMigration(target: 'local' | 'database') {
@@ -324,21 +206,6 @@
 				}
 			}
 
-			for (const [id, e] of Object.entries(editors)) {
-				if (e.instance) {
-					const saved = await e.instance.save();
-					const key =
-						id === 'home'
-							? 'home_hero_content'
-							: id === 'about'
-								? 'about_page_content'
-								: id === 'error404'
-									? 'error_404_content'
-									: 'error_500_content';
-					updates[key] = JSON.stringify(saved);
-				}
-			}
-
 			const res = await fetch('/api/settings', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
@@ -369,20 +236,11 @@
 
 	onMount(() => {
 		setTimeout(() => {
-			initEditor('home', data.settings?.home_hero_content || '');
-			initEditor('about', data.settings?.about_page_content || '');
-			initEditor('error404', data.settings?.error_404_content || '');
-			initEditor('error500', data.settings?.error_500_content || '');
 			setTimeout(refreshSettings, 1000);
 		}, 200);
 		window.addEventListener('keydown', handleKeydown);
 		return () => {
 			window.removeEventListener('keydown', handleKeydown);
-			Object.values(editors).forEach((e) => {
-				if (e.instance && typeof e.instance.destroy === 'function') {
-					e.instance.isReady.then(() => e.instance.destroy()).catch(() => {});
-				}
-			});
 		};
 	});
 </script>
@@ -744,39 +602,6 @@
 					/>
 				</div>
 			</section>
-
-			<div class="space-y-8">
-				<div class="card-psan p-8 space-y-6">
-					<h3 class="text-xl font-black italic uppercase">Home Page</h3>
-					<div
-						id="editor-home"
-						class="text-main bg-white dark:bg-slate-900 rounded-[32px] p-4 border border-slate-200 dark:border-slate-800"
-					></div>
-				</div>
-				<div class="card-psan p-8 space-y-6">
-					<h3 class="text-xl font-black italic uppercase">About Page</h3>
-					<div
-						id="editor-about"
-						class="text-main bg-white dark:bg-slate-900 rounded-[32px] p-4 border border-slate-200 dark:border-slate-800"
-					></div>
-				</div>
-				<div class="grid md:grid-cols-2 gap-8">
-					<div class="card-psan p-6 space-y-4">
-						<h3 class="text-[10px] font-black text-muted uppercase">404 Error</h3>
-						<div
-							id="editor-404"
-							class="text-main bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200 dark:border-slate-800"
-						></div>
-					</div>
-					<div class="card-psan p-6 space-y-4">
-						<h3 class="text-[10px] font-black text-muted uppercase">500 Error</h3>
-						<div
-							id="editor-500"
-							class="text-main bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200 dark:border-slate-800"
-						></div>
-					</div>
-				</div>
-			</div>
 
 			<section class="card-psan p-8 space-y-6 border-psan-green/20 border-2">
 				<h3 class="text-xl font-black text-psan-green italic uppercase">Backup Settings</h3>

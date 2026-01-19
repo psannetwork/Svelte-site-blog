@@ -128,7 +128,17 @@
 									<option value="admin" selected={user.role === 'admin'}>ADMIN</option>
 								</select>
 							</form>
-							<form method="POST" action="?/deleteUser" use:enhance>
+							<form
+								method="POST"
+								action="?/deleteUser"
+								use:enhance={({ cancel }) => {
+									if (!confirm('このユーザーを完全に削除してもよろしいですか？関連するファイルもすべて削除されます。'))
+										return cancel();
+									return async ({ update }) => {
+										await update();
+									};
+								}}
+							>
 								<input type="hidden" name="userId" value={user.id} />
 								<button class="text-xs font-bold text-red-500 hover:text-red-700 transition"
 									>DELETE</button

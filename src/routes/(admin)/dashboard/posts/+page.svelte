@@ -138,7 +138,16 @@
 								/></svg
 							>
 						</a>
-						<form method="POST" action="?/deletePost" use:enhance>
+						<form
+							method="POST"
+							action="?/deletePost"
+							use:enhance={({ cancel }) => {
+								if (!confirm('この投稿を完全に削除してもよろしいですか？')) return cancel();
+								return async ({ update }) => {
+									await update();
+								};
+							}}
+						>
 							<input type="hidden" name="id" value={post.id} />
 							<button
 								disabled={!canEdit}
