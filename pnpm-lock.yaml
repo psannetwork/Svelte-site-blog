@@ -44,6 +44,9 @@ importers:
       '@editorjs/quote':
         specifier: ^2.7.6
         version: 2.7.6
+      '@editorjs/raw':
+        specifier: ^2.5.1
+        version: 2.5.1
       '@editorjs/table':
         specifier: ^2.4.5
         version: 2.4.5
@@ -59,6 +62,9 @@ importers:
       '@node-rs/argon2':
         specifier: ^2.0.2
         version: 2.0.2
+      editorjs-drag-drop:
+        specifier: ^1.1.16
+        version: 1.1.16
       editorjs-text-alignment-blocktune:
         specifier: ^1.0.3
         version: 1.0.3
@@ -217,6 +223,9 @@ packages:
 
   '@editorjs/quote@2.7.6':
     resolution: {integrity: sha512-D01KUMSDj2r+6Z+xjDkQqI+y6URpeHCvj0+P4pah+GtkG040lWjFb2H4pgHFXuol2cbfyAoraYSw85fuPheCvw==}
+
+  '@editorjs/raw@2.5.1':
+    resolution: {integrity: sha512-h7CjXtfSTe4Bj1CL84ch5NW0q0CdrlWsLzQ/kbaFTgx914CzKz4Ug+xgdvytVO1dd1QzB5/HCW0ic1VxtgkhMQ==}
 
   '@editorjs/table@2.4.5':
     resolution: {integrity: sha512-pF48R2wc5m0c+N+RjtCLXBGZd23Rl7EjfSFpmcSViwNsu5RwMgYGrEiQ8mzVh98mbvYQwXm/NYBi9DEUUs970A==}
@@ -1153,6 +1162,9 @@ packages:
   devalue@5.6.1:
     resolution: {integrity: sha512-jDwizj+IlEZBunHcOuuFVBnIMPAEHvTsJj0BcIp94xYguLRVBcXO853px/MyIJvbVzWdsGvrRweIUWJw8hBP7A==}
 
+  editorjs-drag-drop@1.1.16:
+    resolution: {integrity: sha512-yOyKZqqZepkdbDQbAw1bZr3mQewkT4a9QgufWW3Aoy1qcTka8uHR01T/dGHqrpyYrF56ykyidPyp0LX79LEHHQ==}
+
   editorjs-text-alignment-blocktune@1.0.3:
     resolution: {integrity: sha512-DAJ2LJP+WjETvU4lVOJCqZ1kZkKHp0GkujkqZgza9DRv7bO46m1M/s2d5Ba5hPFdmqk1vA/ci++MQXgWD7mWYw==}
 
@@ -1888,6 +1900,10 @@ snapshots:
     dependencies:
       '@codexteam/icons': 0.3.3
       '@editorjs/dom': 0.0.5
+
+  '@editorjs/raw@2.5.1':
+    dependencies:
+      '@codexteam/icons': 0.0.4
 
   '@editorjs/table@2.4.5':
     dependencies:
@@ -2648,6 +2664,8 @@ snapshots:
   detect-libc@2.1.2: {}
 
   devalue@5.6.1: {}
+
+  editorjs-drag-drop@1.1.16: {}
 
   editorjs-text-alignment-blocktune@1.0.3: {}
 

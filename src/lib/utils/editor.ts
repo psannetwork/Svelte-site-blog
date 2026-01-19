@@ -75,11 +75,13 @@ export function editorJsToHtml(blocks: any[]) {
 				case 'embed':
 					html += `<figure class="my-20 flex flex-col items-center"><div class="w-full max-w-5xl aspect-video rounded-[40px] overflow-hidden shadow-2xl bg-black border border-white/10"><iframe class="w-full h-full" src="${block.data.embed}" frameborder="0" allowfullscreen></iframe></div>${block.data.caption ? `<figcaption class="text-center text-xs mt-6 font-black opacity-60 uppercase tracking-widest">${block.data.caption}</figcaption>` : ''}</figure>`;
 					break;
-				case 'delimiter':
-					html += `<div class="flex justify-center my-16 gap-4"><span class="w-2 h-2 rounded-full bg-slate-200 dark:bg-slate-700"></span><span class="w-2 h-2 rounded-full bg-psan-green"></span><span class="w-2 h-2 rounded-full bg-slate-200 dark:bg-slate-700"></span></div>`;
-					break;
-				case 'checklist':
-					const checklistItems = (block.data.items || [])
+				                               case 'delimiter':
+				                                       html += `<div class="flex justify-center my-16 gap-4"><span class="w-2 h-2 rounded-full bg-slate-200 dark:bg-slate-700"></span><span class="w-2 h-2 rounded-full bg-psan-green"></span><span class="w-2 h-2 rounded-full bg-slate-200 dark:bg-slate-700"></span></div>`;
+				                                       break;
+				                               case 'raw':
+				                                       html += `<div class="raw-html-container my-10">${block.data.html}</div>`;
+				                                       break;
+				                               case 'checklist':					const checklistItems = (block.data.items || [])
 						.map((item: any) => {
 							const text = typeof item === 'string' ? item : item.text || item.content || '';
 							const checked = item.checked ? 'checked' : '';

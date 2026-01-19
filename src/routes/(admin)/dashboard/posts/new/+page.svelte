@@ -105,14 +105,34 @@
 			const Undo = (await import('editorjs-undo')).default;
 			const LinkTool = (await import('@editorjs/link')).default;
 
+			const Undo = (await import('editorjs-undo')).default;
+			const LinkTool = (await import('@editorjs/link')).default;
+			const RawTool = (await import('@editorjs/raw')).default;
+			const DragDrop = (await import('editorjs-drag-drop')).default;
+
+			let parsedData: { blocks: any[] } = { blocks: [] };
+			try {
+				const autosaved = localStorage.getItem('autosave_new_post');
+				if (autosaved) {
+					const confirmRestore = confirm('未保存の下書きが見つかりました。復元しますか？');
+					if (confirmRestore) {
+						parsedData = JSON.parse(autosaved);
+					}
+				}
+			} catch (e) {}
+
+			if (parsedData.blocks.length === 0) {
+				parsedData.blocks.push({ type: 'paragraph', data: { text: '' } });
+			}
+
 			editor = new EditorJS({
 				holder: 'editorjs',
 				inlineToolbar: true,
 				i18n: data?.settings?.site_language === 'ja' ? editorI18n : undefined,
 				onReady: () => {
 					new Undo({ editor });
+					new DragDrop(editor);
 				},
-				// Improved UX config
 				minHeight: 300,
 				logLevel: 'ERROR',
 				tools: {
@@ -123,6 +143,7 @@
 					list: { class: List, inlineToolbar: true },
 					quote: { class: Quote, inlineToolbar: true },
 					code: Code,
+					raw: RawTool,
 					marker: {
 						class: ColorPlugin,
 						config: {
@@ -183,7 +204,8 @@
 						config: {
 							endpoints: { byFile: '/api/upload' },
 							field: 'image',
-							types: 'image/*'
+							types: 'image/*',
+							captionPlaceholder: 'キャプションを入力...'
 						}
 					},
 					linkTool: { class: LinkTool, config: { endpoint: '/api/link' } },
@@ -209,9 +231,28 @@
 					}
 				},
 				tunes: ['anyTuneName'],
-				data: { blocks: [{ type: 'paragraph', data: { text: '' } }] },
-				placeholder: 'Start writing...',
+				data: parsedData,
+				onChange: async () => {
+					if (editor) {
+						const saved = await editor.save();
+						localStorage.setItem('autosave_new_post', JSON.stringify(saved));
+					}
+				},
+				placeholder: '執筆を開始...',
 				defaultBlock: 'paragraph'
+			});
+
+			const editorContainer = document.getElementById('editorjs');
+			editorContainer?.addEventListener('contextmenu', (e) => {
+				e.preventDefault();
+				const target = e.target as HTMLElement;
+				const block = target.closest('.ce-block');
+				if (block) {
+					const settingsBtn = block.querySelector('.ce-toolbar__settings-btn') as HTMLElement;
+					if (settingsBtn) {
+						settingsBtn.click();
+					}
+				}
 			});
 		})();
 
@@ -233,7 +274,10 @@
 		method="POST"
 		class="space-y-8"
 		use:enhance={() => {
-			return async ({ update }) => {
+			return async ({ result, update }) => {
+				if (result.type === 'success' || result.type === 'redirect') {
+					localStorage.removeItem('autosave_new_post');
+				}
 				await update();
 				isSaving = false;
 			};

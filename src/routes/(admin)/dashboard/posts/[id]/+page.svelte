@@ -108,10 +108,22 @@
 			const AlignmentTune = (await import('editorjs-text-alignment-blocktune')).default;
 			const Undo = (await import('editorjs-undo')).default;
 			const LinkTool = (await import('@editorjs/link')).default;
+			const RawTool = (await import('@editorjs/raw')).default;
+			const DragDrop = (await import('editorjs-drag-drop')).default;
 
 			let parsedData: { blocks: any[] } = { blocks: [] };
 			try {
-				if (editorData) {
+				// 1. まずローカルストレージから復元を試みる (オートセーブ)
+				const autosaved = localStorage.getItem(`autosave_post_${initialPost.id}`);
+				if (autosaved) {
+					const confirmRestore = confirm('未保存の編集データが見つかりました。復元しますか？');
+					if (confirmRestore) {
+						parsedData = JSON.parse(autosaved);
+					}
+				}
+
+				// 2. 復元しなかった場合はサーバーのデータを読み込む
+				if (parsedData.blocks.length === 0 && editorData) {
 					const data = JSON.parse(editorData);
 					if (data && data.blocks) parsedData = data;
 				}
@@ -123,7 +135,7 @@
 
 			editor = new EditorJS({
 				holder: 'editorjs',
-				inlineToolbar: true, // 全体的にインラインツールバーを有効化
+				inlineToolbar: true,
 				i18n: data?.settings?.site_language === 'ja' ? editorI18n : undefined,
 				tools: {
 					header: {
@@ -131,8 +143,9 @@
 						inlineToolbar: true
 					},
 					list: { class: List, inlineToolbar: true },
-					quote: Quote,
+					quote: { class: Quote, inlineToolbar: true },
 					code: Code,
+					raw: RawTool,
 					marker: {
 						class: ColorPlugin,
 						config: {
@@ -155,7 +168,7 @@
 							customPicker: true
 						}
 					},
-					table: Table,
+					table: { class: Table, inlineToolbar: true },
 					checklist: Checklist,
 					warning: Warning,
 					delimiter: Delimiter,
@@ -216,6 +229,14 @@
 				tunes: ['anyTuneName'],
 				onReady: () => {
 					new Undo({ editor });
+					new DragDrop(editor);
+				},
+				onChange: async () => {
+					// オートセーブ
+					if (editor) {
+						const saved = await editor.save();
+						localStorage.setItem(`autosave_post_${initialPost.id}`, JSON.stringify(saved));
+					}
 				},
 				data: parsedData,
 				placeholder: '執筆を開始...',
@@ -267,6 +288,7 @@
 			return async ({ result, update }) => {
 				if (result.type === 'success') {
 					isSaving = false;
+					localStorage.removeItem(`autosave_post_${initialPost.id}`);
 					await update({ reset: false });
 				} else {
 					await update();
