@@ -1,61 +1,45 @@
-# Svelte Site Blog
+# ✨ Svelte Site Blog
 
-Everything you need to build a Svelte project, powered by [`sv`](https://github.com/sveltejs/cli).
-
-## 🚀 Creating a project
-
-If you're seeing this, you've probably already done this step. Congrats!
-
-```sh
-# create a new project in the current directory
-npx sv create
-
-# create a new project in my-app
-npx sv create my-app
-```
-
-## 🛠 Developing
-
-Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
-
-```sh
-npm run dev
-
-# or start the server and open the app in a new browser tab
-npm run dev -- --open
-```
-
-## 🚀 Deployment
-
-For detailed instructions on how to deploy this blog locally or to the web (Render.com), please see our **[Deployment Guide (Japanese)](./DEPLOY.md)**.
-
-## 📦 Building
-
-To create a production version of your app:
-
-```sh
-npm run build
-```
-
-You can preview the production build with `npm run preview`.
-
-> To deploy your app, you may need to install an [adapter](https://svelte.dev/docs/kit/adapters) for your target environment.
+誰でも、簡単に、プロ級のブログを。
+SvelteKit を活用した、モダンで高速な完全無料ブログシステムです。
 
 ---
 
-## 📝 Commit Convention
+## 📖 ユーザーガイド
 
-Please use the following format for commit messages:
+プロジェクトのセットアップ、運用、デプロイ方法については、以下の総合ドキュメントをご覧ください。
 
+### **[📚 総合ドキュメント (日本語)](./Docs/README.md)**
+
+1.  **[はじめる準備 (ローカル構築)](./Docs/Setup-Local.md)**
+2.  **[完全無料で本番公開 (Render × Turso)](./Docs/Deployment-Render.md)**
+3.  **[執筆・管理マニュアル](./Docs/User-Manual.md)**
+4.  **[トラブルシューティング](./Docs/Troubleshooting.md)**
+
+---
+
+## 🚀 クイックスタート (開発者向け)
+
+```bash
+# 依存関係のインストール
+pnpm install
+
+# セットアップと開発サーバー起動
+bash setup.sh
+pnpm run dev
+```
+
+---
+
+## 📝 コミット規約
+
+コミットメッセージは以下の形式で統一してください：
 `[Emoji] [Prefix]: [Summary]`
 
-| Prefix        | Meaning         |
-| :------------ | :-------------- |
-| `feat` ✨     | New Feature     |
-| `fix` 🐛      | Bug Fix         |
-| `ui` 💄       | UI/Style Change |
-| `refactor` ♻️ | Refactoring     |
-| `docs` 📝     | Documentation   |
-| `chore` 🔧    | Tooling/Config  |
+例: `✨ feat: サムネイル機能の追加`
 
-Example: `💄 ui: Improve button visibility in dark mode`
+| Prefix | 内容 | Prefix | 内容 |
+| :--- | :--- | :--- | :--- |
+| `feat` ✨ | 新機能 | `fix` 🐛 | 修正 |
+| `ui` 💄 | デザイン | `docs` 📝 | ドキュメント |
+| `refactor` ♻️ | リファクタ | `chore` 🔧 | 設定・雑務 |
