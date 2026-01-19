@@ -12,7 +12,7 @@ export function isValidSqlite(buffer: Buffer): boolean {
 	return header === 'SQLite format 3\0';
 }
 
-export function performBackup() {
+export async function performBackup() {
 	if (env.TURSO_DB_URL) {
 		console.log('[BACKUP] Automatic backup is managed by Turso dashboard. Skipping local task.');
 		setSetting('last_backup_at', Date.now().toString());
@@ -57,7 +57,7 @@ export function performBackup() {
 
 			}
 
-	
+
 
 			// 2. ファイルコピーによるバックアップ (ローカルSQLiteのみ)
 
@@ -73,7 +73,7 @@ export function performBackup() {
 
 			}
 
-	
+
 
 			return { success: false, error: 'Backup method not available' };
 

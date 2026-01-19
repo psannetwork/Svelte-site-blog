@@ -25,7 +25,7 @@
 		<meta name="description" content={data.settings.site_description} />
 	{/if}
 	{#if data.settings?.site_icon_url}
-		<link rel="icon" href="{data.settings.site_icon_url}?v={Date.now()}" />
+		<link rel="icon" href="{data.settings.site_icon_url}" />
 	{:else}
 		<link rel="icon" href="/favicon.svg" />
 	{/if}
