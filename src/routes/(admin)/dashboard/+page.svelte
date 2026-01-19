@@ -121,9 +121,18 @@
 				{#each data.posts.slice(0, 3) as post}
 					<a
 						href="/dashboard/posts"
-						class="flex items-center justify-between p-5 md:p-6 hover:bg-slate-50 transition"
+						class="flex items-center justify-between p-5 md:p-6 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition gap-4"
 					>
-						<span class="font-black text-sm text-main truncate pr-4">{post.title}</span>
+						<div class="flex items-center gap-4 flex-1 min-w-0">
+							<div class="w-10 h-10 rounded-lg bg-secondary dark:bg-slate-800 shrink-0 overflow-hidden flex items-center justify-center border border-slate-100 dark:border-slate-700">
+								{#if post.thumbnail_url}
+									<img src={post.thumbnail_url} alt="" class="w-full h-full object-cover" />
+								{:else}
+									<span class="text-[10px] font-black text-muted opacity-30 uppercase">{post.title.substring(0, 1)}</span>
+								{/if}
+							</div>
+							<span class="font-black text-sm text-main truncate">{post.title}</span>
+						</div>
 						<span class="text-[9px] font-black text-muted uppercase shrink-0"
 							>{new Date(post.created_at).toLocaleDateString()}</span
 						>

@@ -48,19 +48,18 @@
 			{#each data.posts as post}
 				<article class="group px-4">
 					<a href="/pages/{post.id}" class="block">
-						<div
-							class="relative aspect-[16/10] bg-slate-100 dark:bg-slate-800 rounded-3xl overflow-hidden mb-6"
-						>
-							<div
-								class="absolute inset-0 bg-gradient-to-br from-psan-green/10 to-psan-pink/10 mix-blend-overlay group-hover:scale-105 transition-transform duration-500"
-							></div>
-							<div class="absolute inset-0 flex items-center justify-center">
-								<span class="text-slate-400 dark:text-slate-500 text-6xl font-black italic"
-									>{post.title.substring(0, 1)}</span
-								>
-							</div>
-						</div>
-						<div class="space-y-3">
+						                    <div
+												class="w-full aspect-video rounded-3xl bg-psan-green/10 dark:bg-slate-800 mb-6 overflow-hidden flex items-center justify-center relative group-hover:scale-[1.02] transition-transform duration-500"
+											>
+												{#if post.thumbnail_url}
+													<img src={post.thumbnail_url} alt="" class="w-full h-full object-cover" />
+												{:else}
+													<span
+														class="text-6xl font-black text-psan-green/20 dark:text-slate-700 uppercase italic tracking-tighter"
+														>{post.title.substring(0, 1)}</span
+													>
+												{/if}
+											</div>						<div class="space-y-3">
 							<div
 								class="flex items-center gap-3 text-[10px] font-black tracking-widest text-muted uppercase"
 							>

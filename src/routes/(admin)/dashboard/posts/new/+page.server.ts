@@ -23,6 +23,7 @@ export const actions: Actions = {
 		const summary = formData.get('summary') as string;
 		let visibility = formData.get('visibility') as string;
 		const editorDataRaw = formData.get('editorData') as string;
+		let thumbnailUrl = formData.get('thumbnail_url') as string;
 
 		if (locals.user.role === 'author' && !['draft', 'review'].includes(visibility)) {
 			visibility = 'draft'; 
@@ -36,6 +37,14 @@ export const actions: Actions = {
 		try {
 			const editorData = JSON.parse(editorDataRaw);
 			htmlContent = editorJsToHtml(editorData.blocks);
+
+			// サムネイルが指定されていない場合、最初の画像を探す
+			if (!thumbnailUrl || thumbnailUrl.trim() === '') {
+				const imageBlock = editorData.blocks.find((b: any) => b.type === 'image');
+				if (imageBlock?.data?.file?.url) {
+					thumbnailUrl = imageBlock.data.file.url;
+				}
+			}
 		} catch (e) {
 			return fail(400, { message: 'Invalid editor data' });
 		}
@@ -45,8 +54,8 @@ export const actions: Actions = {
 
 		db.prepare(
 			`
-			INSERT INTO post (id, title, summary, content, raw_json, author_id, visibility, created_at, updated_at) 
-			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+			INSERT INTO post (id, title, summary, content, raw_json, author_id, visibility, created_at, updated_at, thumbnail_url) 
+			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 		`
 		).run(
 			postId,
@@ -57,7 +66,8 @@ export const actions: Actions = {
 			locals.user.id,
 			visibility || 'draft',
 			now,
-			now
+			now,
+			thumbnailUrl || null
 		);
 
 		throw redirect(302, '/dashboard/posts');

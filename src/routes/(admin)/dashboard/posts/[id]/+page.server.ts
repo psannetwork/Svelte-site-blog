@@ -52,6 +52,7 @@ export const actions: Actions = {
 		const summary = formData.get('summary') as string;
 		const visibility = formData.get('visibility') as string;
 		const editorDataRaw = formData.get('editorData') as string;
+		let thumbnailUrl = formData.get('thumbnail_url') as string;
 
 		if (!title || !editorDataRaw) {
 			return fail(400, { message: 'Title and content are required' });
@@ -61,6 +62,14 @@ export const actions: Actions = {
 		try {
 			const editorData = JSON.parse(editorDataRaw);
 			htmlContent = editorJsToHtml(editorData.blocks);
+
+			// サムネイルが指定されていない場合、最初の画像を探す
+			if (!thumbnailUrl || thumbnailUrl.trim() === '') {
+				const imageBlock = editorData.blocks.find((b: any) => b.type === 'image');
+				if (imageBlock?.data?.file?.url) {
+					thumbnailUrl = imageBlock.data.file.url;
+				}
+			}
 		} catch (e) {
 			return fail(400, { message: 'Invalid editor data' });
 		}
@@ -68,10 +77,10 @@ export const actions: Actions = {
 		db.prepare(
 			`
 			UPDATE post 
-			SET title = ?, summary = ?, content = ?, raw_json = ?, visibility = ?, updated_at = ? 
+			SET title = ?, summary = ?, content = ?, raw_json = ?, visibility = ?, updated_at = ?, thumbnail_url = ? 
 			WHERE id = ?
 		`
-		).run(title, summary, htmlContent, editorDataRaw, visibility, Date.now(), params.id);
+		).run(title, summary, htmlContent, editorDataRaw, visibility, Date.now(), thumbnailUrl || null, params.id);
 
 		throw redirect(302, '/dashboard/posts');
 	}

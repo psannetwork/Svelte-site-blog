@@ -34,30 +34,39 @@
 					? 'opacity-60 grayscale'
 					: ''}"
 			>
-				<div class="flex-1 min-w-0">
-					<div class="flex items-center gap-2 mb-2">
-						<span
-							class="text-[10px] md:text-xs font-black tracking-widest px-2 py-0.5 rounded
-							{post.visibility === 'public'
-								? 'bg-psan-green/10 text-psan-green border border-psan-green/20'
-								: post.visibility === 'draft'
-									? 'bg-slate-100 text-slate-500 border border-slate-200'
-									: post.visibility === 'review'
-										? 'bg-psan-pink/10 text-psan-pink border border-psan-pink/20 animate-pulse'
-										: 'bg-psan-dark/10 text-psan-dark border border-psan-dark/20'} dark:bg-slate-800 dark:text-slate-100 dark:border dark:border-slate-600 uppercase"
-						>
-							{post.visibility}
-						</span>
-						<span class="text-[10px] md:text-xs font-black tracking-widest text-muted"
-							>{new Date(post.created_at).toLocaleDateString()}</span
-						>
+				<div class="flex items-center gap-6 flex-1 min-w-0">
+					<div class="w-20 h-20 md:w-24 md:h-24 rounded-2xl bg-secondary dark:bg-slate-800 shrink-0 overflow-hidden border border-slate-100 dark:border-slate-700 flex items-center justify-center">
+						{#if post.thumbnail_url}
+							<img src={post.thumbnail_url} alt="" class="w-full h-full object-cover" />
+						{:else}
+							<span class="text-2xl font-black text-muted opacity-20 uppercase">{post.title.substring(0, 1)}</span>
+						{/if}
 					</div>
-					<h3
-						class="text-xl md:text-2xl font-black text-main group-hover:text-psan-green transition-colors truncate"
-					>
-						{post.title}
-					</h3>
-					<p class="text-xs text-muted font-bold line-clamp-1 mt-1">By {post.author_name}</p>
+					<div class="flex-1 min-w-0">
+						<div class="flex items-center gap-2 mb-2">
+							<span
+								class="text-[10px] md:text-xs font-black tracking-widest px-2 py-0.5 rounded
+								{post.visibility === 'public'
+									? 'bg-psan-green/10 text-psan-green border border-psan-green/20'
+									: post.visibility === 'draft'
+										? 'bg-slate-100 text-slate-500 border border-slate-200'
+										: post.visibility === 'review'
+											? 'bg-psan-pink/10 text-psan-pink border border-psan-pink/20 animate-pulse'
+											: 'bg-psan-dark/10 text-psan-dark border border-psan-dark/20'} dark:bg-slate-800 dark:text-slate-100 dark:border dark:border-slate-600 uppercase"
+							>
+								{post.visibility}
+							</span>
+							<span class="text-[10px] md:text-xs font-black tracking-widest text-muted"
+								>{new Date(post.created_at).toLocaleDateString()}</span
+							>
+						</div>
+						<h3
+							class="text-xl md:text-2xl font-black text-main group-hover:text-psan-green transition-colors truncate"
+						>
+							{post.title}
+						</h3>
+						<p class="text-xs text-muted font-bold line-clamp-1 mt-1">By {post.author_name}</p>
+					</div>
 				</div>
 
 				<div
