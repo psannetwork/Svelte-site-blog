@@ -7,6 +7,6 @@ export default defineConfig({
 	server: {
 		port: 5174,
 		strictPort: true,
-		allowedHosts: ['blogtest.psannetwork.net']
+		allowedHosts: ['blogtest.psannetwork.net', 'blog.psannetwork.net']
 	}
 });
