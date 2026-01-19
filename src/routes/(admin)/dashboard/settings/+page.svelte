@@ -23,91 +23,82 @@
 		data.settings?.allowed_extensions || '.jpg,.jpeg,.png,.gif,.webp,.svg,.ico'
 	);
 	let siteIconUrl = $state(data.settings?.site_icon_url || '');
-	let storageType = $state(data.settings?.storage_type || 'local');
-
-	let migrationStatus = $state<{ active: boolean; progress: number; message: string }>({
-		active: false,
-		progress: 0,
-		message: ''
-	});
-
-	let userEdited = $state<Record<string, boolean>>({});
-	let lastSyncTime = $state(0);
-
-	onMount(() => {
-		if (data.settings) {
-			lastSyncTime = parseInt(data.settings._updated || '0');
-		}
-	});
-
-	function markEdited(key: string) {
-		userEdited[key] = true;
-	}
-
-	async function refreshSettings() {
-		if (isRefreshing || isSaving) return;
-		isRefreshing = true;
-		try {
-			const res = await fetch('/api/settings');
-			const result = await res.json();
-			if (result.success && result.settings) {
-				const s = result.settings;
-				const newTime = parseInt(s._updated || '0');
-
-				if (newTime > lastSyncTime) {
-					let changed = false;
-
-					const sync = (key: string, current: any, remote: any, setter: (v: any) => void) => {
-						if (!userEdited[key] && current !== remote) {
-							setter(remote);
-							changed = true;
-						}
-					};
-
-					sync('site_title', siteTitle, s.site_title, (v) => (siteTitle = v));
-					sync(
-						'site_description',
-						siteDescription,
-						s.site_description,
-						(v) => (siteDescription = v)
-					);
-					sync('accent_color', accentColor, s.accent_color, (v) => (accentColor = v));
-					sync('site_language', siteLanguage, s.site_language, (v) => (siteLanguage = v));
-					sync('site_icon_url', siteIconUrl, s.site_icon_url, (v) => (siteIconUrl = v));
-
-					Object.entries(editors).forEach(([id, e]) => {
-						const key =
-							id === 'home'
-								? 'home_hero_content'
-								: id === 'about'
-									? 'about_page_content'
-									: id === 'error404'
-										? 'error_404_content'
-										: 'error_500_content';
-						const content = s[key];
-
-						if (e.instance && content && !isSaving) {
-							try {
-								const parsed = JSON.parse(content);
-								e.instance.isReady.then(async () => {
-									const cur = await e.instance.save();
-									if (JSON.stringify(cur.blocks) !== JSON.stringify(parsed.blocks)) {
-										await e.instance.render(parsed);
-										changed = true;
-									}
-								});
-							} catch (err) {}
-						}
-					});
-
-					lastSyncTime = newTime;
-				}
+		let storageType = $state(data.settings?.storage_type || 'local');
+		let storageStats = $state({ local: 0, database: 0 });
+	
+		let migrationStatus = $state<{ active: boolean, progress: number, message: string }> ({
+			active: false,
+			progress: 0,
+			message: ''
+		});
+	
+		let userEdited = $state<Record<string, boolean>>({});
+		let lastSyncTime = $state(0);
+	
+		onMount(() => {
+			if (data.settings) {
+				lastSyncTime = parseInt(data.settings._updated || '0');
 			}
-		} catch (e) {
-		} finally {
-			isRefreshing = false;
+			// 統計情報の初期取得
+			refreshSettings();
+		});
+	
+		function markEdited(key: string) {
+			userEdited[key] = true;
 		}
-	}
+	
+		async function refreshSettings() {
+			if (isRefreshing || isSaving) return;
+			isRefreshing = true;
+			try {
+				const res = await fetch('/api/settings');
+				const result = await res.json();
+				if (result.success) {
+					if (result.stats) storageStats = result.stats;
+					const s = result.settings;
+					const newTime = parseInt(s._updated || '0');
+					
+					if (newTime > lastSyncTime) {
+						let changed = false;
+						const sync = (key: string, current: any, remote: any, setter: (v: any) => void) => {
+							if (!userEdited[key] && current !== remote) {
+								setter(remote);
+								changed = true;
+							}
+						};
+	
+						sync('site_title', siteTitle, s.site_title, v => siteTitle = v);
+						sync('site_description', siteDescription, s.site_description, v => siteDescription = v);
+						sync('accent_color', accentColor, s.accent_color, v => accentColor = v);
+						sync('site_language', siteLanguage, s.site_language, v => siteLanguage = v);
+						sync('site_icon_url', siteIconUrl, s.site_icon_url, v => siteIconUrl = v);
+	
+						Object.entries(editors).forEach(([id, e]) => {
+							const key = id === 'home' ? 'home_hero_content' : id === 'about' ? 'about_page_content' : id === 'error404' ? 'error_404_content' : 'error_500_content';
+							const content = s[key];
+							if (e.instance && content && !isSaving) {
+								try {
+									const parsed = JSON.parse(content);
+									e.instance.isReady.then(async () => {
+										const cur = await e.instance.save();
+										if (JSON.stringify(cur.blocks) !== JSON.stringify(parsed.blocks)) {
+											await e.instance.render(parsed);
+											changed = true;
+										}
+									});
+								} catch (err) {}
+							}
+						});
+						lastSyncTime = newTime;
+						if (changed) console.log('[SETTINGS] Data synced.');
+					}
+				}
+			} catch (e) {
+			} finally {
+				isRefreshing = false;
+			}
+		}
+	
 
 	let editors = $state({
 		home: { data: '', instance: null as any, holder: 'editor-home' },
@@ -652,19 +643,33 @@
 						</div>
 					{/if}
 
-					<div class="flex flex-col gap-4">
-						<div class="flex flex-col md:flex-row md:items-center gap-6">
-							<select
-								name="storage_type"
-								bind:value={storageType}
-								class="bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-500 rounded-xl text-xs font-black p-3 text-main dark:text-white"
-								onchange={() => markEdited('storage_type')}
-							>
-								<option value="local">Local Filesystem</option>
-								<option value="database">SQLite Database</option>
-							</select>
+										<div class="flex flex-col gap-4">
 
-							{#if storageType === 'database'}
+											<div class="flex flex-col md:flex-row md:items-center gap-6">
+
+												<div class="space-y-1">
+
+													<select name="storage_type" bind:value={storageType} class="bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-500 rounded-xl text-xs font-black p-3 text-main dark:text-white" onchange={() => markEdited('storage_type')}>
+
+														<option value="local">Local Filesystem</option>
+
+														<option value="database">SQLite Database</option>
+
+													</select>
+
+													<div class="flex gap-2 text-[9px] font-black uppercase opacity-50">
+
+														<span class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800">Local: {storageStats.local}</span>
+
+														<span class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800">DB: {storageStats.database}</span>
+
+													</div>
+
+												</div>
+
+					
+
+												{#if storageType === 'database'}
 								<button
 									type="button"
 									onclick={() => runMigration('database')}
