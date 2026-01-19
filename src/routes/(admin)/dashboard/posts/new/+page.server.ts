@@ -6,7 +6,7 @@ import { getSettings } from '$lib/server/settings';
 import type { PageServerLoad, Actions } from './$types';
 
 export const load: PageServerLoad = async ({ locals }) => {
-	if (!locals.user || (locals.user.role !== 'admin' && locals.user.role !== 'editor')) {
+	if (!locals.user || !['admin', 'editor', 'author'].includes(locals.user.role)) {
 		throw redirect(302, '/auth/login');
 	}
 	return { settings: getSettings() };
@@ -14,15 +14,19 @@ export const load: PageServerLoad = async ({ locals }) => {
 
 export const actions: Actions = {
 	default: async ({ request, locals }) => {
-		if (!locals.user || (locals.user.role !== 'admin' && locals.user.role !== 'editor')) {
+		if (!locals.user || !['admin', 'editor', 'author'].includes(locals.user.role)) {
 			throw redirect(302, '/dashboard');
 		}
 
 		const formData = await request.formData();
 		const title = formData.get('title') as string;
 		const summary = formData.get('summary') as string;
-		const visibility = formData.get('visibility') as string;
+		let visibility = formData.get('visibility') as string;
 		const editorDataRaw = formData.get('editorData') as string;
+
+		if (locals.user.role === 'author' && !['draft', 'review'].includes(visibility)) {
+			visibility = 'draft'; 
+		}
 
 		if (!title || !editorDataRaw) {
 			return fail(400, { message: 'Title and content are required' });
@@ -51,7 +55,7 @@ export const actions: Actions = {
 			htmlContent,
 			editorDataRaw,
 			locals.user.id,
-			visibility || 'public',
+			visibility || 'draft',
 			now,
 			now
 		);

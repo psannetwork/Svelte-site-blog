@@ -103,7 +103,7 @@
 							></span>
 						{/if}
 					</a>
-					{#if data.user.role === 'admin' || data.user.role === 'editor'}
+					{#if ['admin', 'editor', 'author'].includes(data.user.role)}
 						<a
 							href="/dashboard"
 							class="text-xs font-black opacity-40 hover:opacity-100 uppercase tracking-widest"
@@ -147,7 +147,7 @@
 			<hr class="opacity-10" />
 			{#if data.user}
 				<a href="/account" class="block font-black">ACCOUNT</a>
-				{#if data.user.role === 'admin' || data.user.role === 'editor'}
+				{#if ['admin', 'editor', 'author'].includes(data.user.role)}
 					<a href="/dashboard" class="block font-black text-psan-green">DASHBOARD</a>
 				{/if}
 				<form action="/auth/logout" method="POST">

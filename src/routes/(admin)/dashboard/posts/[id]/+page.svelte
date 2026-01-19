@@ -19,6 +19,20 @@
 	let isPreview = $state(false);
 	let previewHtml = $state('');
 
+	const buttonLabel = $derived.by(() => {
+		if (isSaving) return 'Saving...';
+		switch (visibility) {
+			case 'draft':
+				return 'Update Draft';
+			case 'review':
+				return 'Submit Review';
+			case 'public':
+				return 'Update & Publish';
+			default:
+				return 'Save Changes';
+		}
+	});
+
 	async function togglePreview() {
 		if (!isPreview) {
 			if (editor) {
@@ -199,10 +213,12 @@
 					>
 						<option class="dark:bg-slate-800" value="draft">📁 Draft</option>
 						<option class="dark:bg-slate-800" value="review">⏳ Review</option>
-						<option class="dark:bg-slate-800" value="public">🌍 Public</option>
-						<option class="dark:bg-slate-800" value="unlisted">🔗 Unlisted</option>
-						<option class="dark:bg-slate-800" value="private">🔒 Private</option>
-						<option class="dark:bg-slate-800" value="vip">💎 VIP</option>
+						{#if data.user?.role === 'admin' || data.user?.role === 'editor'}
+							<option class="dark:bg-slate-800" value="public">🌍 Public</option>
+							<option class="dark:bg-slate-800" value="unlisted">🔗 Unlisted</option>
+							<option class="dark:bg-slate-800" value="private">🔒 Private</option>
+							<option class="dark:bg-slate-800" value="vip">💎 VIP</option>
+						{/if}
 					</select>
 				</div>
 			</div>
@@ -225,7 +241,7 @@
 					class="btn-psan-primary py-3 px-10 text-sm"
 					disabled={isSaving}
 				>
-					{isSaving ? 'Saving...' : 'Save Changes'}
+					{buttonLabel}
 				</button>
 			</div>
 		</header>

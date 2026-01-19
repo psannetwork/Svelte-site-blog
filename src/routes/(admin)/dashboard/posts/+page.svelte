@@ -21,8 +21,18 @@
 
 	<div class="grid gap-4 md:gap-6">
 		{#each data.posts as post}
+			{@const canManage =
+				data.user?.role === 'admin' ||
+				data.user?.role === 'editor' ||
+				(data.user?.role === 'author' && post.author_id === data.user?.id)}
+			{@const canEdit =
+				canManage &&
+				(data.user?.role !== 'author' || ['draft', 'review'].includes(post.visibility))}
+
 			<div
-				class="card-psan p-5 md:p-6 flex flex-col md:flex-row md:items-center justify-between gap-4 md:gap-6 group"
+				class="card-psan p-5 md:p-6 flex flex-col md:flex-row md:items-center justify-between gap-4 md:gap-6 group {!canManage
+					? 'opacity-60 grayscale'
+					: ''}"
 			>
 				<div class="flex-1 min-w-0">
 					<div class="flex items-center gap-2 mb-2">
@@ -57,8 +67,9 @@
 						<input type="hidden" name="id" value={post.id} />
 						<select
 							name="status"
+							disabled={!canEdit}
 							onchange={(e) => e.currentTarget.form?.requestSubmit()}
-							class="bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-500 rounded-xl text-xs font-black p-2 pr-8 focus:ring-2 focus:ring-psan-green text-slate-900 dark:text-white cursor-pointer shadow-sm outline-none"
+							class="bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-500 rounded-xl text-xs font-black p-2 pr-8 focus:ring-2 focus:ring-psan-green text-slate-900 dark:text-white cursor-pointer shadow-sm outline-none disabled:opacity-50 disabled:cursor-not-allowed"
 						>
 							<option
 								class="dark:bg-slate-800 dark:text-white"
@@ -73,21 +84,25 @@
 							<option
 								class="dark:bg-slate-800 dark:text-white"
 								value="public"
+								disabled={data.user?.role === 'author'}
 								selected={post.visibility === 'public'}>PUBLIC</option
 							>
 							<option
 								class="dark:bg-slate-800 dark:text-white"
 								value="unlisted"
+								disabled={data.user?.role === 'author'}
 								selected={post.visibility === 'unlisted'}>UNLISTED</option
 							>
 							<option
 								class="dark:bg-slate-800 dark:text-white"
 								value="vip"
+								disabled={data.user?.role === 'author'}
 								selected={post.visibility === 'vip'}>VIP</option
 							>
 							<option
 								class="dark:bg-slate-800 dark:text-white"
 								value="private"
+								disabled={data.user?.role === 'author'}
 								selected={post.visibility === 'private'}>PRIVATE</option
 							>
 						</select>
@@ -95,8 +110,10 @@
 
 					<div class="flex items-center gap-1 md:gap-2">
 						<a
-							href="/dashboard/posts/{post.id}"
-							class="p-2 md:p-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-500 text-slate-600 dark:text-white hover:bg-psan-green/10 hover:text-psan-green hover:border-psan-green/50 dark:hover:border-psan-green/50 transition-all rounded-xl group/edit shadow-sm"
+							href={canEdit ? `/dashboard/posts/${post.id}` : 'javascript:void(0)'}
+							class="p-2 md:p-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-500 text-slate-600 dark:text-white hover:bg-psan-green/10 hover:text-psan-green hover:border-psan-green/50 dark:hover:border-psan-green/50 transition-all rounded-xl group/edit shadow-sm {!canEdit
+								? 'opacity-30 grayscale cursor-not-allowed pointer-events-none'
+								: ''}"
 							title="Edit"
 						>
 							<svg
@@ -115,7 +132,8 @@
 						<form method="POST" action="?/deletePost" use:enhance>
 							<input type="hidden" name="id" value={post.id} />
 							<button
-								class="p-2 md:p-3 text-psan-pink hover:bg-psan-pink/10 border border-psan-pink/20 rounded-xl transition-all"
+								disabled={!canEdit}
+								class="p-2 md:p-3 text-psan-pink hover:bg-psan-pink/10 border border-psan-pink/20 rounded-xl transition-all disabled:opacity-30 disabled:grayscale disabled:cursor-not-allowed"
 								title="Delete"
 							>
 								<svg

@@ -14,7 +14,8 @@
 		{
 			name: '固定ページ',
 			href: '/dashboard/pages',
-			icon: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z'
+			icon: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z',
+			adminOnly: true // Editor/Author共に制限
 		},
 		{
 			name: '投稿管理',
@@ -24,17 +25,20 @@
 		{
 			name: 'コメント',
 			href: '/dashboard/comments',
-			icon: 'M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z'
+			icon: 'M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z',
+			adminOnly: true
 		},
 		{
 			name: 'ユーザー',
 			href: '/dashboard/users',
-			icon: 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z'
+			icon: 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z',
+			adminOnly: true
 		},
 		{
 			name: '設定',
 			href: '/dashboard/settings',
-			icon: 'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z'
+			icon: 'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z',
+			adminOnly: true
 		}
 	];
 
@@ -63,7 +67,11 @@
 	>
 		<div class="p-8 flex items-center justify-between">
 			<div class="flex items-center gap-3">
-				<div class="w-8 h-8 bg-psan-green rounded-lg shrink-0"></div>
+				<div
+					class="w-8 h-8 rounded-lg shrink-0 {data.user?.role === 'author'
+						? 'bg-psan-author'
+						: 'bg-psan-green'}"
+				></div>
 				<span class="font-black text-xl tracking-tighter text-main uppercase">Dashboard</span>
 			</div>
 			<button
@@ -84,12 +92,18 @@
 
 		<nav class="flex-1 px-4 space-y-1 overflow-y-auto">
 			{#each menuItems as item}
+				{@const isDisabled = item.adminOnly && (data.user?.role === 'editor' || data.user?.role === 'author')}
 				<a
-					href={item.href}
+					href={isDisabled ? 'javascript:void(0)' : item.href}
 					class="flex items-center gap-3 px-4 py-4 lg:py-3 rounded-2xl font-black text-sm lg:text-xs transition-all
-					{page.url.pathname === item.href
-						? 'bg-psan-green text-white shadow-xl shadow-psan-green/30 translate-x-1'
-						: 'text-muted hover:bg-slate-100 dark:hover:bg-slate-700/50 hover:text-[--text-main] dark:hover:text-white hover:translate-x-1'}"
+					{isDisabled
+						? 'opacity-30 grayscale cursor-not-allowed pointer-events-none'
+						: page.url.pathname === item.href
+							? data.user?.role === 'author'
+								? 'bg-psan-author text-white shadow-xl shadow-blue-500/30 translate-x-1'
+								: 'bg-psan-green text-white shadow-xl shadow-psan-green/30 translate-x-1'
+							: 'text-muted hover:bg-slate-100 dark:hover:bg-slate-700/50 hover:text-[--text-main] dark:hover:text-white hover:translate-x-1'}"
+					aria-disabled={isDisabled}
 				>
 					<svg
 						class="w-5 h-5 {page.url.pathname === item.href ? 'stroke-2' : ''}"
@@ -169,10 +183,18 @@
 						<div class="text-[10px] font-black text-[--text-main] uppercase">
 							{data.user?.nickname || data.user?.username}
 						</div>
-						<div class="text-[8px] font-black text-psan-green uppercase">{data.user?.role}</div>
+						<div
+							class="text-[8px] font-black uppercase {data.user?.role === 'author'
+								? 'text-psan-author'
+								: 'text-psan-green'}"
+						>
+							{data.user?.role}
+						</div>
 					</div>
 					<div
-						class="w-10 h-10 rounded-2xl bg-psan-green overflow-hidden flex items-center justify-center font-black text-white shadow-lg"
+						class="w-10 h-10 rounded-2xl overflow-hidden flex items-center justify-center font-black text-white shadow-lg {data.user?.role === 'author'
+							? 'bg-psan-author'
+							: 'bg-psan-green'}"
 					>
 						{#if data.user?.avatar_url}
 							<img src={data.user.avatar_url} alt="" class="w-full h-full object-cover" />

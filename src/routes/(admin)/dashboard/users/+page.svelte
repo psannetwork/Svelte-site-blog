@@ -64,20 +64,26 @@
 				</div>
 				<div class="space-y-2">
 					<label class="text-[10px] font-black uppercase text-muted" for="new_role">Role</label>
-					<select
-						id="new_role"
-						name="role"
-						class="w-full bg-secondary dark:bg-slate-800 border-none rounded-xl p-3 font-bold text-main"
-					>
-						<option value="user">User</option>
-						<option value="vip">VIP</option>
-						<option value="editor">Editor</option>
-						<option value="admin">Admin</option>
-					</select>
-				</div>
-				<button class="w-full btn-psan-primary py-3 font-black uppercase text-sm mt-4"
+											<select
+												id="new_role"
+												name="role"
+												class="w-full bg-secondary dark:bg-slate-800 border-none rounded-xl p-3 font-bold text-main"
+											>
+												<option value="user">User</option>
+												<option value="vip">VIP</option>
+												<option value="author">Author</option>
+												<option value="editor">Editor</option>
+												<option value="admin">Admin</option>
+											</select>
+										</div>				<button class="w-full btn-psan-primary py-3 font-black uppercase text-sm mt-4"
 					>Create Account</button
 				>
+
+				{#if form?.message}
+					<p class="text-center font-black text-psan-pink text-xs animate-bounce mt-2">
+						{form.message}
+					</p>
+				{/if}
 			</form>
 		</div>
 	</dialog>
@@ -99,6 +105,11 @@
 						<span class="text-[10px] font-bold text-psan-pink uppercase tracking-widest"
 							>{user.role}</span
 						>
+						{#if user.created_at}
+							<span class="text-[10px] font-bold text-muted uppercase ml-2"
+								>• Joined {new Date(user.created_at).toLocaleDateString()}</span
+							>
+						{/if}
 					</div>
 
 					<div class="flex items-center gap-4">
@@ -112,6 +123,7 @@
 								>
 									<option value="user" selected={user.role === 'user'}>USER</option>
 									<option value="vip" selected={user.role === 'vip'}>VIP</option>
+									<option value="author" selected={user.role === 'author'}>AUTHOR</option>
 									<option value="editor" selected={user.role === 'editor'}>EDITOR</option>
 									<option value="admin" selected={user.role === 'admin'}>ADMIN</option>
 								</select>
@@ -144,6 +156,12 @@
 					</p>
 				</div>
 				<div>
+					<div class="font-black text-psan-green text-sm">AUTHOR</div>
+					<p class="text-xs font-medium text-main opacity-70">
+						記事の作成、自分の記事の編集（下書き/レビュー中のみ）が可能です。
+					</p>
+				</div>
+				<div>
 					<div class="font-black text-psan-green text-sm italic">VIP</div>
 					<p class="text-xs font-medium text-main opacity-70">
 						一般ユーザーの全機能に加え、VIP限定投稿の閲覧が可能です。
@@ -158,6 +176,4 @@
 			</div>
 		</aside>
 	</div>
-
-	{#if form?.message}<p class="mt-8 text-center font-black text-psan-pink">{form.message}</p>{/if}
 </div>

@@ -6,6 +6,7 @@
 	--color-psan-green: #00cc99;
 	--color-psan-pink: #eb2d8c;
 	--color-psan-dark: #1a1a1a;
+	--color-psan-author: #3b82f6; /* Blue for Author */
 
 	/* セマンティックカラーを直接定義 */
 	--color-main: var(--text-main);

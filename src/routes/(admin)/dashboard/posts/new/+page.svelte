@@ -9,11 +9,27 @@
 	let editor: any;
 	let title = $state('');
 	let summary = $state('');
-	let visibility = $state('public');
+	let visibility = $state('draft');
 	let editorData = $state('');
 	let isSaving = $state(false);
 	let isPreview = $state(false);
 	let previewHtml = $state('');
+
+	const buttonLabel = $derived.by(() => {
+		if (isSaving) return 'Saving...';
+		switch (visibility) {
+			case 'draft':
+				return 'Save Draft';
+			case 'review':
+				return 'Request Review';
+			case 'public':
+				return 'Publish Now';
+			case 'vip':
+				return 'Publish as VIP';
+			default:
+				return 'Save Story';
+		}
+	});
 
 	async function togglePreview() {
 		if (!isPreview) {
@@ -162,10 +178,12 @@
 					>
 						<option value="draft">📁 Draft</option>
 						<option value="review">⏳ Review</option>
-						<option value="public">🌍 Public</option>
-						<option value="unlisted">🔗 Unlisted</option>
-						<option value="private">🔒 Private</option>
-						<option value="vip">💎 VIP</option>
+						{#if data.user?.role === 'admin' || data.user?.role === 'editor'}
+							<option value="public">🌍 Public</option>
+							<option value="unlisted">🔗 Unlisted</option>
+							<option value="private">🔒 Private</option>
+							<option value="vip">💎 VIP</option>
+						{/if}
 					</select>
 				</div>
 			</div>
@@ -184,7 +202,7 @@
 					class="btn-psan-primary py-3 px-10 text-sm"
 					disabled={isSaving}
 				>
-					{isSaving ? 'Publishing...' : 'Publish'}
+					{buttonLabel}
 				</button>
 			</div>
 		</header>

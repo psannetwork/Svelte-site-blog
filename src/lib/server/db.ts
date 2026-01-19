@@ -53,7 +53,8 @@ function initSchema(db: any) {
 				role TEXT NOT NULL DEFAULT 'user', 
 				is_protected INTEGER DEFAULT 0,
 				avatar_url TEXT,
-				notification_enabled INTEGER DEFAULT 1
+				notification_enabled INTEGER DEFAULT 1,
+				created_at INTEGER
 			);
 			CREATE TABLE IF NOT EXISTS session (id TEXT PRIMARY KEY, expires_at INTEGER NOT NULL, user_id TEXT NOT NULL, FOREIGN KEY (user_id) REFERENCES user(id) ON DELETE CASCADE);
 			CREATE TABLE IF NOT EXISTS post (id TEXT PRIMARY KEY, title TEXT NOT NULL, summary TEXT, content TEXT NOT NULL, raw_json TEXT, author_id TEXT NOT NULL, visibility TEXT NOT NULL DEFAULT 'public', created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL, FOREIGN KEY (author_id) REFERENCES user(id));
@@ -74,6 +75,9 @@ function initSchema(db: any) {
 		} catch (e) {}
 		try {
 			db.exec('ALTER TABLE user ADD COLUMN notification_enabled INTEGER DEFAULT 1');
+		} catch (e) {}
+		try {
+			db.exec('ALTER TABLE user ADD COLUMN created_at INTEGER');
 		} catch (e) {}
 		try {
 			db.exec('ALTER TABLE post ADD COLUMN raw_json TEXT');
