@@ -24,14 +24,11 @@ export function performBackup() {
 	}
 	const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
 	const backupPath = join(BACKUP_DIR, `backup-${timestamp}.db`);
-	
+
 	try {
-		
 		if (typeof (db as any).backup === 'function') {
 			(db as any).backup(backupPath);
 		} else {
-			
-			
 			copyFileSync(DB_PATH, backupPath);
 		}
 
@@ -47,19 +44,19 @@ export function performBackup() {
 export function rotateBackups() {
 	const keepCount = parseInt(getSetting('backup_keep_count', '5'));
 	const files = readdirSync(BACKUP_DIR)
-		.filter(f => f.endsWith('.db'))
-		.map(f => ({ name: f, time: statSync(join(BACKUP_DIR, f)).mtimeMs }))
+		.filter((f) => f.endsWith('.db'))
+		.map((f) => ({ name: f, time: statSync(join(BACKUP_DIR, f)).mtimeMs }))
 		.sort((a, b) => b.time - a.time);
 	if (files.length > keepCount) {
-		files.slice(keepCount).forEach(f => unlinkSync(join(BACKUP_DIR, f.name)));
+		files.slice(keepCount).forEach((f) => unlinkSync(join(BACKUP_DIR, f.name)));
 	}
 }
 
 export function listBackups() {
 	if (!existsSync(BACKUP_DIR)) return [];
 	return readdirSync(BACKUP_DIR)
-		.filter(f => f.endsWith('.db'))
-		.map(f => {
+		.filter((f) => f.endsWith('.db'))
+		.map((f) => {
 			const stat = statSync(join(BACKUP_DIR, f));
 			return { name: f, size: stat.size, time: stat.mtimeMs };
 		})
@@ -75,15 +72,13 @@ export async function restoreBackup(filename: string) {
 	if (!existsSync(backupPath)) return { success: false, error: 'Backup not found' };
 
 	try {
-		
 		resetDb();
 
-		
 		copyFileSync(backupPath, DB_PATH);
 
 		console.log(`[RESTORE] Database restored from ${filename}. Connection reset.`);
-		
-		return { success: true, message: "データベースの復元が完了しました。" };
+
+		return { success: true, message: 'データベースの復元が完了しました。' };
 	} catch (e) {
 		console.error('[RESTORE ERROR]', e);
 		return { success: false, error: e };

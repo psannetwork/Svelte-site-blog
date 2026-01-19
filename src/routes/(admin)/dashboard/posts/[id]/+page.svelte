@@ -5,13 +5,12 @@
 	import { editorI18n } from '$lib/utils/editor_i18n';
 	import type { ActionData, PageData } from './$types';
 
-	let { data, form } = $props<{ data: PageData, form: ActionData }>();
+	let { data, form } = $props<{ data: PageData; form: ActionData }>();
 	const { post: initialPost } = data;
-	
+
 	let editor: any;
 	let formElement: HTMLFormElement;
-	
-	
+
 	let title = $state(initialPost.title);
 	let summary = $state(initialPost.summary || '');
 	let visibility = $state(initialPost.visibility);
@@ -45,8 +44,8 @@
 		try {
 			const saved = await editor.save();
 			const json = JSON.stringify(saved);
-			editorData = json; 
-			
+			editorData = json;
+
 			setTimeout(() => {
 				formElement?.requestSubmit();
 			}, 20);
@@ -58,7 +57,7 @@
 
 	onMount(() => {
 		(async () => {
-			if (editor) return; 
+			if (editor) return;
 
 			const EditorJS = (await import('@editorjs/editorjs')).default;
 			const Header = (await import('@editorjs/header')).default;
@@ -77,7 +76,7 @@
 			const ColorPlugin = (await import('editorjs-text-color-plugin')).default;
 			const Undo = (await import('editorjs-undo')).default;
 			const LinkTool = (await import('@editorjs/link')).default;
-			
+
 			let parsedData: { blocks: any[] } = { blocks: [] };
 			try {
 				if (editorData) {
@@ -113,17 +112,20 @@
 							customPicker: true
 						}
 					},
-					image: { 
-						class: Image, 
-						config: { 
+					image: {
+						class: Image,
+						config: {
 							endpoints: { byFile: '/api/upload' },
 							field: 'image',
 							types: 'image/*',
 							captionPlaceholder: 'キャプションを入力...'
-						} 
+						}
 					},
 					linkTool: { class: LinkTool, config: { endpoint: '/api/link' } },
-					embed: { class: Embed, config: { services: { youtube: true, vimeo: true, twitter: true } } }
+					embed: {
+						class: Embed,
+						config: { services: { youtube: true, vimeo: true, twitter: true } }
+					}
 				},
 				onReady: () => {
 					new Undo({ editor });
@@ -139,7 +141,6 @@
 				const target = e.target as HTMLElement;
 				const block = target.closest('.ce-block');
 				if (block) {
-					
 					const settingsBtn = block.querySelector('.ce-toolbar__settings-btn') as HTMLElement;
 					if (settingsBtn) {
 						settingsBtn.click();
@@ -155,9 +156,11 @@
 				const currentEditor = editor;
 				editor = null;
 				if (typeof currentEditor.destroy === 'function') {
-					currentEditor.isReady.then(() => {
-						currentEditor.destroy();
-					}).catch(() => {});
+					currentEditor.isReady
+						.then(() => {
+							currentEditor.destroy();
+						})
+						.catch(() => {});
 				}
 			}
 		};
@@ -169,22 +172,31 @@
 </svelte:head>
 
 <div class="max-w-5xl mx-auto px-4 py-8">
-	<form bind:this={formElement} method="POST" class="space-y-8" use:enhance={() => {
-		return async ({ result, update }) => {
-			if (result.type === 'success') {
-				isSaving = false;
-				await update({ reset: false });
-			} else {
-				await update();
-				isSaving = false;
-			}
-		};
-	}}>
+	<form
+		bind:this={formElement}
+		method="POST"
+		class="space-y-8"
+		use:enhance={() => {
+			return async ({ result, update }) => {
+				if (result.type === 'success') {
+					isSaving = false;
+					await update({ reset: false });
+				} else {
+					await update();
+					isSaving = false;
+				}
+			};
+		}}
+	>
 		<header class="flex flex-col md:flex-row md:items-center justify-between gap-6">
 			<div>
 				<h2 class="text-4xl font-black tracking-tighter uppercase text-psan-green">Edit Story</h2>
 				<div class="flex gap-4 mt-2">
-					<select name="visibility" bind:value={visibility} class="text-xs font-black bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-500 rounded-lg px-4 py-2 uppercase tracking-widest cursor-pointer text-slate-900 dark:text-white focus:ring-2 focus:ring-psan-green shadow-sm outline-none">
+					<select
+						name="visibility"
+						bind:value={visibility}
+						class="text-xs font-black bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-500 rounded-lg px-4 py-2 uppercase tracking-widest cursor-pointer text-slate-900 dark:text-white focus:ring-2 focus:ring-psan-green shadow-sm outline-none"
+					>
 						<option class="dark:bg-slate-800" value="draft">📁 Draft</option>
 						<option class="dark:bg-slate-800" value="review">⏳ Review</option>
 						<option class="dark:bg-slate-800" value="public">🌍 Public</option>
@@ -195,11 +207,24 @@
 				</div>
 			</div>
 			<div class="flex gap-3">
-				<a href="/dashboard/posts" class="btn-psan-ghost text-xs py-2 dark:bg-slate-700 dark:text-white dark:border-slate-500">Cancel</a>
-				<button type="button" onclick={togglePreview} class="btn-psan-ghost text-xs py-2 border-psan-green text-psan-green hover:bg-psan-green hover:text-white transition-all min-w-[100px]">
+				<a
+					href="/dashboard/posts"
+					class="btn-psan-ghost text-xs py-2 dark:bg-slate-700 dark:text-white dark:border-slate-500"
+					>Cancel</a
+				>
+				<button
+					type="button"
+					onclick={togglePreview}
+					class="btn-psan-ghost text-xs py-2 border-psan-green text-psan-green hover:bg-psan-green hover:text-white transition-all min-w-[100px]"
+				>
 					{isPreview ? 'Edit' : 'Preview'}
 				</button>
-				<button type="button" onclick={submitForm} class="btn-psan-primary py-3 px-10 text-sm" disabled={isSaving}>
+				<button
+					type="button"
+					onclick={submitForm}
+					class="btn-psan-primary py-3 px-10 text-sm"
+					disabled={isSaving}
+				>
 					{isSaving ? 'Saving...' : 'Save Changes'}
 				</button>
 			</div>

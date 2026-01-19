@@ -10,7 +10,7 @@ export function editorJsToHtml(blocks: any[]) {
 			lastBlockJson = currentBlockJson;
 
 			let text = block.data?.text || '';
-			
+
 			switch (block.type) {
 				case 'header':
 					const level = block.data.level || 2;
@@ -31,13 +31,17 @@ export function editorJsToHtml(blocks: any[]) {
 				case 'image':
 					// 視覚的リサイズ: stretched (全幅), withBorder (枠線), withBackground (背景) を組み合わせて表現
 					// stretched が true の場合は 100%, false の場合は 70% (中央寄せ)
-					const widthStyle = block.data.stretched ? 'width: 100%;' : 'width: 70%; max-width: 800px;';
+					const widthStyle = block.data.stretched
+						? 'width: 100%;'
+						: 'width: 70%; max-width: 800px;';
 					const classes = [
 						'mx-auto rounded-[40px] transition-all duration-700 shadow-2xl',
 						block.data.withBorder ? 'border-8 border-slate-100 dark:border-slate-800' : '',
 						block.data.withBackground ? 'bg-slate-100 dark:bg-slate-800 p-6 md:p-16' : ''
 					].join(' ');
-					const caption = block.data.caption ? `<figcaption class="text-center text-xs mt-6 font-black opacity-30 uppercase tracking-widest">${block.data.caption}</figcaption>` : '';
+					const caption = block.data.caption
+						? `<figcaption class="text-center text-xs mt-6 font-black opacity-30 uppercase tracking-widest">${block.data.caption}</figcaption>`
+						: '';
 					html += `<figure class="my-20 overflow-hidden flex flex-col items-center"><img src="${block.data.file.url}" alt="${block.data.caption || ''}" class="${classes}" style="${widthStyle} height: auto; aspect-ratio: auto;">${caption}</figure>`;
 					break;
 				case 'code':

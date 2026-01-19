@@ -5,13 +5,12 @@
 	import { editorI18n } from '$lib/utils/editor_i18n';
 	import type { ActionData, PageData } from './$types';
 
-	let { data, form } = $props<{ data: PageData, form: ActionData }>();
+	let { data, form } = $props<{ data: PageData; form: ActionData }>();
 	const { page: initialPage } = data;
-	
+
 	let editor: any;
 	let formElement: HTMLFormElement;
-	
-	
+
 	let title = $state(initialPage.title);
 	let editorData = $state(initialPage.raw_json || initialPage.content || '');
 	let isSaving = $state(false);
@@ -127,9 +126,11 @@
 				const currentEditor = editor;
 				editor = null;
 				if (typeof currentEditor.destroy === 'function') {
-					currentEditor.isReady.then(() => {
-						currentEditor.destroy();
-					}).catch(() => {});
+					currentEditor.isReady
+						.then(() => {
+							currentEditor.destroy();
+						})
+						.catch(() => {});
 				}
 			}
 		};
@@ -141,28 +142,47 @@
 </svelte:head>
 
 <div class="max-w-5xl mx-auto px-4 py-8">
-	<form bind:this={formElement} method="POST" action="?/savePage" class="space-y-8" use:enhance={() => {
-		return async ({ result, update }) => {
-			if (result.type === 'success') {
-				isSaving = false;
-				await update({ reset: false });
-			} else {
-				await update();
-				isSaving = false;
-			}
-		};
-	}}>
+	<form
+		bind:this={formElement}
+		method="POST"
+		action="?/savePage"
+		class="space-y-8"
+		use:enhance={() => {
+			return async ({ result, update }) => {
+				if (result.type === 'success') {
+					isSaving = false;
+					await update({ reset: false });
+				} else {
+					await update();
+					isSaving = false;
+				}
+			};
+		}}
+	>
 		<header class="flex flex-col md:flex-row md:items-center justify-between gap-6">
 			<div>
 				<h2 class="text-4xl font-black tracking-tighter uppercase text-psan-green">Edit Page</h2>
 				<p class="text-xs text-muted font-bold mt-1">ID: {data.page.id}</p>
 			</div>
 			<div class="flex gap-3">
-				<a href="/dashboard/pages" class="btn-psan-ghost text-xs py-2 dark:bg-slate-700 dark:text-white dark:border-slate-500">Back</a>
-				<button type="button" onclick={togglePreview} class="btn-psan-ghost text-xs py-2 border-psan-green text-psan-green hover:bg-psan-green hover:text-white transition-all min-w-[100px]">
+				<a
+					href="/dashboard/pages"
+					class="btn-psan-ghost text-xs py-2 dark:bg-slate-700 dark:text-white dark:border-slate-500"
+					>Back</a
+				>
+				<button
+					type="button"
+					onclick={togglePreview}
+					class="btn-psan-ghost text-xs py-2 border-psan-green text-psan-green hover:bg-psan-green hover:text-white transition-all min-w-[100px]"
+				>
 					{isPreview ? 'Edit' : 'Preview'}
 				</button>
-				<button type="button" onclick={submitForm} class="btn-psan-primary py-3 px-10 text-sm" disabled={isSaving}>
+				<button
+					type="button"
+					onclick={submitForm}
+					class="btn-psan-primary py-3 px-10 text-sm"
+					disabled={isSaving}
+				>
 					{isSaving ? 'Saving...' : 'Save Changes'}
 				</button>
 			</div>
@@ -190,7 +210,9 @@
 
 		<input type="hidden" name="content" value={editorData} />
 		{#if form?.success}
-			<div class="fixed top-24 left-1/2 -translate-x-1/2 bg-psan-green text-white px-10 py-4 rounded-full font-black shadow-2xl z-[101] animate-in fade-in slide-in-from-top-4">
+			<div
+				class="fixed top-24 left-1/2 -translate-x-1/2 bg-psan-green text-white px-10 py-4 rounded-full font-black shadow-2xl z-[101] animate-in fade-in slide-in-from-top-4"
+			>
 				PAGE SAVED!
 			</div>
 		{/if}

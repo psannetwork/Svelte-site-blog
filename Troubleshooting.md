@@ -14,6 +14,7 @@ Error: Could not locate the bindings file. Tried:
 ### 解決方法
 
 1. 以下のコマンドで依存関係を再インストール：
+
    ```bash
    rm -rf node_modules
    rm pnpm-lock.yaml
@@ -21,6 +22,7 @@ Error: Could not locate the bindings file. Tried:
    ```
 
 2. `better-sqlite3` を再構築：
+
    ```bash
    cd node_modules/better-sqlite3
    npm rebuild

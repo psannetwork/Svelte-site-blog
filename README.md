@@ -49,13 +49,13 @@ Please use the following format for commit messages:
 
 `[Emoji] [Prefix]: [Summary]`
 
-| Prefix | Meaning |
-| :--- | :--- |
-| `feat` ✨ | New Feature |
-| `fix` 🐛 | Bug Fix |
-| `ui` 💄 | UI/Style Change |
-| `refactor` ♻️ | Refactoring |
-| `docs` 📝 | Documentation |
-| `chore` 🔧 | Tooling/Config |
+| Prefix        | Meaning         |
+| :------------ | :-------------- |
+| `feat` ✨     | New Feature     |
+| `fix` 🐛      | Bug Fix         |
+| `ui` 💄       | UI/Style Change |
+| `refactor` ♻️ | Refactoring     |
+| `docs` 📝     | Documentation   |
+| `chore` 🔧    | Tooling/Config  |
 
 Example: `💄 ui: Improve button visibility in dark mode`

@@ -9,55 +9,67 @@
 このセクションでは、プログラミングの知識がなくてもサイトの見た目を劇的に変えられる「カスタムスタイル」について詳しく解説します。
 
 ### 1. ブラウザタブの設定 (Browser Tab Settings)
-*   **Tab Title (Site Title)**: 
-    *   サイトの正式名称です。トップページではそのまま表示され、記事ページでは「記事タイトル | サイト名」のように自動的に組み合わされます。
-*   **Tab Icon (Favicon)**: 
-    *   ブラウザのタブに表示される小さなアイコンです。512x512px 程度の正方形の PNG または SVG 画像をアップロードすると、自動的に適切なサイズで反映されます。
+
+- **Tab Title (Site Title)**:
+  - サイトの正式名称です。トップページではそのまま表示され、記事ページでは「記事タイトル | サイト名」のように自動的に組み合わされます。
+- **Tab Icon (Favicon)**:
+  - ブラウザのタブに表示される小さなアイコンです。512x512px 程度の正方形の PNG または SVG 画像をアップロードすると、自動的に適切なサイズで反映されます。
 
 ---
 
 ### 2. カスタムCSSの活用 (Custom Styles)
+
 「Custom CSS」欄にコードを書き込むことで、サイトのデザイン（色、フォント、余白など）を自由自在に上書きできます。
 
 #### 💡 基本的な書き方
+
 ```css
 セレクタ {
-    プロパティ: 値 !important;
+	プロパティ: 値 !important;
 }
 ```
+
 ※ 他の設定よりも優先させるために `!important` をつけるのがコツです。
 
 #### 📋 すぐに使えるカスタマイズ例
 
 ##### ① 全体の背景色を変える
+
 サイト全体の背景を少し目に優しいクリーム色にする例です。
+
 ```css
 body {
-    background-color: #fdfcf0 !important;
+	background-color: #fdfcf0 !important;
 }
 ```
 
 ##### ② フォント（書体）を変更する
+
 Google Fonts などを使って、サイト全体の雰囲気を柔らかくする例です。
+
 ```css
 body {
-    font-family: "Zen Maru Gothic", sans-serif !important;
+	font-family: 'Zen Maru Gothic', sans-serif !important;
 }
 ```
 
 ##### ③ 特定のパーツの色をブランドカラーにする
+
 たとえば、記事タイトルの色を自分の好きな青色に固定する場合：
+
 ```css
 h1 {
-    color: #2388FF !important;
+	color: #2388ff !important;
 }
 ```
 
 ##### ④ 不要な要素を非表示にする
+
 フッターの著作権表示などを消したい場合（上級者向け）：
+
 ```css
 footer {
-    display: none !important;
+	display: none !important;
 }
 ```
 
@@ -70,7 +82,7 @@ footer {
 1.  変更したい場所（例：ボタン）の上で **右クリック**。
 2.  **「検証（または 開発者ツールで調査）」** を選択。
 3.  表示されたコードの中で、`class="..."` と書かれている部分を探します。
-    *   例：`class="btn-psan-primary"` とあれば、CSSでは `.btn-psan-primary` と書きます。
+    - 例：`class="btn-psan-primary"` とあれば、CSSでは `.btn-psan-primary` と書きます。
 4.  Custom CSS欄に `.btn-psan-primary { background: red !important; }` と書けば赤くなります。
 
 ---
@@ -81,12 +93,14 @@ footer {
 
 ```css
 /* 通常（ライトモード）の色 */
-.my-box { background: white; }
+.my-box {
+	background: white;
+}
 
 /* ダークモードの時だけ黒くする */
 .dark .my-box {
-    background: #1a1a1a !important;
-    color: white !important;
+	background: #1a1a1a !important;
+	color: white !important;
 }
 ```
 
@@ -105,14 +119,14 @@ footer {
 
 画像の保存方法を環境に合わせて選択できます。
 
-*   **Local Filesystem (デフォルト)**:
-    *   開発環境や、永続Diskがあるサーバー向け。高速です。
-*   **SQLite Database**:
-    *   Render.com の無料プランなど、サーバー再起動でファイルが消える環境向け。画像をDB内に保存するため、絶対に消えません。
+- **Local Filesystem (デフォルト)**:
+  - 開発環境や、永続Diskがあるサーバー向け。高速です。
+- **SQLite Database**:
+  - Render.com の無料プランなど、サーバー再起動でファイルが消える環境向け。画像をDB内に保存するため、絶対に消えません。
 
 ---
 
 ## 🌍 言語設定
 
-*   **日本語 (デフォルト)**: 管理画面やエディタのメニューがすべて日本語化されます。
-*   **英語**: グローバルな運営向けに英語表記に切り替わります。
+- **日本語 (デフォルト)**: 管理画面やエディタのメニューがすべて日本語化されます。
+- **英語**: グローバルな運営向けに英語表記に切り替わります。

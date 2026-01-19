@@ -14,8 +14,10 @@ export const POST: RequestHandler = async ({ request, locals, url }) => {
 
 	if (!file) throw error(400, 'No file uploaded');
 
-
-	const allowedExtensionsStr = getSetting('allowed_extensions', '["jpg","jpeg","png","gif","webp","svg","ico"]');
+	const allowedExtensionsStr = getSetting(
+		'allowed_extensions',
+		'["jpg","jpeg","png","gif","webp","svg","ico"]'
+	);
 	let allowedExtensions: string[] = [];
 	try {
 		allowedExtensions = JSON.parse(allowedExtensionsStr);
@@ -29,7 +31,14 @@ export const POST: RequestHandler = async ({ request, locals, url }) => {
 	}
 
 	// Security: Verify MIME type
-	const allowedMimes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml', 'image/x-icon'];
+	const allowedMimes = [
+		'image/jpeg',
+		'image/png',
+		'image/gif',
+		'image/webp',
+		'image/svg+xml',
+		'image/x-icon'
+	];
 	if (!allowedMimes.includes(file.type)) {
 		throw error(400, `Invalid file content type: ${file.type}`);
 	}

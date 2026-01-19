@@ -1,8 +1,7 @@
-import type { Session, User } from "lucia";
+import type { Session, User } from 'lucia';
 
 declare global {
 	namespace App {
-		
 		interface Locals {
 			user: User | null;
 			session: Session | null;
@@ -10,9 +9,6 @@ declare global {
 		interface PageData {
 			pageTitle?: string;
 		}
-		
-		
-		
 	}
 }
 

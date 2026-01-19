@@ -5,7 +5,7 @@
 	import { editorI18n } from '$lib/utils/editor_i18n';
 	import type { ActionData, PageData } from './$types';
 
-	let { data, form } = $props<{ data: PageData, form: ActionData }>();
+	let { data, form } = $props<{ data: PageData; form: ActionData }>();
 	let editor: any;
 	let title = $state('');
 	let summary = $state('');
@@ -70,7 +70,7 @@
 			const ColorPlugin = (await import('editorjs-text-color-plugin')).default;
 			const Undo = (await import('editorjs-undo')).default;
 			const LinkTool = (await import('@editorjs/link')).default;
-					
+
 			editor = new EditorJS({
 				holder: 'editorjs',
 				i18n: data?.settings?.site_language === 'ja' ? editorI18n : undefined,
@@ -103,7 +103,7 @@
 					},
 					image: {
 						class: Image,
-						config: { 
+						config: {
 							endpoints: { byFile: '/api/upload' },
 							field: 'image',
 							types: 'image/*'
@@ -140,17 +140,26 @@
 </script>
 
 <div class="max-w-5xl mx-auto px-4 py-8">
-	<form bind:this={formElement} method="POST" class="space-y-8" use:enhance={() => {
-		return async ({ update }) => {
-			await update();
-			isSaving = false;
-		};
-	}}>
+	<form
+		bind:this={formElement}
+		method="POST"
+		class="space-y-8"
+		use:enhance={() => {
+			return async ({ update }) => {
+				await update();
+				isSaving = false;
+			};
+		}}
+	>
 		<header class="flex flex-col md:flex-row md:items-center justify-between gap-6">
 			<div>
 				<h2 class="text-4xl font-black tracking-tighter text-main">CREATE STORY</h2>
 				<div class="flex gap-4 mt-2">
-					<select name="visibility" bind:value={visibility} class="text-xs font-black bg-white dark:bg-slate-800 border border-slate-200 dark:border-none rounded-lg px-4 py-2 uppercase tracking-widest cursor-pointer text-main focus:ring-2 focus:ring-psan-green shadow-sm">
+					<select
+						name="visibility"
+						bind:value={visibility}
+						class="text-xs font-black bg-white dark:bg-slate-800 border border-slate-200 dark:border-none rounded-lg px-4 py-2 uppercase tracking-widest cursor-pointer text-main focus:ring-2 focus:ring-psan-green shadow-sm"
+					>
 						<option value="draft">📁 Draft</option>
 						<option value="review">⏳ Review</option>
 						<option value="public">🌍 Public</option>
@@ -162,10 +171,19 @@
 			</div>
 			<div class="flex gap-3">
 				<a href="/dashboard/posts" class="btn-psan-ghost text-xs py-2">Discard</a>
-				<button type="button" onclick={togglePreview} class="btn-psan-ghost text-xs py-2 border-psan-green text-psan-green hover:bg-psan-green hover:text-white transition-all min-w-[100px]">
+				<button
+					type="button"
+					onclick={togglePreview}
+					class="btn-psan-ghost text-xs py-2 border-psan-green text-psan-green hover:bg-psan-green hover:text-white transition-all min-w-[100px]"
+				>
 					{isPreview ? 'Edit' : 'Preview'}
 				</button>
-				<button type="button" onclick={submitForm} class="btn-psan-primary py-3 px-10 text-sm" disabled={isSaving}>
+				<button
+					type="button"
+					onclick={submitForm}
+					class="btn-psan-primary py-3 px-10 text-sm"
+					disabled={isSaving}
+				>
 					{isSaving ? 'Publishing...' : 'Publish'}
 				</button>
 			</div>

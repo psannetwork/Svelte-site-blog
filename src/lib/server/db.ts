@@ -69,10 +69,18 @@ function initSchema(db: any) {
 			CREATE INDEX IF NOT EXISTS idx_notification_user ON notification(user_id);
 		`);
 
-		try { db.exec("ALTER TABLE user ADD COLUMN avatar_url TEXT"); } catch (e) { }
-		try { db.exec("ALTER TABLE user ADD COLUMN notification_enabled INTEGER DEFAULT 1"); } catch (e) { }
-		try { db.exec("ALTER TABLE post ADD COLUMN raw_json TEXT"); } catch (e) { }
-		try { db.exec("ALTER TABLE comment ADD COLUMN parent_id TEXT"); } catch (e) { }
+		try {
+			db.exec('ALTER TABLE user ADD COLUMN avatar_url TEXT');
+		} catch (e) {}
+		try {
+			db.exec('ALTER TABLE user ADD COLUMN notification_enabled INTEGER DEFAULT 1');
+		} catch (e) {}
+		try {
+			db.exec('ALTER TABLE post ADD COLUMN raw_json TEXT');
+		} catch (e) {}
+		try {
+			db.exec('ALTER TABLE comment ADD COLUMN parent_id TEXT');
+		} catch (e) {}
 		try {
 			db.exec(`CREATE TABLE IF NOT EXISTS notification (
 				id TEXT PRIMARY KEY, 
@@ -84,10 +92,12 @@ function initSchema(db: any) {
 				created_at INTEGER NOT NULL, 
 				FOREIGN KEY (user_id) REFERENCES user(id) ON DELETE CASCADE
 			)`);
-			db.exec("CREATE INDEX IF NOT EXISTS idx_notification_user ON notification(user_id)");
-		} catch (e) { }
+			db.exec('CREATE INDEX IF NOT EXISTS idx_notification_user ON notification(user_id)');
+		} catch (e) {}
 
-		const insertSetting = db.prepare("INSERT OR IGNORE INTO site_settings (key, value) VALUES (?, ?)");
+		const insertSetting = db.prepare(
+			'INSERT OR IGNORE INTO site_settings (key, value) VALUES (?, ?)'
+		);
 		for (const [key, value] of Object.entries(DEFAULT_SETTINGS)) {
 			try {
 				insertSetting.run(key, value);
@@ -114,27 +124,31 @@ function getDb(): any {
 
 export function resetDb() {
 	if (_db) {
-		try { _db.close(); } catch (e) { }
+		try {
+			_db.close();
+		} catch (e) {}
 		_db = null;
 	}
 }
 
-export function getDbStatus() { return _dbStatus; }
+export function getDbStatus() {
+	return _dbStatus;
+}
 
 function createPreparedStatement(sql: string, dbInstance: any) {
 	const stmt = dbInstance.prepare(sql);
 	return {
 		run: (...params: any[]) => {
-			const args = (params.length === 1 && Array.isArray(params[0])) ? params[0] : params;
+			const args = params.length === 1 && Array.isArray(params[0]) ? params[0] : params;
 			return args.length > 0 ? stmt.run(args) : stmt.run();
 		},
 		all: (...params: any[]) => {
-			const args = (params.length === 1 && Array.isArray(params[0])) ? params[0] : params;
+			const args = params.length === 1 && Array.isArray(params[0]) ? params[0] : params;
 			const result = args.length > 0 ? stmt.all(args) : stmt.all();
-			return Array.isArray(result) ? result : (result?.rows || []);
+			return Array.isArray(result) ? result : result?.rows || [];
 		},
 		get: (...params: any[]) => {
-			const args = (params.length === 1 && Array.isArray(params[0])) ? params[0] : params;
+			const args = params.length === 1 && Array.isArray(params[0]) ? params[0] : params;
 			const result = args.length > 0 ? stmt.get(args) : stmt.get();
 			if (result && !Array.isArray(result) && result.rows && result.rows.length > 0) {
 				return result.rows[0];
@@ -146,15 +160,21 @@ function createPreparedStatement(sql: string, dbInstance: any) {
 	};
 }
 
-const dbProxy = new Proxy({}, {
-	get(target, prop) {
-		const instance = getDb();
-		if (!instance) return (...args: any[]) => { throw new Error("DB error"); };
-		if (prop === 'prepare') return (sql: string) => createPreparedStatement(sql, instance);
-		const value = instance[prop];
-		return typeof value === 'function' ? value.bind(instance) : value;
+const dbProxy = new Proxy(
+	{},
+	{
+		get(target, prop) {
+			const instance = getDb();
+			if (!instance)
+				return (...args: any[]) => {
+					throw new Error('DB error');
+				};
+			if (prop === 'prepare') return (sql: string) => createPreparedStatement(sql, instance);
+			const value = instance[prop];
+			return typeof value === 'function' ? value.bind(instance) : value;
+		}
 	}
-});
+);
 
 export default dbProxy as any;
 export { getDb };

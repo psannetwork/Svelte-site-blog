@@ -1,20 +1,19 @@
-import db from "$lib/server/db";
-import { error, redirect, fail } from "@sveltejs/kit";
-import { editorJsToHtml } from "$lib/server/editor";
-import type { PageServerLoad, Actions } from "./$types";
+import db from '$lib/server/db';
+import { error, redirect, fail } from '@sveltejs/kit';
+import { editorJsToHtml } from '$lib/server/editor';
+import type { PageServerLoad, Actions } from './$types';
 
 export const load: PageServerLoad = async ({ params, locals }) => {
 	if (!locals.user || (locals.user.role !== 'admin' && locals.user.role !== 'editor')) {
-		throw redirect(302, "/auth/login");
+		throw redirect(302, '/auth/login');
 	}
 
-	const post = db.prepare("SELECT * FROM post WHERE id = ?").get(params.id) as any;
+	const post = db.prepare('SELECT * FROM post WHERE id = ?').get(params.id) as any;
 
-	if (!post) throw error(404, "Post not found");
+	if (!post) throw error(404, 'Post not found');
 
-	
 	if (locals.user.role === 'editor' && post.author_id !== locals.user.id) {
-		throw error(403, "You do not have permission to edit this post");
+		throw error(403, 'You do not have permission to edit this post');
 	}
 
 	return {
@@ -29,13 +28,13 @@ export const actions: Actions = {
 		}
 
 		const formData = await request.formData();
-		const title = formData.get("title") as string;
-		const summary = formData.get("summary") as string;
-		const visibility = formData.get("visibility") as string;
-		const editorDataRaw = formData.get("editorData") as string;
+		const title = formData.get('title') as string;
+		const summary = formData.get('summary') as string;
+		const visibility = formData.get('visibility') as string;
+		const editorDataRaw = formData.get('editorData') as string;
 
 		if (!title || !editorDataRaw) {
-			return fail(400, { message: "Title and content are required" });
+			return fail(400, { message: 'Title and content are required' });
 		}
 
 		let htmlContent = '';
@@ -43,15 +42,17 @@ export const actions: Actions = {
 			const editorData = JSON.parse(editorDataRaw);
 			htmlContent = editorJsToHtml(editorData.blocks);
 		} catch (e) {
-			return fail(400, { message: "Invalid editor data" });
+			return fail(400, { message: 'Invalid editor data' });
 		}
 
-		db.prepare(`
+		db.prepare(
+			`
 			UPDATE post 
 			SET title = ?, summary = ?, content = ?, raw_json = ?, visibility = ?, updated_at = ? 
 			WHERE id = ?
-		`).run(title, summary, htmlContent, editorDataRaw, visibility, Date.now(), params.id);
+		`
+		).run(title, summary, htmlContent, editorDataRaw, visibility, Date.now(), params.id);
 
-		throw redirect(302, "/dashboard/posts");
+		throw redirect(302, '/dashboard/posts');
 	}
 };
