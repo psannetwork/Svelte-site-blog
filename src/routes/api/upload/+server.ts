@@ -14,7 +14,7 @@ export const POST: RequestHandler = async ({ request, locals, url }) => {
 
 	if (!file) throw error(400, 'No file uploaded');
 
-	
+
 	const allowedExtensionsStr = getSetting('allowed_extensions', '["jpg","jpeg","png","gif","webp","svg","ico"]');
 	let allowedExtensions: string[] = [];
 	try {
@@ -26,6 +26,12 @@ export const POST: RequestHandler = async ({ request, locals, url }) => {
 	const ext = file.name.split('.').pop()?.toLowerCase();
 	if (!ext || !allowedExtensions.includes(ext)) {
 		throw error(400, `Unsupported file type: .${ext}`);
+	}
+
+	// Security: Verify MIME type
+	const allowedMimes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml', 'image/x-icon'];
+	if (!allowedMimes.includes(file.type)) {
+		throw error(400, `Invalid file content type: ${file.type}`);
 	}
 
 	try {

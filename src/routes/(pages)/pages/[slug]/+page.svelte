@@ -5,6 +5,7 @@
 	
 	let { data, form } = $props<{ data: PageData, form: ActionData }>();
 	let replyingTo = $state<string | null>(null);
+	let isPosting = $state(false);
 
 	
 	const commentTree = $derived.by(() => {
@@ -32,10 +33,16 @@
 </svelte:head>
 
 {#snippet commentItem(comment: any, depth = 0)}
-	<!-- depth に応じてインデント (最大レベル2まで) -->
-	{@const visualDepth = Math.min(depth, 3)}
-	<div class="flex gap-4 group {visualDepth > 0 ? (visualDepth < 3 ? 'ml-3 md:ml-10 mt-6 pt-6 border-t border-slate-200 dark:border-slate-800/50 relative before:absolute before:left-[-10px] md:before:left-[-20px] before:top-0 before:bottom-0 before:w-0.5 before:bg-slate-200 dark:before:bg-slate-800/50 before:content-[\'\']' : 'mt-4 pt-4 border-l-2 border-slate-200 dark:border-slate-800/50 pl-2 md:pl-4') : 'mt-10'}">
-		<div class="{depth > 0 ? 'w-8 h-8' : 'w-10 h-10'} rounded-2xl bg-slate-100 dark:bg-slate-800 overflow-hidden shrink-0 shadow-sm">
+	<!-- "Side Comment" Logic: 
+		- Depth 0: Main Thread
+		- Depth 1+: Flattened replies with slight indent to show relationship, but do NOT indent infinitely.
+		- Mobile: Max indent 1 level.
+	-->
+	{@const isRoot = depth === 0}
+	
+	<!-- Visual Distinction for Replies: Add background and tighter spacing -->
+	<div class="flex gap-3 md:gap-4 group {isRoot ? 'mt-8' : 'mt-3 bg-slate-50 dark:bg-slate-900/30 p-3 md:p-4 rounded-xl'}">
+		<div class="{isRoot ? 'w-10 h-10' : 'w-6 h-6 md:w-8 md:h-8'} rounded-2xl bg-white dark:bg-slate-800 overflow-hidden shrink-0 shadow-sm">
 			{#if comment.avatar_url}
 				<img src={comment.avatar_url} alt="" class="w-full h-full object-cover" />
 			{:else}
@@ -45,16 +52,27 @@
 			{/if}
 		</div>
 		<div class="flex-1 min-w-0">
-			<div class="flex items-center justify-between gap-4 mb-1">
-				<div class="flex items-center gap-2">
+			<div class="flex items-center justify-between gap-4 mb-2">
+				<div class="flex items-center gap-2 flex-wrap">
 					<span class="text-sm font-black dark:text-white truncate">{comment.author_name}</span>
 					{#if comment.author_role === 'admin'}
-						<span class="text-[10px] font-black px-2 py-1 bg-psan-green text-white rounded-md uppercase tracking-wider shrink-0">Admin</span>
+						<span class="text-[10px] font-black px-2 py-0.5 bg-psan-green text-white rounded uppercase tracking-wider shrink-0">Admin</span>
+					{/if}
+					{#if comment.parent_id}
+						{@const parent = data.comments.find(c => c.id === comment.parent_id)}
+						{#if parent}
+							<span class="text-[10px] text-muted font-bold flex items-center gap-1">
+								<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"/></svg>
+								to {parent.author_name}
+							</span>
+						{/if}
 					{/if}
 				</div>
-				<time class="text-xs font-bold text-muted uppercase whitespace-nowrap">{new Date(comment.created_at).toLocaleString()}</time>
+				<time class="text-[10px] font-bold text-muted uppercase whitespace-nowrap">{new Date(comment.created_at).toLocaleString()}</time>
 			</div>
-			<p class="text-base font-medium leading-relaxed dark:text-slate-300 whitespace-pre-wrap">{comment.content}</p>
+			<div class="text-base font-medium leading-relaxed dark:text-slate-300 whitespace-pre-wrap relative z-10">
+				{comment.content}
+			</div>
 			
 			<div class="flex items-center gap-2 mt-3">
 				<button 
@@ -84,7 +102,14 @@
 			</div>
 
 			{#if replyingTo === comment.id}
-				<form method="POST" action="?/addComment" use:enhance={() => { replyingTo = null; }} class="mt-4 space-y-4">
+				<form method="POST" action="?/addComment" use:enhance={() => {
+					isPosting = true;
+					return async ({ update }) => {
+						await update();
+						isPosting = false;
+						replyingTo = null;
+					}; 
+				}} class="mt-4 space-y-4">
 					<input type="hidden" name="parentId" value={comment.id} />
 					<textarea 
 						name="content" 
@@ -98,15 +123,29 @@
 						<div class="cf-turnstile" data-sitekey={data.settings.turnstile_site_key} data-theme={theme.current}></div>
 					{/if}
 
-					<button type="submit" class="btn-psan-primary py-2 px-6 text-xs uppercase tracking-widest">Send Reply</button>
+					<div class="flex justify-end">
+						<button type="submit" class="btn-psan-primary py-2 px-6 text-xs uppercase tracking-widest" disabled={isPosting}>
+							{isPosting ? 'Sending...' : 'Send Reply'}
+						</button>
+					</div>
 				</form>
 			{/if}
+		</div>
+	</div>
 
+	<!-- Replies: Rendered OUTSIDE the flex container to control nesting -->
+	{#if comment.replies.length > 0}
+		<!-- 
+			Indentation Logic:
+			- If Root (depth 0): Indent children with a colored thread line.
+			- If Depth >= 1: DO NOT Indent further structurally, just stack them.
+		-->
+		<div class="{depth === 0 ? 'pl-3 md:pl-6 border-l-4 border-slate-100 dark:border-slate-800 mt-4 space-y-4' : 'mt-4 space-y-4'}">
 			{#each comment.replies as reply}
 				{@render commentItem(reply, depth + 1)}
 			{/each}
 		</div>
-	</div>
+	{/if}
 {/snippet}
 
 <article class="max-w-4xl mx-auto px-4 py-20">
@@ -131,7 +170,13 @@
 
 		{#if data.settings.allow_comments}
 			{#if data.user || data.settings.allow_anonymous_comments}
-				<form method="POST" action="?/addComment" use:enhance class="card-psan p-6 md:p-10 space-y-6">
+				<form method="POST" action="?/addComment" use:enhance={() => {
+						isPosting = true;
+						return async ({ update, result }) => {
+							await update();
+							isPosting = false;
+						};
+					}} class="card-psan p-6 md:p-10 space-y-6">
 					<h3 class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">New Comment</h3>
 					<textarea 
 						name="content" 
@@ -146,7 +191,9 @@
 					{/if}
 
 					<div class="flex justify-end">
-						<button type="submit" class="btn-psan-primary px-12">Post Comment</button>
+						<button type="submit" class="btn-psan-primary px-12" disabled={isPosting}>
+							{isPosting ? 'Posting...' : 'Post Comment'}
+						</button>
 					</div>
 				</form>
 			{:else}

@@ -77,14 +77,17 @@
 				onReady: () => {
 					new Undo({ editor });
 				},
+				// Improved UX config
+				minHeight: 300,
+				logLevel: 'ERROR',
 				tools: {
-					header: Header,
-					list: List,
-					quote: Quote,
+					header: { class: Header, inlineToolbar: true },
+					list: { class: List, inlineToolbar: true },
+					quote: { class: Quote, inlineToolbar: true },
 					code: Code,
 					marker: Marker,
-					table: Table,
-					checklist: Checklist,
+					table: { class: Table, inlineToolbar: true },
+					checklist: { class: Checklist, inlineToolbar: true },
 					warning: Warning,
 					delimiter: Delimiter,
 					inlineCode: InlineCode,

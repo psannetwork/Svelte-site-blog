@@ -73,6 +73,19 @@ function initSchema(db: any) {
 		try { db.exec("ALTER TABLE user ADD COLUMN notification_enabled INTEGER DEFAULT 1"); } catch (e) { }
 		try { db.exec("ALTER TABLE post ADD COLUMN raw_json TEXT"); } catch (e) { }
 		try { db.exec("ALTER TABLE comment ADD COLUMN parent_id TEXT"); } catch (e) { }
+		try {
+			db.exec(`CREATE TABLE IF NOT EXISTS notification (
+				id TEXT PRIMARY KEY, 
+				user_id TEXT NOT NULL, 
+				type TEXT NOT NULL, 
+				content TEXT NOT NULL, 
+				link TEXT, 
+				is_read INTEGER DEFAULT 0, 
+				created_at INTEGER NOT NULL, 
+				FOREIGN KEY (user_id) REFERENCES user(id) ON DELETE CASCADE
+			)`);
+			db.exec("CREATE INDEX IF NOT EXISTS idx_notification_user ON notification(user_id)");
+		} catch (e) { }
 
 		const insertSetting = db.prepare("INSERT OR IGNORE INTO site_settings (key, value) VALUES (?, ?)");
 		for (const [key, value] of Object.entries(DEFAULT_SETTINGS)) {

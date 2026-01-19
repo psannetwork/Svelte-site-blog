@@ -369,7 +369,7 @@
 			</div>
 		{/if}
 
-		<form bind:this={formElement} onsubmit={(e) => e.preventDefault()} class="space-y-12">
+		<form bind:this={formElement} onsubmit={(e) => e.preventDefault()} class="space-y-12" autocomplete="off">
 			<section class="card-psan p-8 space-y-6">
 				<h3 class="text-xl font-black text-psan-green italic uppercase">Identity</h3>
 				<div class="grid md:grid-cols-2 gap-6">
@@ -386,12 +386,12 @@
 					</div>
 					<div class="space-y-2">
 						<label for="site_description" class="text-[10px] font-black text-muted uppercase">Site Description (SEO)</label>
-						<input id="site_description" name="site_description" bind:value={siteDescription} oninput={() => markEdited('site_description')} class="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-none rounded-xl p-4 font-bold text-main" />
+						<input id="site_description" name="site_description" bind:value={siteDescription} oninput={() => markEdited('site_description')} class="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-none rounded-xl p-4 font-bold text-main" autocomplete="off" />
 					</div>
 				</div>
 				<div class="space-y-2">
 					<label for="allowed_extensions" class="text-[10px] font-black text-muted uppercase">許可するファイル拡張子</label>
-					<input id="allowed_extensions" name="allowed_extensions" bind:value={allowedExtensions} oninput={() => markEdited('allowed_extensions')} class="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-none rounded-xl p-4 font-mono text-xs text-main" />
+					<input id="allowed_extensions" name="allowed_extensions" bind:value={allowedExtensions} oninput={() => markEdited('allowed_extensions')} class="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-none rounded-xl p-4 font-mono text-xs text-main" autocomplete="off" />
 				</div>
 			</section>
 
@@ -401,7 +401,7 @@
 					<div class="space-y-6">
 						<div class="space-y-2">
 							<label for="site_title" class="text-[10px] font-black text-muted uppercase">Tab Title (Site Title)</label>
-							<input id="site_title" name="site_title" bind:value={siteTitle} oninput={() => markEdited('site_title')} class="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-none rounded-xl p-4 font-bold text-main" />
+							<input id="site_title" name="site_title" bind:value={siteTitle} oninput={() => markEdited('site_title')} class="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-none rounded-xl p-4 font-bold text-main" autocomplete="off" />
 						</div>
 						<div class="space-y-4">
 							<span class="text-[10px] font-black text-muted uppercase">Tab Icon (Favicon)</span>
@@ -441,8 +441,8 @@
 						<input type="checkbox" name="enable_turnstile" checked={data.settings?.enable_turnstile === 'true'} onchange={() => markEdited('enable_turnstile')} class="w-6 h-6 accent-psan-green" />
 					</label>
 					<div class="space-y-4">
-						<input id="turnstile_site_key" name="turnstile_site_key" oninput={() => markEdited('turnstile_site_key')} value={data.settings?.turnstile_site_key || ''} class="w-full bg-secondary dark:bg-slate-800 border-none rounded-xl p-3 text-xs font-bold text-main" placeholder="Site Key" />
-						<input id="turnstile_secret_key" name="turnstile_secret_key" type="password" oninput={() => markEdited('turnstile_secret_key')} value={data.settings?.turnstile_secret_key || ''} class="w-full bg-secondary dark:bg-slate-800 border-none rounded-xl p-3 text-xs font-bold text-main" placeholder="Secret Key" />
+						<input id="turnstile_site_key" name="turnstile_site_key" oninput={() => markEdited('turnstile_site_key')} value={data.settings?.turnstile_site_key || ''} class="w-full bg-secondary dark:bg-slate-800 border-none rounded-xl p-3 text-xs font-bold text-main" placeholder="Site Key" autocomplete="off" />
+						<input id="turnstile_secret_key" name="turnstile_secret_key" type="password" oninput={() => markEdited('turnstile_secret_key')} value={data.settings?.turnstile_secret_key || ''} class="w-full bg-secondary dark:bg-slate-800 border-none rounded-xl p-3 text-xs font-bold text-main" placeholder="Secret Key" autocomplete="new-password" />
 					</div>
 				</div>
 			</section>
@@ -544,11 +544,11 @@
 						</label>
 						<div class="space-y-2">
 							<label for="backup_interval" class="text-[10px] font-black text-muted uppercase">Interval (Hours)</label>
-							<input id="backup_interval" type="number" name="backup_interval" value={data.settings?.backup_interval} class="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-none rounded-xl p-4 font-bold text-main" />
+							<input id="backup_interval" type="number" name="backup_interval" value={data.settings?.backup_interval} class="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-none rounded-xl p-4 font-bold text-main" autocomplete="off" />
 						</div>
 						<div class="space-y-2">
 							<label for="backup_keep_count" class="text-[10px] font-black text-muted uppercase">Keep Count</label>
-							<input id="backup_keep_count" type="number" name="backup_keep_count" value={data.settings?.backup_keep_count} class="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-none rounded-xl p-4 font-bold text-main" />
+							<input id="backup_keep_count" type="number" name="backup_keep_count" value={data.settings?.backup_keep_count} class="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-none rounded-xl p-4 font-bold text-main" autocomplete="off" />
 						</div>
 					</div>
 				{/if}
