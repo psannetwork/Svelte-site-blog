@@ -99,6 +99,38 @@ export default defineConfig({
 
 ---
 
+## ❓ `Cross-site POST form submissions are forbidden`
+
+### 原因: CSRF保護によるブロック
+
+SvelteKit のセキュリティ機能（CSRF保護）が、リクエストの送信元が正しくない（あるいは不明）と判断して POST 送信をブロックしています。主にリバースプロキシ（Cloudflare等）を通した際に発生します。
+
+### 解決策:
+
+#### 方法1: `ORIGIN` 環境変数を設定する（推奨）
+
+本番環境の環境変数に `ORIGIN` を追加し、サイトの正確な URL を指定してください。
+
+- **Key**: `ORIGIN`
+- **Value**: `https://your-domain.com`
+
+#### 方法2: CSRFチェックを無効化する
+
+もし上記で解決しない場合、`svelte.config.js` でチェックを無効にできます。
+
+```javascript
+// svelte.config.js
+const config = {
+  kit: {
+    csrf: {
+      checkOrigin: false,
+    }
+  }
+};
+```
+
+---
+
 ## ❓ `better-sqlite3` ネイティブバイナリエラー
 
 開発サーバー起動時に `Error: Could not locate the bindings file` というエラーが出た場合、ネイティブバイナリが正しくビルドされていない可能性があります。
