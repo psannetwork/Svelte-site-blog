@@ -6,42 +6,32 @@
 
 	let { data, form } = $props();
 	const { dbStatus } = data;
-
+	
 	let formElement: HTMLFormElement;
 	let isSaving = $state(false);
 	let isRefreshing = $state(false);
 	let showSuccess = $state(false);
 	let isUploadingIcon = $state(false);
 
-	const baseSettings = { ...data.settings };
+	// 最新のサーバー状態を保持
+	let baseSettings = $state({ ...data.settings });
 
 	let siteTitle = $state(data.settings?.site_title || '');
 	let siteDescription = $state(data.settings?.site_description || '');
 	let accentColor = $state(data.settings?.accent_color || '#00CC99');
 	let siteLanguage = $state(data.settings?.site_language || 'ja');
-	let allowedExtensions = $state(
-		data.settings?.allowed_extensions || '.jpg,.jpeg,.png,.gif,.webp,.svg,.ico'
-	);
+	let allowedExtensions = $state(data.settings?.allowed_extensions || '.jpg,.jpeg,.png,.gif,.webp,.svg,.ico');
 	let siteIconUrl = $state(data.settings?.site_icon_url || '');
-		let storageType = $state(data.settings?.storage_type || 'local');
-		let storageStats = $state({ local: 0, database: 0 });
-	
-		let migrationStatus = $state<{ active: boolean, progress: number, message: string }> ({
-			active: false,
-			progress: 0,
-			message: ''
-		});
-	
-		let userEdited = $state<Record<string, boolean>>({});
-		let lastSyncTime = $state(0);
-	
-		onMount(() => {
-			if (data.settings) {
-				lastSyncTime = parseInt(data.settings._updated || '0');
-			}
-			// 統計情報の初期取得
-			refreshSettings();
-		});
+
+	let userEdited = $state<Record<string, boolean>>({});
+	let lastSyncTime = $state(0);
+
+	onMount(() => {
+		if (data.settings) {
+			lastSyncTime = parseInt(data.settings._updated || '0');
+		}
+		refreshSettings();
+	});
 	
 		function markEdited(key: string) {
 			userEdited[key] = true;
@@ -353,8 +343,8 @@
 
 			const result = await res.json();
 			if (result.success && result.settings) {
-				const s = result.settings;
-				lastSyncTime = parseInt(s._updated || '0');
+				baseSettings = { ...result.settings }; // 最新状態で更新
+				lastSyncTime = parseInt(result.settings._updated || '0');
 				userEdited = {};
 				showSuccess = true;
 				setTimeout(() => (showSuccess = false), 3000);
