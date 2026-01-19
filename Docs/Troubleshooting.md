@@ -107,16 +107,19 @@ SvelteKit のセキュリティ機能（CSRF保護）が、リクエストの送
 
 ### 解決策:
 
-#### 方法1: `ORIGIN` 環境変数を設定する（推奨）
+#### 方法1: `ORIGIN` 環境変数を設定する（最推奨）
 
-本番環境の環境変数に `ORIGIN` を追加し、サイトの正確な URL を指定してください。
+本番環境（Render.com 等）の環境変数に `ORIGIN` を追加します。これが最も安全で正しい解決策です。
 
 - **Key**: `ORIGIN`
-- **Value**: `https://your-domain.com`
+- **Value**: `https://your-domain.com` (自分のサイトのURL)
 
-#### 方法2: CSRFチェックを無効化する
+#### 方法2: `svelte.config.js` でチェックを無効にする
 
-もし上記で解決しない場合、`svelte.config.js` でチェックを無効にできます。
+環境変数の設定が難しい場合、コードから直接チェックを無効にできます（※SvelteKit 側で非推奨の警告が出ますが動作します）。
+
+1.  `svelte.config.js` を開きます。
+2.  `kit` セクションの中に `csrf: { checkOrigin: false }` を追記します。
 
 ```javascript
 // svelte.config.js
@@ -124,7 +127,8 @@ const config = {
   kit: {
     csrf: {
       checkOrigin: false,
-    }
+    },
+    // ...
   }
 };
 ```
