@@ -27,6 +27,13 @@ pnpm install
 # セットアップと開発サーバー起動
 bash setup.sh
 pnpm run dev
+
+# ポートを指定して起動
+pnpm run dev -- --port 8080
+
+# ビルドとプレビュー
+pnpm run build
+pnpm run preview -- --port 8080
 ```
 
 ---
