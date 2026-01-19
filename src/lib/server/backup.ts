@@ -25,20 +25,65 @@ export function performBackup() {
 	const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
 	const backupPath = join(BACKUP_DIR, `backup-${timestamp}.db`);
 
-	try {
-		if (typeof (db as any).backup === 'function') {
-			(db as any).backup(backupPath);
-		} else {
-			copyFileSync(DB_PATH, backupPath);
-		}
+		try {
 
-		setSetting('last_backup_at', Date.now().toString());
-		rotateBackups();
-		return { success: true, path: backupPath };
-	} catch (e) {
-		console.error('[BACKUP ERROR]', e);
-		return { success: false, error: e };
-	}
+			// 1. ドライバのバックアップ機能があるか確認
+
+			if (typeof (db as any).backup === 'function') {
+
+				try {
+
+					await (db as any).backup(backupPath);
+
+					setSetting('last_backup_at', Date.now().toString());
+
+					rotateBackups();
+
+					return { success: true, path: backupPath };
+
+				} catch (err: any) {
+
+					if (err.message?.includes('not implemented')) {
+
+						// 未実装の場合はファイルコピーへフォールバック
+
+					} else {
+
+						throw err;
+
+					}
+
+				}
+
+			}
+
+	
+
+			// 2. ファイルコピーによるバックアップ (ローカルSQLiteのみ)
+
+			if (existsSync(DB_PATH)) {
+
+				copyFileSync(DB_PATH, backupPath);
+
+				setSetting('last_backup_at', Date.now().toString());
+
+				rotateBackups();
+
+				return { success: true, path: backupPath };
+
+			}
+
+	
+
+			return { success: false, error: 'Backup method not available' };
+
+		} catch (e) {
+
+			console.error('[BACKUP ERROR]', e);
+
+			return { success: false, error: String(e) };
+
+		}
 }
 
 export function rotateBackups() {

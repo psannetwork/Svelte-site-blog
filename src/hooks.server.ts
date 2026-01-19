@@ -25,8 +25,8 @@ try {
 }
 
 export const handle: Handle = async ({ event, resolve }) => {
-	const enableBackup = getSetting('enable_backup') === 'true';
-	if (enableBackup) {
+	// バックアップ自動実行 (ランダムに1/10の確率でチェック)
+	if (Math.random() < 0.1 && getSetting('enable_backup') === 'true') {
 		const interval = parseInt(getSetting('backup_interval', '24')) * 60 * 60 * 1000;
 		const lastBackup = parseInt(getSetting('last_backup_at', '0'));
 		if (Date.now() - lastBackup > interval) {
