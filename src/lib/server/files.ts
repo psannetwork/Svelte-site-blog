@@ -71,9 +71,7 @@ export function deleteFile(id: string) {
 	db.prepare('DELETE FROM file_storage WHERE id = ?').run(id);
 }
 
-export function cleanupPostImages(postId: string) {
-	console.log(`Cleanup post ${postId}`);
-}
+export function cleanupPostImages(postId: string) {}
 
 // ユーザーの全ファイル削除
 export function cleanupUserFiles(userId: string) {

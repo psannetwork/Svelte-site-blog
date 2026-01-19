@@ -62,15 +62,23 @@
 	<h2 class="text-4xl font-black tracking-tighter mb-10 uppercase text-main">Account Settings</h2>
 
 	{#if form?.success}
-		<div class="fixed top-24 left-1/2 -translate-x-1/2 z-[100] animate-in fade-in slide-in-from-top-4">
-			<p class="bg-psan-green text-white px-8 py-3 rounded-full font-black shadow-2xl uppercase tracking-widest text-xs">
+		<div
+			class="fixed top-24 left-1/2 -translate-x-1/2 z-[100] animate-in fade-in slide-in-from-top-4"
+		>
+			<p
+				class="bg-psan-green text-psan-green-fg px-8 py-3 rounded-full font-black shadow-2xl uppercase tracking-widest text-xs"
+			>
 				Settings Updated!
 			</p>
 		</div>
 	{/if}
 	{#if form?.message}
-		<div class="fixed top-24 left-1/2 -translate-x-1/2 z-[100] animate-in fade-in slide-in-from-top-4">
-			<p class="bg-psan-pink text-white px-8 py-3 rounded-full font-black shadow-2xl uppercase tracking-widest text-xs">
+		<div
+			class="fixed top-24 left-1/2 -translate-x-1/2 z-[100] animate-in fade-in slide-in-from-top-4"
+		>
+			<p
+				class="bg-psan-pink text-white px-8 py-3 rounded-full font-black shadow-2xl uppercase tracking-widest text-xs"
+			>
 				{form.message}
 			</p>
 		</div>

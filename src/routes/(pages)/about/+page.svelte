@@ -11,7 +11,7 @@
 	<div class="fixed bottom-8 right-8 z-[100]">
 		<a
 			href="/dashboard/pages/about"
-			class="flex items-center gap-2 bg-psan-green text-white px-6 py-3 rounded-full font-black shadow-2xl hover:scale-105 transition-all uppercase tracking-widest text-xs border-4 border-white dark:border-slate-900"
+			class="flex items-center gap-2 bg-psan-green text-psan-green-fg px-6 py-3 rounded-full font-black shadow-2xl hover:scale-105 transition-all uppercase tracking-widest text-xs border-4 border-white dark:border-slate-900"
 		>
 			<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"
 				><path

@@ -35,7 +35,7 @@
 
 				<a
 					href="/dashboard/pages/{p.id}"
-					class="btn-psan-ghost py-2 px-8 text-xs dark:bg-slate-700 dark:text-white dark:border-slate-500 hover:bg-psan-green hover:text-white hover:border-psan-green transition-all shadow-sm uppercase tracking-widest"
+					class="btn-psan-ghost py-2 px-8 text-xs dark:bg-slate-700 dark:text-white dark:border-slate-500 hover:bg-psan-green hover:text-psan-green-fg hover:border-psan-green transition-all shadow-sm uppercase tracking-widest"
 				>
 					Edit Content
 				</a>

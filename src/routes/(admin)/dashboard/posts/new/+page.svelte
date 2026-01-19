@@ -101,11 +101,13 @@
 			const InlineCode = (await import('@editorjs/inline-code')).default;
 			const Underline = (await import('@editorjs/underline')).default;
 			const ColorPlugin = (await import('editorjs-text-color-plugin')).default;
+			const AlignmentTune = (await import('editorjs-text-alignment-blocktune')).default;
 			const Undo = (await import('editorjs-undo')).default;
 			const LinkTool = (await import('@editorjs/link')).default;
 
 			editor = new EditorJS({
 				holder: 'editorjs',
+				inlineToolbar: true,
 				i18n: data?.settings?.site_language === 'ja' ? editorI18n : undefined,
 				onReady: () => {
 					new Undo({ editor });
@@ -114,11 +116,35 @@
 				minHeight: 300,
 				logLevel: 'ERROR',
 				tools: {
-					header: { class: Header, inlineToolbar: true },
+					header: {
+						class: Header,
+						inlineToolbar: true
+					},
 					list: { class: List, inlineToolbar: true },
 					quote: { class: Quote, inlineToolbar: true },
 					code: Code,
-					marker: Marker,
+					marker: {
+						class: ColorPlugin,
+						config: {
+							colorCollections: [
+								'#FFEB3B',
+								'#FFC107',
+								'#FF9800',
+								'#FF5722',
+								'#795548',
+								'#9E9E9E',
+								'#607D8B',
+								'#00CC99',
+								'#EB2D8C',
+								'#1A1A1A',
+								'#FF1313',
+								'#2388FF',
+								'#FFD300'
+							],
+							type: 'marker',
+							customPicker: true
+						}
+					},
 					table: { class: Table, inlineToolbar: true },
 					checklist: { class: Checklist, inlineToolbar: true },
 					warning: Warning,
@@ -128,8 +154,26 @@
 					color: {
 						class: ColorPlugin,
 						config: {
-							colorCollections: ['#00CC99', '#EB2D8C', '#1A1A1A', '#FF1313', '#2388FF', '#FFD300'],
-							defaultColor: '#1A1A1A',
+							colorCollections: [
+								'#00CC99',
+								'#EB2D8C',
+								'#1A1A1A',
+								'#FF1313',
+								'#2388FF',
+								'#FFD300',
+								'#000000',
+								'#444444',
+								'#888888',
+								'#CCCCCC',
+								'#FFFFFF',
+								'#FF5733',
+								'#FF8D1A',
+								'#FFC300',
+								'#DAF7A6',
+								'#C70039',
+								'#900C3F',
+								'#581845'
+							],
 							type: 'text',
 							customPicker: true
 						}
@@ -152,8 +196,19 @@
 								twitter: true
 							}
 						}
+					},
+					anyTuneName: {
+						class: AlignmentTune,
+						config: {
+							default: 'left',
+							blocks: {
+								header: 'left',
+								list: 'left'
+							}
+						}
 					}
 				},
+				tunes: ['anyTuneName'],
 				data: { blocks: [{ type: 'paragraph', data: { text: '' } }] },
 				placeholder: 'Start writing...',
 				defaultBlock: 'paragraph'
@@ -209,7 +264,7 @@
 				<button
 					type="button"
 					onclick={togglePreview}
-					class="btn-psan-ghost text-xs py-2 border-psan-green text-psan-green hover:bg-psan-green hover:text-white transition-all min-w-[100px]"
+					class="btn-psan-ghost text-xs py-2 border-psan-green text-psan-green hover:bg-psan-green hover:text-psan-green-fg transition-all min-w-[100px]"
 				>
 					{isPreview ? 'Edit' : 'Preview'}
 				</button>
@@ -228,32 +283,56 @@
 			<div class="flex flex-col md:flex-row gap-8 items-start">
 				<div class="w-full md:w-64 shrink-0">
 					<span class="text-[10px] font-black text-muted uppercase block mb-2">Thumbnail</span>
-					<div class="aspect-video rounded-2xl bg-secondary dark:bg-slate-800 overflow-hidden relative group border-2 border-dashed border-slate-200 dark:border-slate-700">
+					<div
+						class="aspect-video rounded-2xl bg-secondary dark:bg-slate-800 overflow-hidden relative group border-2 border-dashed border-slate-200 dark:border-slate-700"
+					>
 						{#if thumbnailUrl}
 							<img src={thumbnailUrl} alt="Thumbnail" class="w-full h-full object-cover" />
-							<button 
-								type="button" 
-								onclick={() => thumbnailUrl = ''} 
+							<button
+								type="button"
+								onclick={() => (thumbnailUrl = '')}
 								class="absolute top-2 right-2 p-1.5 bg-black/50 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-							>✕</button>
+								>✕</button
+							>
 						{:else}
-							<label class="absolute inset-0 flex flex-col items-center justify-center cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
-								<svg class="w-8 h-8 text-muted opacity-20 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-								<span class="text-[10px] font-black text-muted uppercase">{isUploadingThumb ? 'Uploading...' : 'Upload Image'}</span>
-								<input type="file" accept="image/*" class="hidden" onchange={handleThumbnailUpload} disabled={isUploadingThumb} />
+							<label
+								class="absolute inset-0 flex flex-col items-center justify-center cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors"
+							>
+								<svg
+									class="w-8 h-8 text-muted opacity-60 mb-2"
+									fill="none"
+									stroke="currentColor"
+									viewBox="0 0 24 24"
+									><path
+										stroke-linecap="round"
+										stroke-linejoin="round"
+										stroke-width="2"
+										d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+									/></svg
+								>
+								<span class="text-[10px] font-black text-muted uppercase"
+									>{isUploadingThumb ? 'Uploading...' : 'Upload Image'}</span
+								>
+								<input
+									type="file"
+									accept="image/*"
+									class="hidden"
+									onchange={handleThumbnailUpload}
+									disabled={isUploadingThumb}
+								/>
 							</label>
 						{/if}
 					</div>
 					<input type="hidden" name="thumbnail_url" value={thumbnailUrl} />
 				</div>
-				
+
 				<div class="flex-1 space-y-6 w-full">
 					<input
 						id="title"
 						type="text"
 						name="title"
 						bind:value={title}
-						class="w-full text-4xl md:text-5xl font-black bg-transparent border-none focus:ring-0 p-0 text-main placeholder:opacity-20"
+						class="w-full text-4xl md:text-5xl font-black bg-transparent border-none focus:ring-0 p-0 text-main placeholder:text-muted/50"
 						placeholder="Title here..."
 					/>
 
@@ -262,7 +341,7 @@
 						name="summary"
 						bind:value={summary}
 						rows="2"
-						class="w-full text-xl font-medium bg-transparent border-b border-border-color dark:border-slate-800 focus:border-psan-green focus:ring-0 p-0 pb-4 text-muted placeholder:opacity-20"
+						class="w-full text-xl font-medium bg-transparent border-b border-border-color dark:border-slate-800 focus:border-psan-green focus:ring-0 p-0 pb-4 text-muted placeholder:text-muted/50"
 						placeholder="Add a short summary..."
 					></textarea>
 				</div>

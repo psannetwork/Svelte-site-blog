@@ -35,7 +35,8 @@ export const actions: Actions = {
 		if (!post) return fail(404);
 
 		if (locals.user.role === 'author') {
-			if (post.author_id !== locals.user.id) return fail(403, { message: '自分の記事のみ変更可能です。' });
+			if (post.author_id !== locals.user.id)
+				return fail(403, { message: '自分の記事のみ変更可能です。' });
 			if (!['draft', 'review'].includes(status))
 				return fail(403, { message: 'Authorは下書きまたはレビュー待ちにのみ変更可能です。' });
 		}
@@ -53,11 +54,14 @@ export const actions: Actions = {
 		const formData = await request.formData();
 		const id = formData.get('id') as string;
 
-		const post = db.prepare('SELECT author_id, visibility, content FROM post WHERE id = ?').get(id) as any;
+		const post = db
+			.prepare('SELECT author_id, visibility, content FROM post WHERE id = ?')
+			.get(id) as any;
 		if (!post) return fail(404);
 
 		if (locals.user.role === 'author') {
-			if (post.author_id !== locals.user.id) return fail(403, { message: '自分の記事のみ削除可能です。' });
+			if (post.author_id !== locals.user.id)
+				return fail(403, { message: '自分の記事のみ削除可能です。' });
 			if (!['draft', 'review'].includes(post.visibility))
 				return fail(403, { message: '公開済みの記事は削除できません。' });
 		}

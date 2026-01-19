@@ -35,11 +35,15 @@
 					: ''}"
 			>
 				<div class="flex items-center gap-6 flex-1 min-w-0">
-					<div class="w-20 h-20 md:w-24 md:h-24 rounded-2xl bg-secondary dark:bg-slate-800 shrink-0 overflow-hidden border border-slate-100 dark:border-slate-700 flex items-center justify-center">
+					<div
+						class="w-20 h-20 md:w-24 md:h-24 rounded-2xl bg-secondary dark:bg-slate-800 shrink-0 overflow-hidden border border-slate-100 dark:border-slate-700 flex items-center justify-center"
+					>
 						{#if post.thumbnail_url}
 							<img src={post.thumbnail_url} alt="" class="w-full h-full object-cover" />
 						{:else}
-							<span class="text-2xl font-black text-muted opacity-20 uppercase">{post.title.substring(0, 1)}</span>
+							<span class="text-2xl font-black text-muted opacity-50 uppercase"
+								>{post.title.substring(0, 1)}</span
+							>
 						{/if}
 					</div>
 					<div class="flex-1 min-w-0">
@@ -49,7 +53,7 @@
 								{post.visibility === 'public'
 									? 'bg-psan-green/10 text-psan-green border border-psan-green/20'
 									: post.visibility === 'draft'
-										? 'bg-slate-100 text-slate-500 border border-slate-200'
+										? 'bg-slate-100 text-slate-500 border border-slate-200 dark:bg-slate-700 dark:text-slate-300 dark:border-slate-600'
 										: post.visibility === 'review'
 											? 'bg-psan-pink/10 text-psan-pink border border-psan-pink/20 animate-pulse'
 											: 'bg-psan-dark/10 text-psan-dark border border-psan-dark/20'} dark:bg-slate-800 dark:text-slate-100 dark:border dark:border-slate-600 uppercase"

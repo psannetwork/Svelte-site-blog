@@ -48,6 +48,16 @@
 	});
 </script>
 
+<svelte:head>
+	{#if data.settings?.accent_color}
+		<style>
+			:root {
+				--accent-color: {data.settings.accent_color} !important;
+			}
+		</style>
+	{/if}
+</svelte:head>
+
 <div class="flex h-screen bg-[--bg-main] transition-colors overflow-hidden">
 	{#if isSidebarOpen}
 		<button
@@ -92,7 +102,8 @@
 
 		<nav class="flex-1 px-4 space-y-1 overflow-y-auto">
 			{#each menuItems as item}
-				{@const isDisabled = item.adminOnly && (data.user?.role === 'editor' || data.user?.role === 'author')}
+				{@const isDisabled =
+					item.adminOnly && (data.user?.role === 'editor' || data.user?.role === 'author')}
 				<a
 					href={isDisabled ? 'javascript:void(0)' : item.href}
 					class="flex items-center gap-3 px-4 py-4 lg:py-3 rounded-2xl font-black text-sm lg:text-xs transition-all
@@ -101,8 +112,8 @@
 						: page.url.pathname === item.href
 							? data.user?.role === 'author'
 								? 'bg-psan-author text-white shadow-xl shadow-blue-500/30 translate-x-1'
-								: 'bg-psan-green text-white shadow-xl shadow-psan-green/30 translate-x-1'
-							: 'text-muted hover:bg-slate-100 dark:hover:bg-slate-700/50 hover:text-[--text-main] dark:hover:text-white hover:translate-x-1'}"
+								: 'bg-psan-green text-psan-green-fg shadow-xl shadow-psan-green/30 translate-x-1'
+							: 'text-muted dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-[--text-main] dark:hover:text-white hover:translate-x-1'}"
 					aria-disabled={isDisabled}
 				>
 					<svg
@@ -125,7 +136,7 @@
 		<div class="p-6 border-t border-[--border-main]">
 			<a
 				href="/"
-				class="btn-psan-ghost py-2.5 text-xs dark:bg-slate-700 dark:text-white dark:border-slate-400 hover:bg-psan-green hover:text-white hover:border-psan-green uppercase tracking-[0.2em] shadow-sm transition-all"
+				class="btn-psan-ghost py-2.5 text-xs dark:bg-slate-700 dark:text-white dark:border-slate-400 hover:bg-psan-green hover:text-psan-green-fg hover:border-psan-green uppercase tracking-[0.2em] shadow-sm transition-all"
 				aria-label="サイトを表示"
 			>
 				View Site
@@ -152,7 +163,9 @@
 						/></svg
 					>
 				</button>
-				<h1 class="text-[10px] font-black tracking-[0.2em] text-muted uppercase hidden sm:block">
+				<h1
+					class="text-[10px] font-black tracking-[0.2em] text-main opacity-70 uppercase hidden sm:block"
+				>
 					Admin Console
 				</h1>
 			</div>
@@ -160,7 +173,7 @@
 			<div class="flex items-center gap-3 md:gap-6">
 				<button
 					onclick={() => theme.toggle()}
-					class="p-2 rounded-xl transition-all bg-slate-100 text-slate-600 border border-slate-200 dark:bg-slate-700 dark:border-slate-400 hover:border-psan-green active:scale-95 shadow-sm"
+					class="p-2 rounded-xl transition-all bg-slate-100 text-slate-600 border border-slate-200 dark:bg-slate-700 dark:border-slate-400 dark:text-slate-200 hover:border-psan-green active:scale-95 shadow-sm"
 					aria-label="テーマ切替"
 				>
 					{#if theme.current === 'light'}
@@ -192,9 +205,10 @@
 						</div>
 					</div>
 					<div
-						class="w-10 h-10 rounded-2xl overflow-hidden flex items-center justify-center font-black text-white shadow-lg {data.user?.role === 'author'
-							? 'bg-psan-author'
-							: 'bg-psan-green'}"
+						class="w-10 h-10 rounded-2xl overflow-hidden flex items-center justify-center font-black shadow-lg {data
+							.user?.role === 'author'
+							? 'bg-psan-author text-white'
+							: 'bg-psan-green text-psan-green-fg'}"
 					>
 						{#if data.user?.avatar_url}
 							<img src={data.user.avatar_url} alt="" class="w-full h-full object-cover" />

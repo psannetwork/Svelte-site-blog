@@ -64,18 +64,19 @@
 				</div>
 				<div class="space-y-2">
 					<label class="text-[10px] font-black uppercase text-muted" for="new_role">Role</label>
-											<select
-												id="new_role"
-												name="role"
-												class="w-full bg-secondary dark:bg-slate-800 border-none rounded-xl p-3 font-bold text-main"
-											>
-												<option value="user">User</option>
-												<option value="vip">VIP</option>
-												<option value="author">Author</option>
-												<option value="editor">Editor</option>
-												<option value="admin">Admin</option>
-											</select>
-										</div>				<button class="w-full btn-psan-primary py-3 font-black uppercase text-sm mt-4"
+					<select
+						id="new_role"
+						name="role"
+						class="w-full bg-secondary dark:bg-slate-800 border-none rounded-xl p-3 font-bold text-main"
+					>
+						<option value="user">User</option>
+						<option value="vip">VIP</option>
+						<option value="author">Author</option>
+						<option value="editor">Editor</option>
+						<option value="admin">Admin</option>
+					</select>
+				</div>
+				<button class="w-full btn-psan-primary py-3 font-black uppercase text-sm mt-4"
 					>Create Account</button
 				>
 
@@ -97,7 +98,7 @@
 							<span class="font-black text-xl text-main">{user.username}</span>
 							{#if user.is_protected}
 								<span
-									class="bg-psan-green text-white text-[8px] font-black px-2 py-0.5 rounded tracking-widest uppercase"
+									class="bg-psan-green text-psan-green-fg text-[8px] font-black px-2 py-0.5 rounded tracking-widest uppercase"
 									>System Protected</span
 								>
 							{/if}
@@ -132,7 +133,11 @@
 								method="POST"
 								action="?/deleteUser"
 								use:enhance={({ cancel }) => {
-									if (!confirm('このユーザーを完全に削除してもよろしいですか？関連するファイルもすべて削除されます。'))
+									if (
+										!confirm(
+											'このユーザーを完全に削除してもよろしいですか？関連するファイルもすべて削除されます。'
+										)
+									)
 										return cancel();
 									return async ({ update }) => {
 										await update();

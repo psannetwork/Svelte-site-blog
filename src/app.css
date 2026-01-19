@@ -3,7 +3,8 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
-	--color-psan-green: #00cc99;
+	--color-psan-green: var(--accent-color);
+	--color-psan-green-fg: var(--psan-green-fg);
 	--color-psan-pink: #eb2d8c;
 	--color-psan-dark: #1a1a1a;
 	--color-psan-author: #3b82f6; /* Blue for Author */
@@ -15,6 +16,8 @@
 
 @layer base {
 	:root {
+		--accent-color: #00cc99; /* デフォルト値 */
+		--psan-green-fg: #ffffff;
 		--bg-main: #ffffff;
 		--bg-secondary: #f1f5f9;
 		--text-main: #000000; /* 純黒 */
@@ -25,18 +28,24 @@
 	}
 
 	.dark {
-		--bg-main: #1a1a1a;
-		--bg-secondary: #2d2d2d;
-		--text-main: #ffffff;
-		--text-muted: #b0b0b0;
-		--card-bg: #242424;
-		--border-color: #3a3a3a;
+		--bg-main: #0f172a; /* Slate 950 */
+		--bg-secondary: #1e293b; /* Slate 800 */
+		--text-main: #f8fafc; /* Slate 50 */
+		--text-muted: #cbd5e1; /* Slate 300 - より明るくして視認性を確保 */
+		--card-bg: #1e293b;
+		--border-color: #334155;
 		color-scheme: dark;
 	}
 
 	body {
 		@apply bg-[--bg-main] text-[--text-main] transition-colors duration-300 min-h-screen font-sans;
-		color: var(--text-main); /* フォールバック */
+		overflow-x: hidden;
+		width: 100%;
+	}
+
+	html {
+		overflow-x: hidden;
+		width: 100%;
 	}
 
 	/* すべての基本要素にテキスト色を強制 */
@@ -79,7 +88,7 @@
 }
 
 @utility btn-psan-primary {
-	@apply px-8 py-3 rounded-2xl bg-psan-green text-white font-black hover:bg-psan-green/90 active:scale-[0.98] transition-all shadow-lg shadow-psan-green/20 flex items-center justify-center gap-2;
+	@apply px-8 py-3 rounded-2xl bg-psan-green text-psan-green-fg font-black hover:bg-psan-green/90 active:scale-[0.98] transition-all shadow-lg shadow-psan-green/20 flex items-center justify-center gap-2;
 }
 
 @utility btn-psan-ghost {
@@ -100,14 +109,28 @@
          hover:bg-psan-pink/20 hover:text-psan-pink dark:hover:text-psan-pink;
 }
 
-/* Editor.js の文字がライトモードで見えない問題の強力な修正 */
+/* Editor.js の文字がライトモードで見えない問題の修正 */
+/* !important を外すことで、カラープラグインの色指定が優先されるようにします */
 .codex-editor,
 .ce-paragraph,
 .ce-header,
 .ce-list__item,
 .cdx-input,
 .ce-inline-tool,
-.ce-settings__plugin-zone,
+.ce-settings__plugin-zone {
+	color: var(--text-main);
+}
+
+.dark .codex-editor,
+.dark .ce-paragraph,
+.dark .ce-header,
+.dark .ce-list__item,
+.dark .cdx-input,
+.dark .ce-inline-tool {
+	color: #ffffff;
+}
+
+/* ツールバーのボタンなどは引き続き視認性を確保 */
 .ce-toolbar__plus,
 .ce-toolbar__settings-btn {
 	color: var(--text-main) !important;
@@ -116,13 +139,21 @@
 /* エディタのプレースホルダー */
 .ce-paragraph[data-placeholder]:empty::before {
 	color: var(--text-muted) !important;
-	opacity: 0.5;
+	opacity: 0.6;
+}
+
+.dark .ce-paragraph[data-placeholder]:empty::before {
+	color: #a0a0a0 !important;
+	opacity: 0.8;
 }
 
 /* ダークモード時のエディタツールバー調整 */
-.dark .ce-toolbar__plus,
+.dark .ce-toolbar__plus {
+	background-color: var(--psan-pink) !important;
+}
+
 .dark .ce-toolbar__settings-btn {
-	background-color: #9f6e6e !important;
+	background-color: var(--psan-green) !important;
 }
 
 .dark .ce-popover,
@@ -158,8 +189,101 @@
 	border: 1px solid var(--border-color) !important;
 }
 
-.dark .ce-popover__search-field::placeholder {
-	color: rgba(255, 255, 255, 0.5) !important;
+/* エディタ内のコードブロック (.ce-code) のデザイン調整 */
+.ce-code__textarea {
+	background-color: #0d1117 !important;
+	color: #79c0ff !important;
+	border-radius: 1.5rem !important;
+	padding: 2rem !important;
+	font-family:
+		ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New',
+		monospace !important;
+	border: 1px solid rgba(255, 255, 255, 0.1) !important;
+	line-height: 1.6 !important;
+}
+
+.dark .ce-code__textarea {
+	background-color: #010409 !important;
+}
+
+.ce-code::after {
+	content: 'CODE';
+	position: absolute;
+	right: 2rem;
+	top: 1rem;
+	font-size: 10px;
+	font-weight: 900;
+	color: #79c0ff;
+	opacity: 0.5;
+	letter-spacing: 0.1em;
+}
+
+/* エディタ内のコードブロック (.ce-code) のデザイン調整 */
+.ce-code__textarea {
+	background-color: #0d1117 !important;
+	color: #79c0ff !important;
+	border-radius: 1.5rem !important;
+	padding: 2.5rem 2rem 2rem !important;
+	font-family:
+		ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New',
+		monospace !important;
+	border: 1px solid rgba(255, 255, 255, 0.1) !important;
+	line-height: 1.6 !important;
+}
+
+.dark .ce-code__textarea {
+	background-color: #010409 !important;
+}
+
+/* 公開ページのコードブロック (pre) のスタイル強制 */
+.code-block-container pre {
+	background-color: #0d1117 !important;
+	color: #79c0ff !important;
+	border: 1px solid rgba(255, 255, 255, 0.1) !important;
+	padding: 2.5rem 2rem 2rem !important;
+	border-radius: 2rem !important;
+	margin: 0 !important;
+}
+
+.code-block-container pre code {
+	background-color: transparent !important;
+	color: inherit !important;
+	padding: 0 !important;
+	border-radius: 0 !important;
+	font-size: 0.9em !important;
+	font-family:
+		ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New',
+		monospace !important;
+}
+
+/* コピーボタンのスタイル */
+.copy-code-btn {
+	background-color: rgba(255, 255, 255, 0.1) !important;
+	color: #79c0ff !important;
+	border: 1px solid rgba(121, 192, 255, 0.2) !important;
+	cursor: pointer;
+	z-index: 20;
+}
+
+.copy-code-btn:hover {
+	background-color: rgba(121, 192, 255, 0.1) !important;
+	border-color: #79c0ff !important;
+}
+
+.copy-code-btn:active {
+	transform: translateY(1px);
+}
+
+.ce-code::after {
+	content: 'CODE';
+	position: absolute;
+	right: 2rem;
+	top: 1rem;
+	font-size: 10px;
+	font-weight: 900;
+	color: #79c0ff;
+	opacity: 0.5;
+	letter-spacing: 0.1em;
 }
 
 /* ホバー時は少し明るいグレーに */
@@ -265,11 +389,102 @@ h6.ce-header {
 .ce-block--selected .ce-block__content {
 	background-color: var(--psan-green) !important;
 	border-radius: 1rem;
-	color: white !important;
 }
 
 .ce-block--selected .ce-block__content * {
 	color: white !important;
+}
+
+/* Editor.js テキストカラープラグインの対応 */
+/* エディタ内での色表示 - ここは !important を維持して最優先にします */
+.cdx-color-column,
+.cdx-color-marker,
+font[color],
+span[style*='color'] {
+	color: var(--color) !important;
+}
+
+/* プレビュー・公開側での色表示を確保 (span style="color:...") 等への対応 */
+.prose [style*='color'] {
+	color: inherit; /* CSS変数が効くように */
+}
+
+/* テキスト配置 (Alignment) の対応 */
+.ce-block__content--align-left {
+	text-align: left;
+}
+.ce-block__content--align-center {
+	text-align: center;
+}
+.ce-block__content--align-right {
+	text-align: right;
+}
+.ce-block__content--align-justify {
+	text-align: justify;
+}
+
+/* ツールバー内のチェックリストアイコンが重複して見える問題の修正（もしあれば） */
+.ce-settings__button--active {
+	color: var(--psan-green) !important;
+}
+
+/* 公開側 (prose) での配置 */
+.prose .text-left {
+	text-align: left;
+}
+.prose .text-center {
+	text-align: center;
+}
+.prose .text-right {
+	text-align: right;
+}
+
+/* 非選択時のテキスト色をテーマに同期 */
+.ce-paragraph,
+.ce-header,
+.ce-list__item {
+	color: var(--text-main);
+}
+
+.dark .ce-paragraph,
+.dark .ce-header,
+.dark .ce-list__item {
+	color: #ffffff;
+}
+
+/* 公開ページのコードブロック (prose) のスタイル強制 */
+.prose pre {
+	background-color: #0d1117 !important;
+	color: #79c0ff !important;
+	border: 1px solid rgba(255, 255, 255, 0.1);
+	padding: 2rem !important;
+	border-radius: 2rem !important;
+}
+
+.prose pre code {
+	background-color: transparent !important;
+	color: inherit !important;
+	padding: 0 !important;
+	border-radius: 0 !important;
+	font-size: 0.9em !important;
+}
+
+/* コピーボタンのスタイル */
+.copy-code-btn {
+	background-color: rgba(255, 255, 255, 0.1) !important;
+	color: white !important;
+	border: 1px solid rgba(255, 255, 255, 0.2) !important;
+	cursor: pointer;
+	z-index: 20;
+}
+
+.copy-code-btn:hover {
+	background-color: rgba(255, 255, 255, 0.2) !important;
+	transform: translateY(-1px);
+}
+
+.copy-code-btn:active {
+	transform: translateY(0);
 }
 
 /* ポップオーバーやインラインツールの色をテーマに強制同期 */
@@ -346,6 +561,19 @@ h6.ce-header {
 .ce-toolbar__content {
 	max-width: 100% !important;
 	margin-left: 0 !important;
+}
+
+/* 投稿詳細ページ（prose）のオーバーフロー防止 */
+.prose {
+	overflow-x: hidden;
+	word-wrap: break-word;
+}
+
+.prose pre,
+.prose img,
+.prose iframe,
+.prose figure {
+	max-width: 100% !important;
 }
 
 @media (max-width: 650px) {

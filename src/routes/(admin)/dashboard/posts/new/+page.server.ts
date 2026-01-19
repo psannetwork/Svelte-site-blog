@@ -26,7 +26,7 @@ export const actions: Actions = {
 		let thumbnailUrl = formData.get('thumbnail_url') as string;
 
 		if (locals.user.role === 'author' && !['draft', 'review'].includes(visibility)) {
-			visibility = 'draft'; 
+			visibility = 'draft';
 		}
 
 		if (!title || !editorDataRaw) {

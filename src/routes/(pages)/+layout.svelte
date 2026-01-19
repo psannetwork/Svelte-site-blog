@@ -32,6 +32,16 @@
 	});
 </script>
 
+<svelte:head>
+	{#if data.settings?.accent_color}
+		<style>
+			:root {
+				--accent-color: {data.settings.accent_color} !important;
+			}
+		</style>
+	{/if}
+</svelte:head>
+
 <header
 	class="bg-[--bg-main]/70 backdrop-blur-xl sticky top-0 z-50 border-b border-[--border-color] transition-colors"
 >
@@ -44,7 +54,7 @@
 				>
 			</a>
 			<div
-				class="hidden md:flex items-center gap-8 text-xs font-black opacity-40 uppercase tracking-widest"
+				class="hidden md:flex items-center gap-8 text-xs font-black opacity-70 uppercase tracking-widest"
 			>
 				<a
 					href="/"
@@ -91,7 +101,7 @@
 								<img src={data.user.avatar_url} alt="" class="w-full h-full object-cover" />
 							{:else}
 								<div
-									class="w-full h-full flex items-center justify-center text-white font-black uppercase text-sm"
+									class="w-full h-full flex items-center justify-center text-psan-green-fg font-black uppercase text-sm"
 								>
 									{(data.user.nickname || data.user.username).substring(0, 1)}
 								</div>
@@ -106,7 +116,7 @@
 					{#if ['admin', 'editor', 'author'].includes(data.user.role)}
 						<a
 							href="/dashboard"
-							class="text-xs font-black opacity-40 hover:opacity-100 uppercase tracking-widest"
+							class="text-xs font-black opacity-70 hover:opacity-100 uppercase tracking-widest"
 							>Dashboard</a
 						>
 					{/if}
@@ -118,7 +128,7 @@
 				{:else}
 					<a
 						href="/auth/login"
-						class="text-xs font-black opacity-40 hover:opacity-100 uppercase tracking-widest"
+						class="text-xs font-black opacity-70 hover:opacity-100 uppercase tracking-widest"
 						>Login</a
 					>
 					{#if data.settings?.allow_signup === 'true'}
@@ -174,7 +184,7 @@
 					>{data.settings?.site_title || 'PSANBLOG'}</span
 				>
 			</div>
-			<p class="text-[10px] font-black tracking-[0.3em] opacity-30 uppercase">
+			<p class="text-[10px] font-black tracking-[0.3em] opacity-60 uppercase">
 				© 2026 PSANNETWORK ALL RIGHTS RESERVED.
 			</p>
 		</div>

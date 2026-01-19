@@ -13,7 +13,9 @@ export const load: PageServerLoad = async ({ locals }) => {
 		if (!exists) {
 			// 設定ページにデータが残っていれば移行、なければ空
 			const legacyContent = getSetting(settingKey, '');
-			db.prepare('INSERT INTO pages (id, title, content, raw_json, updated_at) VALUES (?, ?, ?, ?, ?)').run(
+			db.prepare(
+				'INSERT INTO pages (id, title, content, raw_json, updated_at) VALUES (?, ?, ?, ?, ?)'
+			).run(
 				id,
 				title,
 				'', // content (HTML) は編集時に生成される

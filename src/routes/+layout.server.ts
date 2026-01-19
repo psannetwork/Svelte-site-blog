@@ -13,12 +13,8 @@ export const load: LayoutServerLoad = async ({ locals, depends }) => {
 	const error404 = db.prepare("SELECT raw_json FROM pages WHERE id = 'error404'").get() as any;
 	const error500 = db.prepare("SELECT raw_json FROM pages WHERE id = 'error500'").get() as any;
 
-	const error404Html = editorJsToHtml(
-		JSON.parse(error404?.raw_json || '{"blocks":[]}').blocks
-	);
-	const error500Html = editorJsToHtml(
-		JSON.parse(error500?.raw_json || '{"blocks":[]}').blocks
-	);
+	const error404Html = editorJsToHtml(JSON.parse(error404?.raw_json || '{"blocks":[]}').blocks);
+	const error500Html = editorJsToHtml(JSON.parse(error500?.raw_json || '{"blocks":[]}').blocks);
 
 	return {
 		user: locals.user,

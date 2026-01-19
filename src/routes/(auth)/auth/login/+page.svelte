@@ -20,7 +20,7 @@
 
 		<div class="relative z-10 text-center mb-10">
 			<div
-				class="w-16 h-16 bg-psan-green rounded-2xl mx-auto mb-6 flex items-center justify-center font-black text-white text-3xl italic rotate-12 shadow-lg shadow-psan-green/20"
+				class="w-16 h-16 bg-psan-green rounded-2xl mx-auto mb-6 flex items-center justify-center font-black text-psan-green-fg text-3xl italic rotate-12 shadow-lg shadow-psan-green/20"
 			>
 				P.
 			</div>
@@ -83,7 +83,7 @@
 			{/if}
 			<a
 				href="/"
-				class="block text-[10px] font-black tracking-widest text-muted opacity-50 hover:opacity-100 transition-colors uppercase"
+				class="block text-[10px] font-black tracking-widest text-muted opacity-80 hover:opacity-100 transition-colors uppercase"
 				>Back to Home</a
 			>
 		</div>

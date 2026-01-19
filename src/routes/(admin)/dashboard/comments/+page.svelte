@@ -24,7 +24,8 @@
 {#snippet commentItem(comment: any, depth = 0)}
 	<div class="space-y-4">
 		<div
-			class="card-psan p-6 flex flex-col md:flex-row gap-6 hover:shadow-md transition-shadow {depth > 0
+			class="card-psan p-6 flex flex-col md:flex-row gap-6 hover:shadow-md transition-shadow {depth >
+			0
 				? 'ml-4 md:ml-12 bg-slate-50/50 dark:bg-slate-900/30'
 				: ''}"
 		>
@@ -34,7 +35,7 @@
 				{#if comment.avatar_url}
 					<img src={comment.avatar_url} alt="" class="w-full h-full object-cover" />
 				{:else}
-					<span class="text-xs font-black text-slate-400 uppercase"
+					<span class="text-xs font-black text-slate-400 dark:text-slate-500 uppercase"
 						>{comment.author_name.substring(0, 1)}</span
 					>
 				{/if}

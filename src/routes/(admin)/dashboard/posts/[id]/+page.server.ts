@@ -16,7 +16,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 	if (locals.user.role === 'editor' && post.author_id !== locals.user.id) {
 		throw error(403, 'You do not have permission to edit this post');
 	}
-	
+
 	if (locals.user.role === 'author') {
 		if (post.author_id !== locals.user.id) {
 			throw error(403, 'You do not have permission to edit this post');
@@ -37,7 +37,9 @@ export const actions: Actions = {
 			return fail(403);
 		}
 
-		const post = db.prepare('SELECT author_id, visibility FROM post WHERE id = ?').get(params.id) as any;
+		const post = db
+			.prepare('SELECT author_id, visibility FROM post WHERE id = ?')
+			.get(params.id) as any;
 		if (!post) return fail(404);
 
 		if (locals.user.role === 'author') {
@@ -80,7 +82,16 @@ export const actions: Actions = {
 			SET title = ?, summary = ?, content = ?, raw_json = ?, visibility = ?, updated_at = ?, thumbnail_url = ? 
 			WHERE id = ?
 		`
-		).run(title, summary, htmlContent, editorDataRaw, visibility, Date.now(), thumbnailUrl || null, params.id);
+		).run(
+			title,
+			summary,
+			htmlContent,
+			editorDataRaw,
+			visibility,
+			Date.now(),
+			thumbnailUrl || null,
+			params.id
+		);
 
 		throw redirect(302, '/dashboard/posts');
 	}

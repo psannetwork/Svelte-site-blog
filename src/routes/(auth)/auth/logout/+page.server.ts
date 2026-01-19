@@ -10,7 +10,7 @@ export const actions: Actions = {
 		await lucia.invalidateSession(locals.session.id);
 		const sessionCookie = lucia.createBlankSessionCookie();
 		cookies.set(sessionCookie.name, sessionCookie.value, {
-			path: '.',
+			path: '/',
 			...sessionCookie.attributes
 		});
 		throw redirect(302, '/auth/login');

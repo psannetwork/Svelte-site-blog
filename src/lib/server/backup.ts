@@ -14,7 +14,6 @@ export function isValidSqlite(buffer: Buffer): boolean {
 
 export async function performBackup() {
 	if (env.TURSO_DB_URL) {
-		console.log('[BACKUP] Automatic backup is managed by Turso dashboard. Skipping local task.');
 		setSetting('last_backup_at', Date.now().toString());
 		return { success: true, message: 'Managed by Turso' };
 	}
@@ -25,65 +24,45 @@ export async function performBackup() {
 	const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
 	const backupPath = join(BACKUP_DIR, `backup-${timestamp}.db`);
 
-		try {
+	try {
+		// 1. ドライバのバックアップ機能があるか確認
 
-			// 1. ドライバのバックアップ機能があるか確認
-
-			if (typeof (db as any).backup === 'function') {
-
-				try {
-
-					await (db as any).backup(backupPath);
-
-					setSetting('last_backup_at', Date.now().toString());
-
-					rotateBackups();
-
-					return { success: true, path: backupPath };
-
-				} catch (err: any) {
-
-					if (err.message?.includes('not implemented')) {
-
-						// 未実装の場合はファイルコピーへフォールバック
-
-					} else {
-
-						throw err;
-
-					}
-
-				}
-
-			}
-
-
-
-			// 2. ファイルコピーによるバックアップ (ローカルSQLiteのみ)
-
-			if (existsSync(DB_PATH)) {
-
-				copyFileSync(DB_PATH, backupPath);
+		if (typeof (db as any).backup === 'function') {
+			try {
+				await (db as any).backup(backupPath);
 
 				setSetting('last_backup_at', Date.now().toString());
 
 				rotateBackups();
 
 				return { success: true, path: backupPath };
-
+			} catch (err: any) {
+				if (err.message?.includes('not implemented')) {
+					// 未実装の場合はファイルコピーへフォールバック
+				} else {
+					throw err;
+				}
 			}
-
-
-
-			return { success: false, error: 'Backup method not available' };
-
-		} catch (e) {
-
-			console.error('[BACKUP ERROR]', e);
-
-			return { success: false, error: String(e) };
-
 		}
+
+		// 2. ファイルコピーによるバックアップ (ローカルSQLiteのみ)
+
+		if (existsSync(DB_PATH)) {
+			copyFileSync(DB_PATH, backupPath);
+
+			setSetting('last_backup_at', Date.now().toString());
+
+			rotateBackups();
+
+			return { success: true, path: backupPath };
+		}
+
+		return { success: false, error: 'Backup method not available' };
+	} catch (e) {
+		console.error('[BACKUP ERROR]', e);
+
+		return { success: false, error: String(e) };
+	}
 }
 
 export function rotateBackups() {
@@ -120,8 +99,6 @@ export async function restoreBackup(filename: string) {
 		resetDb();
 
 		copyFileSync(backupPath, DB_PATH);
-
-		console.log(`[RESTORE] Database restored from ${filename}. Connection reset.`);
 
 		return { success: true, message: 'データベースの復元が完了しました。' };
 	} catch (e) {

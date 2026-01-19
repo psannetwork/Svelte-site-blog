@@ -173,7 +173,7 @@
 				<button
 					type="button"
 					onclick={togglePreview}
-					class="btn-psan-ghost text-xs py-2 border-psan-green text-psan-green hover:bg-psan-green hover:text-white transition-all min-w-[100px]"
+					class="btn-psan-ghost text-xs py-2 border-psan-green text-psan-green hover:bg-psan-green hover:text-psan-green-fg transition-all min-w-[100px]"
 				>
 					{isPreview ? 'Edit' : 'Preview'}
 				</button>
@@ -211,7 +211,7 @@
 		<input type="hidden" name="content" value={editorData} />
 		{#if form?.success}
 			<div
-				class="fixed top-24 left-1/2 -translate-x-1/2 bg-psan-green text-white px-10 py-4 rounded-full font-black shadow-2xl z-[101] animate-in fade-in slide-in-from-top-4"
+				class="fixed top-24 left-1/2 -translate-x-1/2 bg-psan-green text-psan-green-fg px-10 py-4 rounded-full font-black shadow-2xl z-[101] animate-in fade-in slide-in-from-top-4"
 			>
 				PAGE SAVED!
 			</div>

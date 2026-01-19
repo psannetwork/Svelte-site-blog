@@ -41,7 +41,7 @@
 							<div
 								class="p-2 rounded-xl {note.type === 'reply'
 									? 'bg-blue-100 text-blue-600'
-									: 'bg-slate-100 text-slate-600'}"
+									: 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-200'}"
 							>
 								{#if note.type === 'reply'}
 									<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"

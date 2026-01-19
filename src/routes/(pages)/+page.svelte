@@ -8,7 +8,7 @@
 	<div class="fixed bottom-8 right-8 z-[100]">
 		<a
 			href="/dashboard/pages/home"
-			class="flex items-center gap-2 bg-psan-green text-white px-6 py-3 rounded-full font-black shadow-2xl hover:scale-105 transition-all uppercase tracking-widest text-xs border-4 border-white dark:border-slate-900"
+			class="flex items-center gap-2 bg-psan-green text-psan-green-fg px-6 py-3 rounded-full font-black shadow-2xl hover:scale-105 transition-all uppercase tracking-widest text-xs border-4 border-white dark:border-slate-900"
 		>
 			<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"
 				><path
@@ -48,18 +48,19 @@
 			{#each data.posts as post}
 				<article class="group px-4">
 					<a href="/pages/{post.id}" class="block">
-						                    <div
-												class="w-full aspect-video rounded-3xl bg-psan-green/10 dark:bg-slate-800 mb-6 overflow-hidden flex items-center justify-center relative group-hover:scale-[1.02] transition-transform duration-500"
-											>
-												{#if post.thumbnail_url}
-													<img src={post.thumbnail_url} alt="" class="w-full h-full object-cover" />
-												{:else}
-													<span
-														class="text-6xl font-black text-psan-green/20 dark:text-slate-700 uppercase italic tracking-tighter"
-														>{post.title.substring(0, 1)}</span
-													>
-												{/if}
-											</div>						<div class="space-y-3">
+						<div
+							class="w-full aspect-video rounded-3xl bg-psan-green/10 dark:bg-slate-800 mb-6 overflow-hidden flex items-center justify-center relative group-hover:scale-[1.02] transition-transform duration-500"
+						>
+							{#if post.thumbnail_url}
+								<img src={post.thumbnail_url} alt="" class="w-full h-full object-cover" />
+							{:else}
+								<span
+									class="text-6xl font-black text-psan-green/20 dark:text-slate-500 uppercase italic tracking-tighter"
+									>{post.title.substring(0, 1)}</span
+								>
+							{/if}
+						</div>
+						<div class="space-y-3">
 							<div
 								class="flex items-center gap-3 text-[10px] font-black tracking-widest text-muted uppercase"
 							>

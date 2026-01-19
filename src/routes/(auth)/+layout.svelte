@@ -12,7 +12,7 @@
 	</a>
 	<a
 		href="/"
-		class="text-[10px] font-black tracking-widest opacity-40 hover:opacity-100 uppercase transition-all"
+		class="text-[10px] font-black tracking-widest opacity-70 hover:opacity-100 uppercase transition-all"
 		>Back to Home</a
 	>
 </header>

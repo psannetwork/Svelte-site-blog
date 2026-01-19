@@ -5,7 +5,9 @@ import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ locals }) => {
 	if (!locals.user || locals.user.role !== 'admin') throw redirect(302, '/dashboard');
-	const users = db.prepare('SELECT id, username, role, is_protected, created_at FROM user').all() as any[];
+	const users = db
+		.prepare('SELECT id, username, role, is_protected, created_at FROM user')
+		.all() as any[];
 	return { users };
 };
 
@@ -43,7 +45,8 @@ export const actions: Actions = {
 		const role = (formData.get('role') as string) || 'user';
 
 		if (!username || !password) return fail(400, { message: 'ユーザー名とパスワードは必須です。' });
-		if (password.length < 6) return fail(400, { message: 'パスワードは6文字以上である必要があります。' });
+		if (password.length < 6)
+			return fail(400, { message: 'パスワードは6文字以上である必要があります。' });
 
 		const existing = db.prepare('SELECT id FROM user WHERE username = ?').get(username);
 		if (existing) return fail(400, { message: 'このユーザー名は既に使用されています。' });

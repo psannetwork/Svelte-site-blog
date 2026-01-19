@@ -16,7 +16,6 @@ try {
 # Created automatically by Svelte Site Blog
 `;
 		writeFileSync(envPath, defaultEnv);
-		console.log('✅ Created .env file with default settings.');
 	}
 } catch (e) {
 	console.warn(
@@ -55,14 +54,14 @@ export const handle: Handle = async ({ event, resolve }) => {
 		if (session && session.fresh) {
 			const sessionCookie = lucia.createSessionCookie(session.id);
 			event.cookies.set(sessionCookie.name, sessionCookie.value, {
-				path: '.',
+				path: '/',
 				...sessionCookie.attributes
 			});
 		}
 		if (!session) {
 			const sessionCookie = lucia.createBlankSessionCookie();
 			event.cookies.set(sessionCookie.name, sessionCookie.value, {
-				path: '.',
+				path: '/',
 				...sessionCookie.attributes
 			});
 		}

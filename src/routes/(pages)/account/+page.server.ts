@@ -47,8 +47,9 @@ export const actions: Actions = {
 			.get(locals.user!.id) as any;
 		const valid = await verify(user.password_hash, currentPassword);
 		if (!valid) return fail(400, { message: '現在のパスワードが違います。' });
-		
-		if (newPassword.length < 6) return fail(400, { message: '新しいパスワードは6文字以上である必要があります。' });
+
+		if (newPassword.length < 6)
+			return fail(400, { message: '新しいパスワードは6文字以上である必要があります。' });
 
 		const newHash = await hash(newPassword);
 		db.prepare('UPDATE user SET password_hash = ? WHERE id = ?').run(newHash, locals.user!.id);
@@ -71,10 +72,9 @@ export const actions: Actions = {
 		await lucia.invalidateSession(locals.session.id);
 		const sessionCookie = lucia.createBlankSessionCookie();
 		cookies.set(sessionCookie.name, sessionCookie.value, {
-			path: '.',
+			path: '/',
 			...sessionCookie.attributes
 		});
-
 		db.prepare('DELETE FROM user WHERE id = ?').run(locals.user.id);
 
 		throw redirect(302, '/');

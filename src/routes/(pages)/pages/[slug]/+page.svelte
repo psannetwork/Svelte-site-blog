@@ -10,7 +10,7 @@
 	// Turnstileを手動でレンダリングするアクション
 	function turnstileAction(node: HTMLElement) {
 		if (data.settings.enable_turnstile !== 'true') return;
-		
+
 		const render = () => {
 			if (window.turnstile) {
 				window.turnstile.render(node, {
@@ -31,7 +31,9 @@
 		return {
 			destroy() {
 				if (window.turnstile && node) {
-					try { window.turnstile.remove(node); } catch (e) {}
+					try {
+						window.turnstile.remove(node);
+					} catch (e) {}
 				}
 			}
 		};
@@ -53,6 +55,39 @@
 		});
 		return roots;
 	});
+
+	// コードブロックのコピー機能
+	function setupCodeCopy(node: HTMLElement) {
+		const handleCopy = async (e: MouseEvent) => {
+			const btn = (e.target as HTMLElement).closest('.copy-code-btn');
+			if (!btn) return;
+
+			const container = btn.closest('.code-block-container');
+			const code = container?.querySelector('code')?.innerText;
+
+			if (code) {
+				try {
+					await navigator.clipboard.writeText(code);
+					const originalText = (btn as HTMLElement).innerText;
+					(btn as HTMLElement).innerText = 'Copied!';
+					btn.classList.add('!bg-psan-green');
+					setTimeout(() => {
+						(btn as HTMLElement).innerText = originalText;
+						btn.classList.remove('!bg-psan-green');
+					}, 2000);
+				} catch (err) {
+					console.error('Copy failed', err);
+				}
+			}
+		};
+
+		node.addEventListener('click', handleCopy);
+		return {
+			destroy() {
+				node.removeEventListener('click', handleCopy);
+			}
+		};
+	}
 </script>
 
 <svelte:head>
@@ -84,7 +119,7 @@
 				<img src={comment.avatar_url} alt="" class="w-full h-full object-cover" />
 			{:else}
 				<div
-					class="w-full h-full flex items-center justify-center text-xs font-black text-slate-400 uppercase"
+					class="w-full h-full flex items-center justify-center text-xs font-black text-slate-400 dark:text-slate-300 uppercase"
 				>
 					{comment.author_name.substring(0, 1)}
 				</div>
@@ -96,7 +131,7 @@
 					<span class="text-sm font-black dark:text-white truncate">{comment.author_name}</span>
 					{#if comment.author_role === 'admin'}
 						<span
-							class="text-[10px] font-black px-2 py-0.5 bg-psan-green text-white rounded uppercase tracking-wider shrink-0"
+							class="text-[10px] font-black px-2 py-0.5 bg-psan-green text-psan-green-fg rounded uppercase tracking-wider shrink-0"
 							>Admin</span
 						>
 					{/if}
@@ -232,7 +267,7 @@
 	{/if}
 {/snippet}
 
-<article class="max-w-4xl mx-auto px-4 py-20">
+<article class="max-w-4xl mx-auto px-4 py-20 overflow-x-hidden">
 	<header class="mb-12">
 		<h1 class="text-4xl md:text-6xl font-black tracking-tighter dark:text-white leading-[1.1]">
 			{data.post.title}
@@ -240,7 +275,8 @@
 	</header>
 
 	<div
-		class="prose prose-slate prose-xl dark:prose-invert max-w-none mb-20 border-b border-slate-100 dark:border-slate-800 pb-20 prose-img:rounded-[40px] prose-img:shadow-2xl"
+		use:setupCodeCopy
+		class="prose prose-slate prose-xl dark:prose-invert max-w-none mb-20 border-b border-slate-100 dark:border-slate-800 pb-20 prose-img:rounded-[40px] prose-img:shadow-2xl break-words overflow-x-hidden"
 	>
 		{@html data.post.content}
 	</div>
@@ -274,7 +310,9 @@
 					}}
 					class="card-psan p-6 md:p-10 space-y-6"
 				>
-					<h3 class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
+					<h3
+						class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-slate-300"
+					>
 						New Comment
 					</h3>
 					<textarea

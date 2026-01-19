@@ -7,11 +7,15 @@ export const GET: RequestHandler = async ({ locals }) => {
 
 	try {
 		const settings = getSettings();
-		
+
 		// 統計情報の取得
 		const stats = {
-			local: db.prepare("SELECT COUNT(*) as count FROM file_storage WHERE storage_type = 'local'").get().count,
-			database: db.prepare("SELECT COUNT(*) as count FROM file_storage WHERE storage_type = 'database'").get().count
+			local: db
+				.prepare("SELECT COUNT(*) as count FROM file_storage WHERE storage_type = 'local'")
+				.get().count,
+			database: db
+				.prepare("SELECT COUNT(*) as count FROM file_storage WHERE storage_type = 'database'")
+				.get().count
 		};
 
 		return json({ success: true, settings, stats });

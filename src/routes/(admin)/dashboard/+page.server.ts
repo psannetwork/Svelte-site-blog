@@ -10,7 +10,9 @@ export const load: PageServerLoad = async ({ locals }) => {
 	const isAuthor = locals.user.role === 'author';
 
 	const posts = isAuthor
-		? (db.prepare(`SELECT * FROM post WHERE author_id = ? ORDER BY created_at DESC`).all(locals.user.id) as any[])
+		? (db
+				.prepare(`SELECT * FROM post WHERE author_id = ? ORDER BY created_at DESC`)
+				.all(locals.user.id) as any[])
 		: (db.prepare(`SELECT * FROM post ORDER BY created_at DESC`).all() as any[]);
 
 	const comments = isAuthor

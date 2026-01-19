@@ -28,14 +28,17 @@
 <div class="max-w-7xl mx-auto space-y-8 md:space-y-12">
 	<header>
 		<h2
-			class="text-3xl md:text-4xl font-black tracking-tighter uppercase {data.user?.role === 'author'
+			class="text-3xl md:text-4xl font-black tracking-tighter uppercase {data.user?.role ===
+			'author'
 				? 'text-psan-author'
 				: 'text-main'}"
 		>
 			Overview
 		</h2>
 		<p class="text-sm text-muted font-bold">
-			{data.user?.role === 'author' ? '自分の活動状況を確認します。' : 'サイトのパフォーマンスをリアルタイムで分析します。'}
+			{data.user?.role === 'author'
+				? '自分の活動状況を確認します。'
+				: 'サイトのパフォーマンスをリアルタイムで分析します。'}
 		</p>
 	</header>
 
@@ -43,13 +46,18 @@
 		<!-- アクセス統計サマリー -->
 		<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
 			<div
-				class="card-psan p-6 md:p-8 text-white border-none shadow-xl relative overflow-hidden group {data.user?.role === 'author' ? 'bg-psan-author shadow-blue-500/20' : 'bg-psan-green shadow-psan-green/20'}"
+				class="card-psan p-6 md:p-8 border-none shadow-xl relative overflow-hidden group {data.user
+					?.role === 'author'
+					? 'bg-psan-author text-white shadow-blue-500/20'
+					: 'bg-psan-green text-psan-green-fg shadow-psan-green/20'}"
 			>
 				<div
 					class="absolute -right-4 -bottom-4 opacity-10 group-hover:scale-110 transition-transform duration-700"
 				>
 					<svg class="w-32 h-32" fill="currentColor" viewBox="0 0 24 24"
-						><path d="M16 6l2.29 2.29-4.88 4.88-4-4L2 16.59 3.41 18l6-6 4 4 6.3-6.29L22 12V6z" /></svg
+						><path
+							d="M16 6l2.29 2.29-4.88 4.88-4-4L2 16.59 3.41 18l6-6 4 4 6.3-6.29L22 12V6z"
+						/></svg
 					>
 				</div>
 				<div class="relative z-10">
@@ -103,7 +111,8 @@
 					</svg>
 					<div class="flex justify-between mt-6">
 						{#each weekly as day}
-							<span class="text-[8px] md:text-[9px] font-black text-muted uppercase tracking-tighter"
+							<span
+								class="text-[8px] md:text-[9px] font-black text-muted uppercase tracking-tighter"
 								>{day.date.split('-').slice(1).join('/')}</span
 							>
 						{/each}
@@ -124,11 +133,15 @@
 						class="flex items-center justify-between p-5 md:p-6 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition gap-4"
 					>
 						<div class="flex items-center gap-4 flex-1 min-w-0">
-							<div class="w-10 h-10 rounded-lg bg-secondary dark:bg-slate-800 shrink-0 overflow-hidden flex items-center justify-center border border-slate-100 dark:border-slate-700">
+							<div
+								class="w-10 h-10 rounded-lg bg-secondary dark:bg-slate-800 shrink-0 overflow-hidden flex items-center justify-center border border-slate-100 dark:border-slate-700"
+							>
 								{#if post.thumbnail_url}
 									<img src={post.thumbnail_url} alt="" class="w-full h-full object-cover" />
 								{:else}
-									<span class="text-[10px] font-black text-muted opacity-30 uppercase">{post.title.substring(0, 1)}</span>
+									<span class="text-[10px] font-black text-muted opacity-60 uppercase"
+										>{post.title.substring(0, 1)}</span
+									>
 								{/if}
 							</div>
 							<span class="font-black text-sm text-main truncate">{post.title}</span>
