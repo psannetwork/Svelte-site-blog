@@ -7,6 +7,36 @@
 	let replyingTo = $state<string | null>(null);
 	let isPosting = $state(false);
 
+	// Turnstileを手動でレンダリングするアクション
+	function turnstileAction(node: HTMLElement) {
+		if (data.settings.enable_turnstile !== 'true') return;
+		
+		const render = () => {
+			if (window.turnstile) {
+				window.turnstile.render(node, {
+					sitekey: data.settings.turnstile_site_key,
+					theme: theme.current === 'dark' ? 'dark' : 'light',
+					callback: (token: string) => {
+						// 必要に応じてトークン取得後の処理
+					}
+				});
+			} else {
+				// スクリプトがまだ読み込まれていない場合はリトライ
+				setTimeout(render, 500);
+			}
+		};
+
+		render();
+
+		return {
+			destroy() {
+				if (window.turnstile && node) {
+					try { window.turnstile.remove(node); } catch (e) {}
+				}
+			}
+		};
+	}
+
 	const commentTree = $derived.by(() => {
 		const map = new Map<string, any>();
 		const roots: any[] = [];
@@ -166,11 +196,7 @@
 					></textarea>
 
 					{#if data.settings.enable_turnstile === 'true'}
-						<div
-							class="cf-turnstile"
-							data-sitekey={data.settings.turnstile_site_key}
-							data-theme={theme.current}
-						></div>
+						<div use:turnstileAction></div>
 					{/if}
 
 					<div class="flex justify-end">
@@ -260,11 +286,7 @@
 					></textarea>
 
 					{#if data.settings.enable_turnstile === 'true'}
-						<div
-							class="cf-turnstile"
-							data-sitekey={data.settings.turnstile_site_key}
-							data-theme={theme.current}
-						></div>
+						<div use:turnstileAction></div>
 					{/if}
 
 					<div class="flex justify-end">

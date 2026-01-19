@@ -5,23 +5,27 @@
 	import { editorI18n } from '$lib/utils/editor_i18n';
 
 	let { data, form } = $props();
-	const { dbStatus } = data;
+	let dbStatus = $derived(data.dbStatus);
 	
-	let formElement: HTMLFormElement;
+	let formElement = $state<HTMLFormElement>();
 	let isSaving = $state(false);
 	let isRefreshing = $state(false);
 	let showSuccess = $state(false);
 	let isUploadingIcon = $state(false);
 
-	// 最新のサーバー状態を保持
-	let baseSettings = $state({ ...data.settings });
+	let storageStats = $state({ local: 0, database: 0 });
+	let migrationStatus = $state({ active: false, progress: 0, message: '' });
 
-	let siteTitle = $state(data.settings?.site_title || '');
-	let siteDescription = $state(data.settings?.site_description || '');
-	let accentColor = $state(data.settings?.accent_color || '#00CC99');
-	let siteLanguage = $state(data.settings?.site_language || 'ja');
-	let allowedExtensions = $state(data.settings?.allowed_extensions || '.jpg,.jpeg,.png,.gif,.webp,.svg,.ico');
-	let siteIconUrl = $state(data.settings?.site_icon_url || '');
+	// 最新のサーバー状態を保持
+	let baseSettings = $state($state.snapshot(data.settings) || {});
+
+	let siteTitle = $state($state.snapshot(data.settings?.site_title) || '');
+	let siteDescription = $state($state.snapshot(data.settings?.site_description) || '');
+	let accentColor = $state($state.snapshot(data.settings?.accent_color) || '#00CC99');
+	let siteLanguage = $state($state.snapshot(data.settings?.site_language) || 'ja');
+	let allowedExtensions = $state($state.snapshot(data.settings?.allowed_extensions) || '.jpg,.jpeg,.png,.gif,.webp,.svg,.ico');
+	let siteIconUrl = $state($state.snapshot(data.settings?.site_icon_url) || '');
+	let storageType = $state($state.snapshot(data.settings?.storage_type) || 'local');
 
 	let userEdited = $state<Record<string, boolean>>({});
 	let lastSyncTime = $state(0);
