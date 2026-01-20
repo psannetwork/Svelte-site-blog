@@ -104,9 +104,6 @@
 			const AlignmentTune = (await import('editorjs-text-alignment-blocktune')).default;
 			const Undo = (await import('editorjs-undo')).default;
 			const LinkTool = (await import('@editorjs/link')).default;
-
-			const Undo = (await import('editorjs-undo')).default;
-			const LinkTool = (await import('@editorjs/link')).default;
 			const RawTool = (await import('@editorjs/raw')).default;
 			const DragDrop = (await import('editorjs-drag-drop')).default;
 
@@ -130,30 +127,27 @@
 					new Undo({ editor });
 					new DragDrop(editor);
 
-					// カラーピッカーの改善
+					// カラーピッカーを確実に行えるように改善
 					const observer = new MutationObserver(() => {
 						const popover = document.querySelector('.tc-popover');
 						if (popover) {
 							const items = popover.querySelectorAll('.tc-popover__item');
 							items.forEach((item) => {
 								if (item.querySelector('input[type="color"]')) return;
-								const leftBtn = item.querySelector('.tc-popover__item-icon');
-								if (leftBtn) {
+								
+								// アイコン部分を基準に picker を作成
+								const icon = item.querySelector('.tc-popover__item-icon');
+								if (icon) {
 									const picker = document.createElement('input');
 									picker.type = 'color';
-									picker.style.position = 'absolute';
-									picker.style.top = '0';
-									picker.style.left = '0';
-									picker.style.width = '100%';
-									picker.style.height = '100%';
-									picker.style.opacity = '0';
-									picker.style.cursor = 'pointer';
-									picker.style.pointerEvents = 'auto';
-
-									picker.addEventListener('input', () => {
+									picker.className = 'absolute inset-0 w-full h-full opacity-0 cursor-pointer';
+									picker.style.zIndex = '10';
+									
+									picker.addEventListener('input', (e) => {
+										e.stopPropagation();
 										(item as HTMLElement).click();
 									});
-
+									
 									(item as HTMLElement).style.position = 'relative';
 									item.appendChild(picker);
 								}
@@ -162,7 +156,7 @@
 					});
 					observer.observe(document.body, { childList: true, subtree: true });
 				},
-				minHeight: 300,
+				minHeight: 400,
 				logLevel: 'ERROR',
 				tools: {
 					header: {
@@ -401,14 +395,14 @@
 					<input type="hidden" name="thumbnail_url" value={thumbnailUrl} />
 				</div>
 
-				<div class="flex-1 space-y-6 w-full">
+				<div class="flex-1 space-y-4 w-full">
 					<input
 						id="title"
 						type="text"
 						name="title"
 						bind:value={title}
-						class="w-full text-4xl md:text-5xl font-black bg-transparent border-none focus:ring-0 p-0 text-main placeholder:text-muted/50"
-						placeholder="Title here..."
+						class="w-full text-4xl md:text-5xl font-black bg-transparent border-none focus:ring-0 p-0 text-main placeholder:text-muted/20 tracking-tighter"
+						placeholder="Untitled Story"
 					/>
 
 					<textarea
@@ -416,16 +410,16 @@
 						name="summary"
 						bind:value={summary}
 						rows="2"
-						class="w-full text-xl font-medium bg-transparent border-b border-border-color dark:border-slate-800 focus:border-psan-green focus:ring-0 p-0 pb-4 text-muted placeholder:text-muted/50"
-						placeholder="Add a short summary..."
+						class="w-full text-xl font-medium bg-transparent border-none focus:ring-0 p-0 text-muted placeholder:text-muted/20 resize-none"
+						placeholder="Write a short teaser for your story..."
 					></textarea>
 				</div>
 			</div>
 
-			<div class="prose dark:prose-invert max-w-none min-h-[500px]">
+			<div class="editor-container-psan min-h-[500px]">
 				<div id="editorjs" class="text-main {isPreview ? 'hidden' : 'block'}"></div>
 				{#if isPreview}
-					<div class="preview-content animate-in fade-in duration-300">
+					<div class="prose dark:prose-invert max-w-none preview-content animate-in fade-in duration-300">
 						{@html previewHtml}
 					</div>
 				{/if}

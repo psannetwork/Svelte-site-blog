@@ -90,6 +90,8 @@
 		(async () => {
 			if (editor) return;
 
+			const settings = data.settings;
+			
 			const EditorJS = (await import('@editorjs/editorjs')).default;
 			const Header = (await import('@editorjs/header')).default;
 			const List = (await import('@editorjs/list')).default;
@@ -133,7 +135,7 @@
 			editor = new EditorJS({
 				holder: 'editorjs',
 				inlineToolbar: true,
-				i18n: data?.settings?.site_language === 'ja' ? editorI18n : undefined,
+				i18n: settings?.site_language === 'ja' ? editorI18n : undefined,
 				tools: {
 					header: {
 						class: Header,
@@ -230,57 +232,32 @@
 					new Undo({ editor });
 					new DragDrop(editor);
 
-					// カラーピッカーの改善: 左側のボタンやアイテムをクリックしたときもパレットを開く
+					// カラーピッカーを確実に行えるように改善
 					const observer = new MutationObserver(() => {
 						const popover = document.querySelector('.tc-popover');
 						if (popover) {
-							// すべてのカラーアイテムに対して、内部に透明な input type="color" を仕込む
 							const items = popover.querySelectorAll('.tc-popover__item');
 							items.forEach((item) => {
 								if (item.querySelector('input[type="color"]')) return;
-
-								const leftBtn = item.querySelector('.tc-popover__item-icon');
-								if (leftBtn) {
+								
+								const icon = item.querySelector('.tc-popover__item-icon');
+								if (icon) {
 									const picker = document.createElement('input');
 									picker.type = 'color';
-									picker.style.position = 'absolute';
-									picker.style.top = '0';
-									picker.style.left = '0';
-									picker.style.width = '100%';
-									picker.style.height = '100%';
-									picker.style.opacity = '0';
-									picker.style.cursor = 'pointer';
-									picker.style.pointerEvents = 'auto';
-
-									// 初期値を設定（アイコンの背景色などから取得）
-									const bgColor = window.getComputedStyle(leftBtn).backgroundColor;
-									if (bgColor && bgColor.startsWith('rgb')) {
-										const rgb = bgColor.match(/\d+/g);
-										if (rgb) {
-											const hex =
-												'#' +
-												rgb
-													.slice(0, 3)
-													.map((x) => parseInt(x).toString(16).padStart(2, '0'))
-													.join('');
-											picker.value = hex;
-										}
-									}
-
+									picker.className = 'absolute inset-0 w-full h-full opacity-0 cursor-pointer';
+									picker.style.zIndex = '10';
+									
 									picker.addEventListener('input', (e) => {
-										const color = (e.target as HTMLInputElement).value;
-										// プラグインの内部ロジックをシミュレートして色を適用
-										// 注意: これはプラグインの内部挙動に依存するため、うまくいかない場合はクリックイベントを発火させる
+										e.stopPropagation();
 										(item as HTMLElement).click();
 									});
-
+									
 									(item as HTMLElement).style.position = 'relative';
 									item.appendChild(picker);
 								}
 							});
 						}
 					});
-
 					observer.observe(document.body, { childList: true, subtree: true });
 				},
 				onChange: async () => {
@@ -291,6 +268,7 @@
 					}
 				},
 				data: parsedData,
+				minHeight: 400,
 				placeholder: '執筆を開始...',
 				defaultBlock: 'paragraph'
 			});
@@ -440,14 +418,14 @@
 					<input type="hidden" name="thumbnail_url" value={thumbnailUrl} />
 				</div>
 
-				<div class="flex-1 space-y-6 w-full">
+				<div class="flex-1 space-y-4 w-full">
 					<input
 						id="title"
 						type="text"
 						name="title"
 						bind:value={title}
-						class="w-full text-4xl md:text-5xl font-black bg-transparent border-none focus:ring-0 p-0 text-main"
-						placeholder="Title here..."
+						class="w-full text-4xl md:text-5xl font-black bg-transparent border-none focus:ring-0 p-0 text-main placeholder:text-muted/20 tracking-tighter"
+						placeholder="Untitled Story"
 					/>
 
 					<textarea
@@ -455,16 +433,16 @@
 						name="summary"
 						bind:value={summary}
 						rows="2"
-						class="w-full text-xl font-medium bg-transparent border-b border-slate-200 dark:border-slate-700 focus:border-psan-green focus:ring-0 p-0 pb-4 text-muted"
-						placeholder="Add a short summary..."
+						class="w-full text-xl font-medium bg-transparent border-none focus:ring-0 p-0 text-muted placeholder:text-muted/20 resize-none"
+						placeholder="Write a short teaser for your story..."
 					></textarea>
 				</div>
 			</div>
 
-			<div class="prose dark:prose-invert max-w-none min-h-[500px]">
+			<div class="editor-container-psan min-h-[500px]">
 				<div id="editorjs" class="text-main {isPreview ? 'hidden' : 'block'}"></div>
 				{#if isPreview}
-					<div class="preview-content animate-in fade-in duration-300">
+					<div class="prose dark:prose-invert max-w-none preview-content animate-in fade-in duration-300">
 						{@html previewHtml}
 					</div>
 				{/if}

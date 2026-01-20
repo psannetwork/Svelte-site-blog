@@ -109,6 +109,10 @@
          hover:bg-psan-pink/20 hover:text-psan-pink dark:hover:text-psan-pink;
 }
 
+@utility editor-container-psan {
+	@apply bg-transparent rounded-3xl p-4 md:p-8;
+}
+
 /* Editor.js の文字がライトモードで見えない問題の修正 */
 /* !important を外すことで、カラープラグインの色指定が優先されるようにします */
 .codex-editor,
@@ -167,20 +171,23 @@
 	border-color: var(--border-color) !important;
 }
 
-/* ポップオーバー内のすべてのテキスト要素を強制的に白に */
-.dark .ce-popover * {
-	color: #ffffff !important;
+/* ポップオーバー内のすべてのテキスト要素をテーマに合わせて調整 */
+.dark .ce-popover {
+    background-color: var(--bg-secondary) !important;
 }
 
-.dark .ce-popover__item-icon,
 .dark .ce-popover__item-label,
 .dark .ce-popover__item-secondary-label,
 .dark .ce-inline-tool,
 .dark .ce-settings__button,
 .dark .ce-toolbox__button,
-.dark .cdx-settings-button,
-.dark .ce-popover__search-field {
+.dark .cdx-settings-button {
 	color: #ffffff !important;
+}
+
+/* カラープラグインのアイテム内の色は保持する */
+.tc-popover__item-icon {
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
 }
 
 /* プレースホルダーと検索フィールドの入力文字 */
@@ -411,29 +418,33 @@ span[style*='color'] {
 
 /* Editor.js Text Color Plugin の調整 */
 .tc-popover {
-	z-index: 9999 !important; /* 他のすべての要素より上に */
+	z-index: 9999 !important;
 	background-color: var(--card-bg) !important;
 	border: 1px solid var(--border-color) !important;
-	color: var(--text-main) !important;
-	pointer-events: auto !important;
-	visibility: visible !important;
+	box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2) !important;
+	border-radius: 12px !important;
+	padding: 8px !important;
 }
 
-.tc-popover__item:hover {
-	background-color: var(--bg-secondary) !important;
+.tc-popover__item {
+	border-radius: 8px !important;
+	margin: 2px 0 !important;
+	transition: background-color 0.2s !important;
 }
 
-/* カスタムピッカーボタン (右下のやつ) の修正 */
+.tc-popover__item-icon {
+	border-radius: 4px !important;
+	border: 1px solid rgba(0, 0, 0, 0.1) !important;
+}
+
+.dark .tc-popover__item-icon {
+	border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
 .tc-color-picker {
-	pointer-events: auto !important;
-	display: flex !important;
-}
-
-.tc-color-picker__button {
-	pointer-events: auto !important;
-	cursor: pointer !important;
-	z-index: 10000 !important;
-	border: 1px solid var(--border-color) !important;
+	margin-top: 8px !important;
+	padding-top: 8px !important;
+	border-top: 1px solid var(--border-color) !important;
 }
 
 /* input[type="color"] が隠れたりクリックできなかったりするのを防ぐ */
@@ -512,6 +523,8 @@ span[style*='color'] {
 	border: 1px solid rgba(255, 255, 255, 0.1);
 	padding: 2rem !important;
 	border-radius: 2rem !important;
+	overflow-x: auto !important;
+	width: 100% !important;
 }
 
 .prose pre code {
@@ -520,6 +533,8 @@ span[style*='color'] {
 	padding: 0 !important;
 	border-radius: 0 !important;
 	font-size: 0.9em !important;
+	white-space: pre !important;
+	word-break: normal !important;
 }
 
 /* コピーボタンのスタイル */
@@ -596,18 +611,53 @@ span[style*='color'] {
 
 /* 左側のはみ出し修正：ボタンを内側に強制配置し、被りを防ぐ */
 .codex-editor__redactor {
-	padding-left: 80px !important; /* 被りを防ぐため余白を拡大 */
-	padding-right: 40px !important;
+	padding-left: 60px !important;
+	padding-right: 60px !important;
 	margin-right: 0 !important;
+	padding-bottom: 100px !important;
 }
 
 .ce-toolbar {
-	left: 0 !important; /* ツールバーの基準を左端に */
+	left: 0 !important;
 }
 
 .ce-toolbar__actions {
-	left: 20px !important; /* テキスト（80px地点）より手前に配置 */
-	transform: none !important;
+	left: 0px !important;
+	transform: translateX(-100%) translateX(-10px) !important;
+}
+
+/* ポップオーバーの視認性向上 */
+.ce-popover {
+    background-color: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1) !important;
+}
+
+.dark .ce-popover {
+    background-color: #1e293b !important;
+    border: 1px solid #334155 !important;
+}
+
+.ce-popover__item:hover {
+    background-color: #f1f5f9 !important;
+}
+
+.dark .ce-popover__item:hover {
+    background-color: #334155 !important;
+}
+
+.ce-popover__item-label {
+    color: #1e293b !important;
+}
+
+.dark .ce-popover__item-label,
+.dark .ce-popover__item-secondary-label,
+.dark .ce-popover__search-field {
+    color: #f8fafc !important;
+}
+
+.dark .ce-popover__search-field {
+    background-color: #0f172a !important;
 }
 
 /* ツールバーの横幅をコンテナに合わせる */
@@ -619,16 +669,27 @@ span[style*='color'] {
 /* 投稿詳細ページ（prose）のオーバーフロー防止と最適化 */
 .prose {
 	overflow-x: hidden;
-	word-wrap: break-word;
-	contain: layout paint; /* 大規模ドキュメントのレンダリングを最適化 */
+	overflow-wrap: anywhere;
+	word-break: break-word;
+	width: 100%;
+	max-width: 100%;
+	display: block;
 }
 
 .prose pre,
+.prose code,
 .prose img,
+.prose video,
 .prose iframe,
-.prose figure {
+.prose table {
 	max-width: 100% !important;
-	contain: content; /* 個別要素の最適化 */
+	box-sizing: border-box;
+}
+
+.prose table {
+	display: block;
+	overflow-x: auto;
+	-webkit-overflow-scrolling: touch;
 }
 
 @media (max-width: 650px) {

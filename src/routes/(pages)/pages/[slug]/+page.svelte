@@ -267,7 +267,7 @@
 	{/if}
 {/snippet}
 
-<article class="max-w-4xl mx-auto px-4 py-20 overflow-x-hidden">
+<article class="max-w-4xl mx-auto px-4 py-20 overflow-x-hidden" style="overflow-x: clip;">
 	<header class="mb-12">
 		<h1 class="text-4xl md:text-6xl font-black tracking-tighter dark:text-white leading-[1.1]">
 			{data.post.title}
@@ -276,7 +276,7 @@
 
 	<div
 		use:setupCodeCopy
-		class="prose prose-slate prose-xl dark:prose-invert max-w-none mb-20 border-b border-slate-100 dark:border-slate-800 pb-20 prose-img:rounded-[40px] prose-img:shadow-2xl break-words overflow-x-hidden"
+		class="prose prose-slate prose-xl dark:prose-invert w-full max-w-none mb-20 border-b border-slate-100 dark:border-slate-800 pb-20 prose-img:rounded-[40px] prose-img:shadow-2xl prose-img:max-w-full break-words overflow-x-hidden"
 	>
 		{@html data.post.content}
 	</div>

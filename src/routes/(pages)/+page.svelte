@@ -24,10 +24,10 @@
 {/if}
 
 <!-- メインコンテンツ -->
-<article class="relative pt-20 pb-20 overflow-hidden transition-colors">
+<article class="relative pt-20 pb-20 overflow-hidden transition-colors" style="overflow-x: clip;">
 	<div class="max-w-7xl mx-auto px-4 relative">
 		<div
-			class="max-w-5xl prose prose-xl dark:prose-invert prose-headings:font-black prose-headings:tracking-tighter prose-p:font-medium prose-img:rounded-[40px] prose-img:shadow-2xl"
+			class="max-w-5xl prose prose-xl dark:prose-invert w-full prose-headings:font-black prose-headings:tracking-tighter prose-p:font-medium prose-img:rounded-[40px] prose-img:shadow-2xl prose-img:max-w-full overflow-x-hidden break-words"
 		>
 			{@html data.homeHtml}
 		</div>

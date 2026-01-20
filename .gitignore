@@ -31,3 +31,6 @@ vite.config.ts.timestamp-*
 # Uploads
 static/uploads/*
 !static/uploads/.gitkeep
+
+# Puppeteer
+puppeteer-profile/
