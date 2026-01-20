@@ -146,7 +146,7 @@
 
 	<div class="flex-1 flex flex-col min-w-0 overflow-hidden">
 		<header
-			class="h-20 bg-[--card-bg]/80 backdrop-blur-xl border-b border-[--border-color] px-4 md:px-8 flex items-center justify-between shrink-0"
+			class="h-20 bg-[--card-bg]/95 backdrop-blur-md border-b border-[--border-color] px-4 md:px-8 flex items-center justify-between shrink-0"
 		>
 			<div class="flex items-center gap-4">
 				<button

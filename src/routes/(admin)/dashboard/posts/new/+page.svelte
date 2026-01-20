@@ -114,10 +114,7 @@
 			try {
 				const autosaved = localStorage.getItem('autosave_new_post');
 				if (autosaved) {
-					const confirmRestore = confirm('未保存の下書きが見つかりました。復元しますか？');
-					if (confirmRestore) {
-						parsedData = JSON.parse(autosaved);
-					}
+					parsedData = JSON.parse(autosaved);
 				}
 			} catch (e) {}
 
@@ -132,6 +129,38 @@
 				onReady: () => {
 					new Undo({ editor });
 					new DragDrop(editor);
+
+					// カラーピッカーの改善
+					const observer = new MutationObserver(() => {
+						const popover = document.querySelector('.tc-popover');
+						if (popover) {
+							const items = popover.querySelectorAll('.tc-popover__item');
+							items.forEach((item) => {
+								if (item.querySelector('input[type="color"]')) return;
+								const leftBtn = item.querySelector('.tc-popover__item-icon');
+								if (leftBtn) {
+									const picker = document.createElement('input');
+									picker.type = 'color';
+									picker.style.position = 'absolute';
+									picker.style.top = '0';
+									picker.style.left = '0';
+									picker.style.width = '100%';
+									picker.style.height = '100%';
+									picker.style.opacity = '0';
+									picker.style.cursor = 'pointer';
+									picker.style.pointerEvents = 'auto';
+
+									picker.addEventListener('input', () => {
+										(item as HTMLElement).click();
+									});
+
+									(item as HTMLElement).style.position = 'relative';
+									item.appendChild(picker);
+								}
+							});
+						}
+					});
+					observer.observe(document.body, { childList: true, subtree: true });
 				},
 				minHeight: 300,
 				logLevel: 'ERROR',
@@ -146,6 +175,7 @@
 					raw: RawTool,
 					marker: {
 						class: ColorPlugin,
+						inlineToolbar: true,
 						config: {
 							colorCollections: [
 								'#FFEB3B',
@@ -174,6 +204,7 @@
 					underline: Underline,
 					color: {
 						class: ColorPlugin,
+						inlineToolbar: true,
 						config: {
 							colorCollections: [
 								'#00CC99',

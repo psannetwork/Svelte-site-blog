@@ -409,6 +409,59 @@ span[style*='color'] {
 	color: inherit; /* CSS変数が効くように */
 }
 
+/* Editor.js Text Color Plugin の調整 */
+.tc-popover {
+	z-index: 9999 !important; /* 他のすべての要素より上に */
+	background-color: var(--card-bg) !important;
+	border: 1px solid var(--border-color) !important;
+	color: var(--text-main) !important;
+	pointer-events: auto !important;
+	visibility: visible !important;
+}
+
+.tc-popover__item:hover {
+	background-color: var(--bg-secondary) !important;
+}
+
+/* カスタムピッカーボタン (右下のやつ) の修正 */
+.tc-color-picker {
+	pointer-events: auto !important;
+	display: flex !important;
+}
+
+.tc-color-picker__button {
+	pointer-events: auto !important;
+	cursor: pointer !important;
+	z-index: 10000 !important;
+	border: 1px solid var(--border-color) !important;
+}
+
+/* input[type="color"] が隠れたりクリックできなかったりするのを防ぐ */
+.tc-color-picker__button input[type='color'] {
+	position: absolute !important;
+	top: 0 !important;
+	left: 0 !important;
+	width: 100% !important;
+	height: 100% !important;
+	opacity: 0 !important;
+	cursor: pointer !important;
+	pointer-events: auto !important;
+	display: block !important;
+}
+
+.dark .tc-popover {
+	background-color: #1e293b !important;
+	color: #ffffff !important;
+}
+
+.dark .tc-popover * {
+	color: #ffffff !important;
+}
+
+.dark .tc-color-picker__button {
+	background-color: #334155 !important;
+}
+
 /* テキスト配置 (Alignment) の対応 */
 .ce-block__content--align-left {
 	text-align: left;
@@ -563,10 +616,11 @@ span[style*='color'] {
 	margin-left: 0 !important;
 }
 
-/* 投稿詳細ページ（prose）のオーバーフロー防止 */
+/* 投稿詳細ページ（prose）のオーバーフロー防止と最適化 */
 .prose {
 	overflow-x: hidden;
 	word-wrap: break-word;
+	contain: layout paint; /* 大規模ドキュメントのレンダリングを最適化 */
 }
 
 .prose pre,
@@ -574,6 +628,7 @@ span[style*='color'] {
 .prose iframe,
 .prose figure {
 	max-width: 100% !important;
+	contain: content; /* 個別要素の最適化 */
 }
 
 @media (max-width: 650px) {

@@ -43,7 +43,7 @@
 </svelte:head>
 
 <header
-	class="bg-[--bg-main]/70 backdrop-blur-xl sticky top-0 z-50 border-b border-[--border-color] transition-colors"
+	class="bg-[--bg-main]/90 backdrop-blur-md sticky top-0 z-50 border-b border-[--border-color] transition-colors"
 >
 	<nav class="max-w-7xl mx-auto px-4 h-20 flex items-center justify-between">
 		<div class="flex items-center gap-8">

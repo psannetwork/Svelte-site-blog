@@ -113,16 +113,13 @@
 
 			let parsedData: { blocks: any[] } = { blocks: [] };
 			try {
-				// 1. まずローカルストレージから復元を試みる (オートセーブ)
+				// 1. まずローカルストレージから自動復元を試みる
 				const autosaved = localStorage.getItem(`autosave_post_${initialPost.id}`);
 				if (autosaved) {
-					const confirmRestore = confirm('未保存の編集データが見つかりました。復元しますか？');
-					if (confirmRestore) {
-						parsedData = JSON.parse(autosaved);
-					}
+					parsedData = JSON.parse(autosaved);
 				}
 
-				// 2. 復元しなかった場合はサーバーのデータを読み込む
+				// 2. 復元データがない場合はサーバーのデータを読み込む
 				if (parsedData.blocks.length === 0 && editorData) {
 					const data = JSON.parse(editorData);
 					if (data && data.blocks) parsedData = data;
@@ -148,6 +145,7 @@
 					raw: RawTool,
 					marker: {
 						class: ColorPlugin,
+						inlineToolbar: true,
 						config: {
 							colorCollections: [
 								'#FFEB3B',
@@ -176,6 +174,7 @@
 					underline: Underline,
 					color: {
 						class: ColorPlugin,
+						inlineToolbar: true,
 						config: {
 							colorCollections: [
 								'#00CC99',
@@ -230,6 +229,59 @@
 				onReady: () => {
 					new Undo({ editor });
 					new DragDrop(editor);
+
+					// カラーピッカーの改善: 左側のボタンやアイテムをクリックしたときもパレットを開く
+					const observer = new MutationObserver(() => {
+						const popover = document.querySelector('.tc-popover');
+						if (popover) {
+							// すべてのカラーアイテムに対して、内部に透明な input type="color" を仕込む
+							const items = popover.querySelectorAll('.tc-popover__item');
+							items.forEach((item) => {
+								if (item.querySelector('input[type="color"]')) return;
+
+								const leftBtn = item.querySelector('.tc-popover__item-icon');
+								if (leftBtn) {
+									const picker = document.createElement('input');
+									picker.type = 'color';
+									picker.style.position = 'absolute';
+									picker.style.top = '0';
+									picker.style.left = '0';
+									picker.style.width = '100%';
+									picker.style.height = '100%';
+									picker.style.opacity = '0';
+									picker.style.cursor = 'pointer';
+									picker.style.pointerEvents = 'auto';
+
+									// 初期値を設定（アイコンの背景色などから取得）
+									const bgColor = window.getComputedStyle(leftBtn).backgroundColor;
+									if (bgColor && bgColor.startsWith('rgb')) {
+										const rgb = bgColor.match(/\d+/g);
+										if (rgb) {
+											const hex =
+												'#' +
+												rgb
+													.slice(0, 3)
+													.map((x) => parseInt(x).toString(16).padStart(2, '0'))
+													.join('');
+											picker.value = hex;
+										}
+									}
+
+									picker.addEventListener('input', (e) => {
+										const color = (e.target as HTMLInputElement).value;
+										// プラグインの内部ロジックをシミュレートして色を適用
+										// 注意: これはプラグインの内部挙動に依存するため、うまくいかない場合はクリックイベントを発火させる
+										(item as HTMLElement).click();
+									});
+
+									(item as HTMLElement).style.position = 'relative';
+									item.appendChild(picker);
+								}
+							});
+						}
+					});
+
+					observer.observe(document.body, { childList: true, subtree: true });
 				},
 				onChange: async () => {
 					// オートセーブ
