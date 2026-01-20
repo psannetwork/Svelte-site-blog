@@ -26,11 +26,11 @@ export const load: PageServerLoad = async ({ locals }) => {
 			SELECT post.*, COALESCE(user.nickname, user.username) as author_name 
 			FROM post 
 			JOIN user ON post.author_id = user.id 
-			WHERE post.visibility IN ('public', 'vip', 'unlisted') OR post.author_id = ?
+			WHERE post.visibility != 'draft'
 			ORDER BY created_at DESC
 		`
 			)
-			.all(user.id) as any[];
+			.all() as any[];
 	} else if (user?.role === 'vip') {
 		posts = db
 			.prepare(
