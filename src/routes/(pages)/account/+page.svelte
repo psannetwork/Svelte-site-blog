@@ -1,7 +1,10 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import { invalidateAll } from '$app/navigation';
+	import { t, type Language } from '$lib/i18n';
 	let { data, form } = $props();
+
+	const lang = $derived((data.settings?.site_language || 'ja') as Language);
 
 	let avatarUrl = $state('');
 	let nickname = $state('');
@@ -55,11 +58,11 @@
 </script>
 
 <svelte:head>
-	<title>Account Settings | {data.settings?.site_title || 'Blog'}</title>
+	<title>{t(lang, 'settings')} | {data.settings?.site_title || 'Blog'}</title>
 </svelte:head>
 
 <div class="max-w-2xl mx-auto px-4 py-20">
-	<h2 class="text-4xl font-black tracking-tighter mb-10 uppercase text-main">Account Settings</h2>
+	<h2 class="text-4xl font-black tracking-tighter mb-10 uppercase text-main">{t(lang, 'settings')}</h2>
 
 	{#if form?.success}
 		<div
@@ -68,7 +71,7 @@
 			<p
 				class="bg-psan-green text-psan-green-fg px-8 py-3 rounded-full font-black shadow-2xl uppercase tracking-widest text-xs"
 			>
-				Settings Updated!
+				{t(lang, 'success')}
 			</p>
 		</div>
 	{/if}
@@ -87,7 +90,7 @@
 	{#if data.user}
 		<div class="space-y-12 pb-20">
 			<section class="card-psan p-8 space-y-8 border-psan-green/30 border-2 shadow-psan-green/5">
-				<h3 class="font-black text-sm tracking-widest text-psan-green uppercase">Profile</h3>
+				<h3 class="font-black text-sm tracking-widest text-psan-green uppercase">{t(lang, 'identity')}</h3>
 				<div class="flex flex-col items-center sm:flex-row gap-8">
 					<div class="relative group">
 						<div
@@ -134,13 +137,13 @@
 						<div class="space-y-2">
 							<label
 								for="nickname"
-								class="text-[10px] font-black text-muted uppercase tracking-widest">Nickname</label
+								class="text-[10px] font-black text-muted uppercase tracking-widest">{t(lang, 'nickname')}</label
 							>
 							<input
 								id="nickname"
 								name="nickname"
 								bind:value={nickname}
-								placeholder="未設定（IDが表示されます）"
+								placeholder={t(lang, 'nickname_placeholder')}
 								class="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-none rounded-xl p-4 font-bold text-main"
 							/>
 						</div>
@@ -149,7 +152,7 @@
 							class="flex items-center justify-between p-4 bg-secondary dark:bg-slate-800 rounded-xl cursor-pointer text-main"
 						>
 							<span class="text-[10px] font-black uppercase tracking-widest text-muted"
-								>Notifications (Replies)</span
+								>{t(lang, 'notifications')}</span
 							>
 							<input
 								type="checkbox"
@@ -159,14 +162,14 @@
 							/>
 						</label>
 
-						<button class="btn-psan-primary w-full" disabled={isUploading}>Save Profile</button>
+						<button class="btn-psan-primary w-full" disabled={isUploading}>{t(lang, 'save_profile')}</button>
 					</form>
 				</div>
 			</section>
 
 			<section class="card-psan p-8 space-y-6">
 				<div class="flex items-center justify-between">
-					<h3 class="font-black text-sm tracking-widest text-muted uppercase">Notifications</h3>
+					<h3 class="font-black text-sm tracking-widest text-muted uppercase">{t(lang, 'notifications')}</h3>
 					{#if notifications.some((n) => !n.is_read)}
 						<button
 							onclick={markAllAsRead}
@@ -202,14 +205,14 @@
 						<p
 							class="text-center py-10 text-[10px] font-black text-muted uppercase tracking-[0.2em]"
 						>
-							No notifications yet.
+							{t(lang, 'no_data')}
 						</p>
 					{/each}
 				</div>
 			</section>
 
 			<section class="card-psan p-8 space-y-6">
-				<h3 class="font-black text-sm tracking-widest text-muted uppercase">Identity</h3>
+				<h3 class="font-black text-sm tracking-widest text-muted uppercase">{t(lang, 'identity')}</h3>
 				<div>
 					<div class="text-[10px] font-black text-muted uppercase tracking-widest mb-1">
 						User ID
@@ -220,25 +223,25 @@
 
 			<section class="card-psan p-8 space-y-6">
 				<h3 class="font-black text-sm tracking-widest text-psan-pink uppercase text-main">
-					Security
+					{t(lang, 'security')}
 				</h3>
 				<form method="POST" action="?/updatePassword" use:enhance class="space-y-4">
 					<input
 						name="current_password"
 						type="password"
-						placeholder="Current Password"
+						placeholder={t(lang, 'current_password')}
 						class="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-none rounded-xl p-4 font-bold text-main"
 					/>
 					<input
 						name="new_password"
 						type="password"
-						placeholder="New Password"
+						placeholder={t(lang, 'new_password')}
 						class="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-none rounded-xl p-4 font-bold text-main"
 					/>
 					<div class="flex justify-end">
 						<button
 							class="btn-psan bg-psan-pink text-white py-4 px-8 rounded-2xl font-black hover:opacity-90 transition-all"
-							>Change Password</button
+							>{t(lang, 'change_password')}</button
 						>
 					</div>
 				</form>
@@ -250,7 +253,7 @@
 						class="p-8 bg-red-50 dark:bg-red-950/20 rounded-[32px] border border-red-100 dark:border-red-900/30"
 					>
 						<h3 class="text-red-600 font-black tracking-tighter text-xl mb-2 uppercase">
-							Danger Zone
+							{t(lang, 'danger_zone')}
 						</h3>
 						<p class="text-red-500/70 text-sm font-medium mb-6">
 							アカウントを削除すると、これまでの投稿やコメント、画像などはすべて完全に削除されます。
@@ -266,7 +269,7 @@
 								};
 							}}
 						>
-							<button class="btn-psan-danger w-full sm:w-auto">Delete My Account</button>
+							<button class="btn-psan-danger w-full sm:w-auto">{t(lang, 'delete_account')}</button>
 						</form>
 					</div>
 				</section>

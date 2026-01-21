@@ -3,6 +3,7 @@ import { join } from 'path';
 import db, { resetDb } from './db';
 import { getSetting, setSetting } from './settings';
 import { env } from '$env/dynamic/private';
+import Database from 'libsql';
 
 const BACKUP_DIR = join(process.cwd(), 'backups');
 const DB_PATH = env.DB_PATH || join(process.cwd(), 'blog.db');
@@ -10,6 +11,36 @@ const DB_PATH = env.DB_PATH || join(process.cwd(), 'blog.db');
 export function isValidSqlite(buffer: Buffer): boolean {
 	const header = buffer.toString('utf8', 0, 16);
 	return header === 'SQLite format 3\0';
+}
+
+/**
+ * データベースファイルの整合性とスキーマを検証する
+ */
+export function verifyDatabase(path: string): { success: boolean; error?: string } {
+	try {
+		// 一時的なコネクションで開いてみる
+		const tempDb = new Database(path);
+		
+		// 必須テーブルの存在確認
+		const requiredTables = ['user', 'post', 'site_settings', 'comment'];
+		const tables = tempDb.prepare("SELECT name FROM sqlite_master WHERE type='table'").all() as any[];
+		const tableNames = tables.map(t => t.name);
+		
+		const missingTables = requiredTables.filter(name => !tableNames.includes(name));
+		
+		tempDb.close();
+
+		if (missingTables.length > 0) {
+			return { 
+				success: false, 
+				error: `不完全なデータベースです。不足テーブル: ${missingTables.join(', ')}` 
+			};
+		}
+
+		return { success: true };
+	} catch (e) {
+		return { success: false, error: 'データベースファイルの検証に失敗しました。' };
+	}
 }
 
 export async function performBackup() {
@@ -96,6 +127,12 @@ export async function restoreBackup(filename: string) {
 	if (!existsSync(backupPath)) return { success: false, error: 'Backup not found' };
 
 	try {
+		// 復元前に検証
+		const verification = verifyDatabase(backupPath);
+		if (!verification.success) {
+			return verification;
+		}
+
 		resetDb();
 
 		copyFileSync(backupPath, DB_PATH);
@@ -103,6 +140,6 @@ export async function restoreBackup(filename: string) {
 		return { success: true, message: 'データベースの復元が完了しました。' };
 	} catch (e) {
 		console.error('[RESTORE ERROR]', e);
-		return { success: false, error: e };
+		return { success: false, error: String(e) };
 	}
 }

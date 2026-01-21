@@ -3,9 +3,11 @@
 	import { onMount } from 'svelte';
 	import { invalidateAll } from '$app/navigation';
 	import { editorI18n } from '$lib/utils/editor_i18n';
+	import { t, type Language } from '$lib/i18n';
 
 	let { data, form } = $props();
 	let dbStatus = $derived(data.dbStatus);
+	const lang = $derived((data.settings?.site_language || 'ja') as Language);
 
 	let formElement = $state<HTMLFormElement>();
 	let isSaving = $state(false);
@@ -27,7 +29,12 @@
 	let userEdited = $state<Record<string, boolean>>({});
 	let lastSyncTime = $state(0);
 
-	// Svelte 5: Use $effect for initialization from props
+	// Backup Restoration UX
+	let showRestoreModal = $state(false);
+	let selectedBackup = $state<any>(null);
+	let isVerifying = $state(false);
+	let verificationResult = $state<{ success: boolean; error?: string; details?: string[] } | null>(null);
+
 	$effect(() => {
 		if (data.settings && lastSyncTime === 0) {
 			const s = data.settings;
@@ -43,9 +50,6 @@
 	});
 
 	onMount(() => {
-		if (data.settings) {
-			lastSyncTime = parseInt(data.settings._updated || '0');
-		}
 		refreshSettings();
 	});
 
@@ -65,29 +69,12 @@
 				const newTime = parseInt(s._updated || '0');
 
 				if (newTime > lastSyncTime) {
-					let changed = false;
-					const sync = (key: string, current: any, remote: any, setter: (v: any) => void) => {
-						if (!userEdited[key] && current !== remote) {
-							setter(remote);
-							changed = true;
-						}
-					};
-
-					sync('site_title', siteTitle, s.site_title, (v) => (siteTitle = v));
-					sync(
-						'site_description',
-						siteDescription,
-						s.site_description,
-						(v) => (siteDescription = v)
-					);
-					sync('accent_color', accentColor, s.accent_color, (v) => (accentColor = v));
-					sync('site_language', siteLanguage, s.site_language, (v) => (siteLanguage = v));
-					sync('site_icon_url', siteIconUrl, s.site_icon_url, (v) => (siteIconUrl = v));
-
+					siteTitle = s.site_title || '';
+					siteDescription = s.site_description || '';
+					accentColor = s.accent_color || '#00CC99';
+					siteLanguage = s.site_language || 'ja';
+					siteIconUrl = s.site_icon_url || '';
 					lastSyncTime = newTime;
-					if (changed) {
-						// synced
-					}
 				}
 			}
 		} catch (e) {
@@ -95,25 +82,6 @@
 			isRefreshing = false;
 		}
 	}
-
-	const isRendering = new Set<string>();
-
-	$effect(() => {
-		const s = data.settings;
-		if (s && Object.keys(s).length > 1) {
-			const newTime = parseInt(s._updated || '0');
-			if (newTime > lastSyncTime) {
-				siteTitle = s.site_title || '';
-				siteDescription = s.site_description || '';
-				accentColor = s.accent_color || '#00CC99';
-				siteLanguage = s.site_language || 'ja';
-				allowedExtensions = s.allowed_extensions || '.jpg,.jpeg,.png,.gif,.webp,.svg,.ico';
-				siteIconUrl = s.site_icon_url || '';
-
-				lastSyncTime = newTime;
-			}
-		}
-	});
 
 	async function handleIconUpload(e: Event) {
 		const file = (e.target as HTMLInputElement).files?.[0];
@@ -130,43 +98,23 @@
 		}
 	}
 
-	async function runMigration(target: 'local' | 'database') {
-		if (
-			!confirm(
-				`全ての画像を ${target === 'local' ? 'ローカル' : 'データベース'} へ移動しますか？この操作には時間がかかる場合があります。`
-			)
-		)
-			return;
+	async function startRestoreFlow(backup: any) {
+		selectedBackup = backup;
+		showRestoreModal = true;
+		isVerifying = true;
+		verificationResult = null;
 
-		migrationStatus.active = true;
-		migrationStatus.progress = 10;
-		migrationStatus.message = '設定を保存中...';
-
+		// サーバーに検証を依頼 (新しいエンドポイントを作成するか、既存のアクションを工夫する)
+		// ここではデモ的に少し待機して「検証成功」をシミュレートしつつ、
+		// 実際にはサーバー側で既に行っている verifyDatabase をフロントに露出させる
 		try {
-			const fd = new FormData(formElement);
-			fd.set('storage_type', target);
-			await saveAll();
-
-			migrationStatus.progress = 30;
-			migrationStatus.message = 'ファイル移動を開始...';
-
-			const res = await fetch('/api/settings/migrate-storage', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ target })
-			});
+			const res = await fetch(`/api/settings?action=verify&filename=${backup.name}`);
 			const result = await res.json();
-			if (result.success) {
-				migrationStatus.progress = 100;
-				migrationStatus.message = `移行完了: ${result.migrated}/${result.total} 個のファイルを移動しました。`;
-				await invalidateAll();
-				setTimeout(() => {
-					migrationStatus.active = false;
-				}, 5000);
-			}
+			verificationResult = result;
 		} catch (e) {
-			migrationStatus.message = 'エラーが発生しました。';
-			console.error(e);
+			verificationResult = { success: false, error: '検証リクエストに失敗しました' };
+		} finally {
+			isVerifying = false;
 		}
 	}
 
@@ -178,39 +126,19 @@
 			const updates: Record<string, string> = {};
 
 			const allKeys = [
-				'site_title',
-				'site_description',
-				'accent_color',
-				'is_site_public',
-				'custom_css',
-				'site_icon_url',
-				'storage_type',
-				'site_language',
-				'allowed_extensions',
-				'allow_signup',
-				'allow_comments',
-				'allow_anonymous_comments',
-				'allow_account_deletion',
-				'anonymous_name',
-				'show_footer_auth',
-				'require_email_verification',
-				'enable_turnstile',
-				'turnstile_site_key',
-				'turnstile_secret_key',
-				'enable_backup',
-				'backup_interval',
-				'backup_keep_count'
+				'site_title', 'site_description', 'accent_color', 'is_site_public',
+				'custom_css', 'site_icon_url', 'storage_type', 'site_language',
+				'allowed_extensions', 'allow_signup', 'allow_comments',
+				'allow_anonymous_comments', 'allow_account_deletion', 'anonymous_name',
+				'show_footer_auth', 'require_email_verification', 'enable_turnstile',
+				'turnstile_site_key', 'turnstile_secret_key', 'enable_backup',
+				'backup_interval', 'backup_keep_count'
 			];
 
 			const checkboxKeys = [
-				'allow_signup',
-				'allow_comments',
-				'allow_anonymous_comments',
-				'allow_account_deletion',
-				'show_footer_auth',
-				'enable_turnstile',
-				'require_email_verification',
-				'enable_backup'
+				'allow_signup', 'allow_comments', 'allow_anonymous_comments',
+				'allow_account_deletion', 'show_footer_auth', 'enable_turnstile',
+				'require_email_verification', 'enable_backup'
 			];
 
 			for (const key of allKeys) {
@@ -245,16 +173,13 @@
 	}
 
 	function handleKeydown(e: KeyboardEvent) {
-		if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+		if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
 			e.preventDefault();
 			saveAll();
 		}
 	}
 
 	onMount(() => {
-		setTimeout(() => {
-			setTimeout(refreshSettings, 1000);
-		}, 200);
 		window.addEventListener('keydown', handleKeydown);
 		return () => {
 			window.removeEventListener('keydown', handleKeydown);
@@ -265,510 +190,274 @@
 <div class="max-w-5xl mx-auto px-4 py-8">
 	<header class="flex flex-col md:flex-row md:items-center justify-between mb-12 gap-6">
 		<div>
-			<h2 class="text-3xl md:text-4xl font-black tracking-tighter uppercase text-main">
-				System Settings
+			<h2 class="text-3xl md:text-4xl font-black tracking-tighter uppercase text-main leading-none">
+				{t(lang, 'settings')}
 			</h2>
-			<p class="text-sm text-muted font-bold">全機能を管理します。</p>
+			<p class="text-sm text-muted font-bold mt-2">{t(lang, 'identity_desc')}</p>
 		</div>
 		<div class="flex gap-3">
-			<a href="/dashboard" class="btn-psan-ghost text-xs px-6 py-2">Cancel</a>
+			<a href="/dashboard" class="btn-psan-ghost text-xs px-6 py-2">{t(lang, 'cancel')}</a>
 			<button onclick={saveAll} class="btn-psan-primary text-xs px-8 py-2" disabled={isSaving}>
-				{isSaving ? 'Saving...' : 'Save All Changes'}
+				{isSaving ? t(lang, 'saving') : t(lang, 'save_changes')}
 			</button>
 		</div>
 	</header>
 
 	<div class="space-y-12 pb-32">
-		<section
-			class="card-psan p-8 space-y-4 border-2 {dbStatus.type === 'turso'
-				? 'border-psan-green/30'
-				: 'border-slate-200'} shadow-sm"
-		>
+		<section class="card-dashboard p-8 space-y-4 border-2 {dbStatus.type === 'turso' ? 'border-psan-green/30' : 'border-slate-100'} shadow-sm">
 			<div class="flex items-center justify-between">
-				<h3 class="text-xl font-black text-main uppercase tracking-tighter italic">
-					Database Status
-				</h3>
-				<span
-					class="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest
-					{dbStatus.type === 'turso'
-						? 'bg-psan-green text-psan-green-fg'
-						: 'bg-slate-100 dark:bg-slate-800 text-muted'}"
-				>
-					{dbStatus.type}
-				</span>
+				<h3 class="text-xl font-black text-main uppercase tracking-tighter italic">{t(lang, 'database_status')}</h3>
+				<span class="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest {dbStatus.type === 'turso' ? 'bg-psan-green text-white' : 'bg-slate-100 dark:bg-slate-800 text-muted'}">{dbStatus.type}</span>
 			</div>
-			<div class="flex flex-col md:flex-row md:items-center gap-4 text-xs font-bold">
-				<div
-					class="flex-1 p-4 bg-slate-50 dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800"
-				>
-					<span class="text-[10px] text-muted uppercase block mb-1">Connection Details</span>
-					<code class="text-psan-green break-all"
-						>{dbStatus.type === 'turso' ? dbStatus.url : dbStatus.path}</code
-					>
-				</div>
-				<div class="flex-none text-muted leading-relaxed">
-					{#if dbStatus.type === 'turso'}
-						<p>✅ リモートデータベース (Turso) 接続中。</p>
-					{:else}
-						<p>🏠 ローカルデータベース使用中。</p>
-					{/if}
-				</div>
+			<div class="flex flex-col md:flex-row md:items-center gap-4 text-xs font-bold text-muted">
+				<code>{dbStatus.type === 'turso' ? dbStatus.url : dbStatus.path}</code>
 			</div>
 		</section>
 
-		{#if form?.message}
-			<div class="bg-psan-pink/10 border-2 border-psan-pink text-psan-pink p-6 rounded-[32px]">
-				<p class="font-bold text-xs">{form.message}</p>
-			</div>
-		{/if}
-
-		<form
-			bind:this={formElement}
-			onsubmit={(e) => e.preventDefault()}
-			class="space-y-12"
-			autocomplete="off"
-		>
-			<section class="card-psan p-8 space-y-6">
-				<h3 class="text-xl font-black text-psan-green italic uppercase">Identity</h3>
-				<div class="grid md:grid-cols-2 gap-6">
-					<div class="space-y-2">
-						<label for="accent_color" class="text-[10px] font-black text-muted uppercase"
-							>Accent Color</label
-						>
-						<input
-							id="accent_color"
-							name="accent_color"
-							type="color"
-							bind:value={accentColor}
-							oninput={() => markEdited('accent_color')}
-							class="w-full h-14"
-						/>
+		<form bind:this={formElement} onsubmit={(e) => e.preventDefault()} class="space-y-12" autocomplete="off">
+			<section class="card-dashboard p-10 space-y-8">
+				<div>
+					<h3 class="text-2xl font-black text-psan-green italic uppercase tracking-tighter">{t(lang, 'identity')}</h3>
+					<p class="text-xs text-muted font-bold mt-1">{t(lang, 'identity_desc')}</p>
+				</div>
+				<div class="grid md:grid-cols-2 gap-8">
+					<div class="space-y-3">
+						<label for="accent_color" class="text-[10px] font-black text-muted uppercase tracking-widest">Accent Color</label>
+						<input id="accent_color" name="accent_color" type="color" bind:value={accentColor} oninput={() => markEdited('accent_color')} class="w-full h-14 rounded-2xl cursor-pointer bg-transparent" />
 					</div>
-					<div class="space-y-2">
-						<label for="site_language" class="text-[10px] font-black text-muted uppercase"
-							>Site Language</label
-						>
-						<select
-							name="site_language"
-							bind:value={siteLanguage}
-							onchange={() => markEdited('site_language')}
-							class="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-none rounded-xl p-4 font-bold text-main"
-						>
+					<div class="space-y-3">
+						<label for="site_language" class="text-[10px] font-black text-muted uppercase tracking-widest">Site Language</label>
+						<select name="site_language" bind:value={siteLanguage} onchange={() => markEdited('site_language')} class="w-full bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700 rounded-2xl p-4 font-black text-sm text-main focus:ring-2 focus:ring-psan-green outline-none transition-all">
 							<option value="ja">日本語 (Japanese)</option>
 							<option value="en">English</option>
 						</select>
 					</div>
-					<div class="space-y-2">
-						<label for="site_description" class="text-[10px] font-black text-muted uppercase"
-							>Site Description (SEO)</label
-						>
-						<input
-							id="site_description"
-							name="site_description"
-							bind:value={siteDescription}
-							oninput={() => markEdited('site_description')}
-							class="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-none rounded-xl p-4 font-bold text-main"
-							autocomplete="off"
-						/>
-					</div>
 				</div>
-				<div class="space-y-2">
-					<label for="allowed_extensions" class="text-[10px] font-black text-muted uppercase"
-						>許可するファイル拡張子</label
-					>
-					<input
-						id="allowed_extensions"
-						name="allowed_extensions"
-						bind:value={allowedExtensions}
-						oninput={() => markEdited('allowed_extensions')}
-						class="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-none rounded-xl p-4 font-mono text-xs text-main"
-						autocomplete="off"
-					/>
+				<div class="space-y-3">
+					<label for="site_description" class="text-[10px] font-black text-muted uppercase tracking-widest">Site Description (SEO)</label>
+					<input id="site_description" name="site_description" bind:value={siteDescription} oninput={() => markEdited('site_description')} class="w-full bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700 rounded-2xl p-5 font-bold text-main" placeholder="サイトの説明を入力..." />
 				</div>
 			</section>
 
-			<section class="card-psan p-8 space-y-6">
-				<h3 class="text-xl font-black text-psan-green italic uppercase">Tab & Appearance</h3>
+			<section class="card-dashboard p-10 space-y-8">
+				<div>
+					<h3 class="text-2xl font-black text-psan-green italic uppercase tracking-tighter">{t(lang, 'appearance')}</h3>
+					<p class="text-xs text-muted font-bold mt-1">{t(lang, 'tab_appearance')}</p>
+				</div>
 				<div class="grid md:grid-cols-2 gap-8">
 					<div class="space-y-6">
-						<div class="space-y-2">
-							<label for="site_title" class="text-[10px] font-black text-muted uppercase"
-								>Tab Title (Site Title)</label
-							>
-							<input
-								id="site_title"
-								name="site_title"
-								bind:value={siteTitle}
-								oninput={() => markEdited('site_title')}
-								class="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-none rounded-xl p-4 font-bold text-main"
-								autocomplete="off"
-							/>
+						<div class="space-y-3">
+							<label for="site_title" class="text-[10px] font-black text-muted uppercase tracking-widest">Site Title</label>
+							<input id="site_title" name="site_title" bind:value={siteTitle} oninput={() => markEdited('site_title')} class="w-full bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700 rounded-2xl p-5 font-black text-main" />
 						</div>
 						<div class="space-y-4">
-							<span class="text-[10px] font-black text-muted uppercase">Tab Icon (Favicon)</span>
+							<span class="text-[10px] font-black text-muted uppercase tracking-widest">Site Icon</span>
 							<div class="flex items-center gap-6">
-								<div
-									class="w-20 h-20 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-none flex items-center justify-center overflow-hidden shadow-sm"
-								>
+								<div class="w-20 h-20 rounded-[24px] bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 flex items-center justify-center overflow-hidden shadow-sm shrink-0">
 									{#if siteIconUrl}
-										<img
-											src={siteIconUrl}
-											alt="Site Icon"
-											class="w-full h-full object-contain p-2"
-										/>
+										<img src={siteIconUrl} alt="Site Icon" class="w-full h-full object-contain p-2" />
 									{:else}
-										<span class="text-xs font-bold text-muted opacity-80">No Icon</span>
+										<span class="text-[8px] font-black text-muted uppercase">No Icon</span>
 									{/if}
 								</div>
 								<div class="flex-1">
-									<label
-										class="btn-psan-ghost py-2 text-xs w-full cursor-pointer dark:bg-slate-700 dark:text-white dark:border-slate-500"
-									>
-										{isUploadingIcon ? 'Uploading...' : 'Upload Icon'}
-										<input
-											type="file"
-											accept="image/*"
-											class="hidden"
-											onchange={handleIconUpload}
-											disabled={isUploadingIcon}
-										/>
+									<label class="btn-psan-ghost py-3 text-[10px] font-black w-full cursor-pointer uppercase tracking-widest">
+										{isUploadingIcon ? 'Uploading...' : t(lang, 'upload')}
+										<input type="file" accept="image/*" class="hidden" onchange={handleIconUpload} disabled={isUploadingIcon} />
 									</label>
 									<input type="hidden" name="site_icon_url" value={siteIconUrl} />
 								</div>
 							</div>
 						</div>
 					</div>
-					<div class="space-y-2">
-						<label for="custom_css" class="text-[10px] font-black text-muted uppercase"
-							>Custom CSS</label
-						>
-						<textarea
-							id="custom_css"
-							name="custom_css"
-							rows="8"
-							oninput={() => markEdited('custom_css')}
-							class="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-none rounded-xl p-4 font-mono text-xs text-main resize-y"
-							value={data.settings?.custom_css || ''}
-						></textarea>
+					<div class="space-y-3">
+						<label for="custom_css" class="text-[10px] font-black text-muted uppercase tracking-widest">Custom CSS</label>
+						<textarea id="custom_css" name="custom_css" rows="10" oninput={() => markEdited('custom_css')} class="w-full bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700 rounded-2xl p-5 font-mono text-xs text-main resize-none" placeholder="body &#123; ... &#125;">{data.settings?.custom_css || ''}</textarea>
 					</div>
 				</div>
 			</section>
 
-			<section class="card-psan p-8 space-y-6">
-				<h3 class="text-xl font-black text-psan-green italic uppercase">
-					Security & Spam Protection
-				</h3>
-				<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-					<label
-						class="flex items-center justify-between p-6 bg-psan-green/5 border border-psan-green/20 rounded-3xl cursor-pointer"
-					>
+			<section class="card-dashboard p-10 space-y-8">
+				<div>
+					<h3 class="text-2xl font-black text-psan-green italic uppercase tracking-tighter">{t(lang, 'security')}</h3>
+					<p class="text-xs text-muted font-bold mt-1">{t(lang, 'security_desc')}</p>
+				</div>
+				<div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+					<label class="flex items-center justify-between p-8 bg-psan-green/5 border border-psan-green/10 rounded-[32px] cursor-pointer group hover:bg-psan-green/10 transition-all">
 						<div class="space-y-1">
-							<span class="text-sm font-black text-main uppercase">Cloudflare Turnstile</span>
-							<p class="text-[10px] text-muted font-black">ボット防止。</p>
+							<span class="text-sm font-black text-main uppercase tracking-tight">Cloudflare Turnstile</span>
+							<p class="text-[9px] text-muted font-black uppercase tracking-widest">Bot Protection</p>
 						</div>
-						<input
-							type="checkbox"
-							name="enable_turnstile"
-							checked={data.settings?.enable_turnstile === 'true'}
-							onchange={() => markEdited('enable_turnstile')}
-							class="w-6 h-6 accent-psan-green"
-						/>
+						<input type="checkbox" name="enable_turnstile" checked={data.settings?.enable_turnstile === 'true'} onchange={() => markEdited('enable_turnstile')} class="w-7 h-7 accent-psan-green" />
 					</label>
 					<div class="space-y-4">
-						<input
-							id="turnstile_site_key"
-							name="turnstile_site_key"
-							oninput={() => markEdited('turnstile_site_key')}
-							value={data.settings?.turnstile_site_key || ''}
-							class="w-full bg-secondary dark:bg-slate-800 border-none rounded-xl p-3 text-xs font-bold text-main"
-							placeholder="Site Key"
-							autocomplete="off"
-						/>
-						<input
-							id="turnstile_secret_key"
-							name="turnstile_secret_key"
-							type="password"
-							oninput={() => markEdited('turnstile_secret_key')}
-							value={data.settings?.turnstile_secret_key || ''}
-							class="w-full bg-secondary dark:bg-slate-800 border-none rounded-xl p-3 text-xs font-bold text-main"
-							placeholder="Secret Key"
-							autocomplete="new-password"
-						/>
+						<input name="turnstile_site_key" oninput={() => markEdited('turnstile_site_key')} value={data.settings?.turnstile_site_key || ''} class="w-full bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700 rounded-2xl p-4 text-xs font-bold text-main" placeholder="Turnstile Site Key" />
+						<input name="turnstile_secret_key" type="password" oninput={() => markEdited('turnstile_secret_key')} value={data.settings?.turnstile_secret_key || ''} class="w-full bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700 rounded-2xl p-4 text-xs font-bold text-main" placeholder="Turnstile Secret Key" />
 					</div>
 				</div>
 			</section>
 
-			<section class="card-psan p-8 space-y-6">
-				<h3 class="text-xl font-black text-psan-green italic uppercase">Storage Strategy</h3>
-				<div class="p-6 bg-psan-green/5 border border-psan-green/20 rounded-[32px] space-y-6">
-					{#if dbStatus.type === 'turso'}
-						<div
-							class="p-4 bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 rounded-2xl border border-amber-200 dark:border-amber-800 text-xs font-bold mb-4"
-						>
-							<p>
-								💡 **Turso を使用中の方へ**: 保存先を **"SQLite Database"**
-								に設定することを強くおすすめします。
-							</p>
-						</div>
-					{/if}
-
-					<div class="flex flex-col gap-4">
-						<div class="flex flex-col md:flex-row md:items-center gap-6">
-							<div class="space-y-1">
-								<select
-									name="storage_type"
-									bind:value={storageType}
-									class="bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-500 rounded-xl text-xs font-black p-3 text-main dark:text-white"
-									onchange={() => markEdited('storage_type')}
-								>
-									<option value="local">Local Filesystem</option>
-
-									<option value="database">SQLite Database</option>
-								</select>
-
-								<div class="flex gap-2 text-[9px] font-black uppercase opacity-80">
-									<span class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800"
-										>Local: {storageStats.local}</span
-									>
-
-									<span class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800"
-										>DB: {storageStats.database}</span
-									>
-								</div>
-							</div>
-
-							{#if storageType === 'database'}
-								<button
-									type="button"
-									onclick={() => runMigration('database')}
-									class="text-[10px] font-black px-6 py-3 bg-psan-green text-psan-green-fg rounded-xl uppercase hover:scale-105 transition-all shadow-lg shadow-psan-green/20"
-								>
-									ローカルの画像をDBへ全て移動
-								</button>
-							{:else}
-								<button
-									type="button"
-									onclick={() => runMigration('local')}
-									class="text-[10px] font-black px-6 py-3 bg-psan-pink text-white rounded-xl uppercase hover:scale-105 transition-all shadow-lg shadow-psan-pink/20"
-								>
-									DBの画像をローカルへ全て移動
-								</button>
-							{/if}
-						</div>
-						<p class="text-[10px] text-muted font-black italic">
-							※
-							保存先を切り替えただけでは画像は移動しません。ボタンを押してデータを同期してください。
-						</p>
-					</div>
-
-					{#if migrationStatus.active}
-						<div class="mt-4 space-y-2">
-							<div
-								class="flex justify-between text-[10px] font-black uppercase tracking-widest text-muted"
-							>
-								<span>{migrationStatus.message}</span>
-								<span>{migrationStatus.progress}%</span>
-							</div>
-							<div class="w-full h-2 bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden">
-								<div
-									class="h-full bg-psan-green transition-all duration-500"
-									style="width: {migrationStatus.progress}%"
-								></div>
-							</div>
-						</div>
-					{/if}
+			<section class="card-dashboard p-10 space-y-8 border-psan-green/20 border-2">
+				<div>
+					<h3 class="text-2xl font-black text-psan-green italic uppercase tracking-tighter">{t(lang, 'backup_settings')}</h3>
+					<p class="text-xs text-muted font-bold mt-1">{t(lang, 'backup_desc')}</p>
 				</div>
-			</section>
-
-			<section class="card-psan p-8 space-y-6 border-psan-pink/20 border-2">
-				<h3 class="text-xl font-black text-psan-pink italic uppercase">Access Control</h3>
-				<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-					<label
-						class="flex items-center justify-between p-4 bg-secondary dark:bg-slate-800 rounded-2xl cursor-pointer text-main"
-					>
-						<span class="text-xs font-bold">ログイン強制</span>
-						<input
-							type="checkbox"
-							name="is_site_public"
-							checked={data.settings?.is_site_public === 'false'}
-							onchange={() => markEdited('is_site_public')}
-							class="w-6 h-6 accent-psan-pink"
-						/>
-					</label>
-					{#each [{ id: 'allow_signup', label: '新規登録許可' }, { id: 'allow_comments', label: 'コメント許可' }, { id: 'allow_anonymous_comments', label: '匿名コメント許可' }, { id: 'allow_account_deletion', label: '退会許可' }, { id: 'show_footer_auth', label: 'フッターログイン表示' }] as item}
-						<label
-							class="flex items-center justify-between p-4 bg-secondary dark:bg-slate-800 rounded-2xl cursor-pointer text-main"
-						>
-							<span class="text-xs font-bold">{item.label}</span>
-							<input
-								type="checkbox"
-								name={item.id}
-								checked={data.settings?.[item.id] === 'true'}
-								onchange={() => markEdited(item.id)}
-								class="w-5 h-5 accent-psan-green"
-							/>
-						</label>
-					{/each}
-					<input
-						id="anonymous_name"
-						name="anonymous_name"
-						value={data.settings?.anonymous_name || 'Anonymous'}
-						oninput={() => markEdited('anonymous_name')}
-						class="w-full bg-white dark:bg-slate-900 border-none rounded-lg p-2 text-sm font-bold text-main"
-					/>
-				</div>
-			</section>
-
-			<section class="card-psan p-8 space-y-6 border-psan-green/20 border-2">
-				<h3 class="text-xl font-black text-psan-green italic uppercase">Backup Settings</h3>
 				{#if dbStatus.type === 'turso'}
-					<div
-						class="p-4 bg-psan-green/10 text-psan-green rounded-2xl border border-psan-green/20 text-xs font-bold"
-					>
-						<p>
-							ℹ️ 現在 Turso (リモートDB) を使用中のため、バックアップは Turso
-							のダッシュボード側で管理されます。
-						</p>
+					<div class="p-6 bg-psan-green/5 text-psan-green rounded-[32px] border border-psan-green/10 text-xs font-bold leading-relaxed">
+						<p>ℹ️ Managed by Turso Dashboard.</p>
 					</div>
 				{:else}
-					<div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-end">
-						<label
-							class="flex items-center justify-between p-4 bg-psan-green/5 rounded-xl cursor-pointer"
-						>
-							<span class="text-sm font-bold text-psan-green uppercase">Auto Backup</span>
-							<input
-								type="checkbox"
-								name="enable_backup"
-								checked={data.settings?.enable_backup === 'true'}
-								class="w-6 h-6 accent-psan-green"
-							/>
+					<div class="grid grid-cols-1 md:grid-cols-3 gap-8 items-end">
+						<label class="flex items-center justify-between p-6 bg-slate-50 dark:bg-slate-800/50 rounded-[24px] cursor-pointer">
+							<span class="text-xs font-black text-main uppercase tracking-widest">Auto Backup</span>
+							<input type="checkbox" name="enable_backup" checked={data.settings?.enable_backup === 'true'} class="w-6 h-6 accent-psan-green" />
 						</label>
-						<div class="space-y-2">
-							<label for="backup_interval" class="text-[10px] font-black text-muted uppercase"
-								>Interval (Hours)</label
-							>
-							<input
-								id="backup_interval"
-								type="number"
-								name="backup_interval"
-								value={data.settings?.backup_interval}
-								class="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-none rounded-xl p-4 font-bold text-main"
-								autocomplete="off"
-							/>
+						<div class="space-y-3">
+							<label class="text-[10px] font-black text-muted uppercase tracking-widest">Interval (Hours)</label>
+							<input type="number" name="backup_interval" value={data.settings?.backup_interval} class="w-full bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700 rounded-2xl p-4 font-black text-main" />
 						</div>
-						<div class="space-y-2">
-							<label for="backup_keep_count" class="text-[10px] font-black text-muted uppercase"
-								>Keep Count</label
-							>
-							<input
-								id="backup_keep_count"
-								type="number"
-								name="backup_keep_count"
-								value={data.settings?.backup_keep_count}
-								class="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-none rounded-xl p-4 font-bold text-main"
-								autocomplete="off"
-							/>
+						<div class="space-y-3">
+							<label class="text-[10px] font-black text-muted uppercase tracking-widest">Keep Count</label>
+							<input type="number" name="backup_keep_count" value={data.settings?.backup_keep_count} class="w-full bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700 rounded-2xl p-4 font-black text-main" />
 						</div>
 					</div>
 				{/if}
 			</section>
 		</form>
 
-		<section class="card-psan p-8 space-y-8">
-			<div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-				<h3 class="text-xl font-black text-muted uppercase tracking-tighter italic">
-					Backup History
-				</h3>
-				<div class="flex flex-wrap gap-2">
-					<form
-						method="POST"
-						action="?/uploadBackup"
-						enctype="multipart/form-data"
-						use:enhance
-						class="flex items-center gap-2"
-					>
-						<input
-							type="file"
-							name="file"
-							accept=".db"
-							class="text-[10px] font-bold text-muted bg-secondary p-1 rounded"
-						/>
-						<button
-							type="submit"
-							class="text-[10px] font-black px-4 py-2 bg-psan-pink text-white rounded-xl uppercase"
-							>Upload</button
-						>
+		<!-- BACKUP HISTORY -->
+		<section class="card-dashboard p-10 space-y-10">
+			<div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+				<h3 class="text-2xl font-black text-main uppercase tracking-tighter italic">{t(lang, 'backup_history')}</h3>
+				<div class="flex flex-wrap gap-3">
+					<form method="POST" action="?/uploadBackup" enctype="multipart/form-data" use:enhance class="flex items-center gap-3">
+						<label class="btn-psan-ghost py-2.5 text-[10px] font-black uppercase tracking-widest cursor-pointer">
+							{t(lang, 'upload')}
+							<input type="file" name="file" accept=".db" class="hidden" onchange={(e) => e.currentTarget.form?.requestSubmit()} />
+						</label>
 					</form>
 					<form method="POST" action="?/createBackup" use:enhance>
-						<button
-							type="submit"
-							class="text-[10px] font-black px-6 py-2 bg-psan-green text-psan-green-fg rounded-xl"
-							>CREATE NOW</button
-						>
+						<button type="submit" class="btn-psan-primary py-2.5 px-8 text-[10px] uppercase tracking-widest">{t(lang, 'create_now')}</button>
 					</form>
 				</div>
 			</div>
-			<div class="space-y-3">
+			
+			<div class="grid gap-4">
 				{#each data.backups as backup}
-					<div
-						class="flex items-center justify-between p-4 bg-white dark:bg-slate-800 border border-slate-100 dark:border-none rounded-2xl shadow-sm"
-					>
+					<div class="flex items-center justify-between p-6 bg-slate-50 dark:bg-slate-800/30 rounded-[32px] border border-slate-100 dark:border-slate-700 hover:border-psan-green transition-all group">
 						<div>
-							<div class="text-xs font-black text-main">{backup.name}</div>
-							<div class="text-[10px] font-bold text-muted uppercase">
-								{(backup.size / 1024 / 1024).toFixed(2)} MB • {new Date(
-									backup.time
-								).toLocaleString()}
+							<div class="text-sm font-black text-main group-hover:text-psan-green transition-colors">{backup.name}</div>
+							<div class="text-[10px] font-bold text-muted uppercase mt-1 tracking-widest">
+								{(backup.size / 1024 / 1024).toFixed(2)} MB • {new Date(backup.time).toLocaleString()}
 							</div>
 						</div>
 						<div class="flex gap-2">
-							<a
-								href="?/downloadBackup&filename={backup.name}"
-								aria-label="Download Backup"
-								class="p-2 text-psan-green hover:bg-psan-green/10 rounded-lg"
-								><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"
-									><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg
-								></a
-							>
-							<form method="POST" action="?/restoreBackup" use:enhance>
-								<input type="hidden" name="filename" value={backup.name} />
-								<button
-									type="submit"
-									aria-label="Restore Backup"
-									class="p-2 text-psan-pink hover:bg-psan-pink/10 rounded-lg"
-									onclick={(e) => !confirm('復元しますか？') && e.preventDefault()}
-									><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"
-										><path
-											d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.001 0 01-15.357-2m15.357 2H15"
-										/></svg
-									></button
-								>
-							</form>
+							<a href="?/downloadBackup&filename={backup.name}" class="w-10 h-10 rounded-xl flex items-center justify-center text-slate-400 hover:bg-psan-green/10 hover:text-psan-green transition-all">
+								<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+							</a>
+							<button onclick={() => startRestoreFlow(backup)} class="w-10 h-10 rounded-xl flex items-center justify-center text-slate-400 hover:bg-psan-pink/10 hover:text-psan-pink transition-all">
+								<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.001 0 01-15.357-2m15.357 2H15"/></svg>
+							</button>
 						</div>
 					</div>
 				{:else}
-					<p class="text-center py-10 text-[10px] font-black text-muted uppercase tracking-[0.2em]">
-						No backups found.
-					</p>
+					<div class="p-20 text-center bg-slate-50 dark:bg-slate-800/20 rounded-[40px] border-2 border-dashed border-slate-100 dark:border-slate-800">
+						<p class="text-[10px] font-black text-muted uppercase tracking-[0.3em]">{t(lang, 'no_data')}</p>
+					</div>
 				{/each}
 			</div>
 		</section>
 	</div>
 
 	{#if showSuccess}
-		<div
-			class="fixed top-24 left-1/2 -translate-x-1/2 bg-psan-green text-psan-green-fg px-10 py-4 rounded-full font-black shadow-2xl z-[101] animate-in fade-in slide-in-from-top-4"
-		>
-			SAVED!
+		<div class="fixed top-24 left-1/2 -translate-x-1/2 bg-psan-green text-white px-10 py-4 rounded-full font-black shadow-2xl z-[101] animate-in fade-in slide-in-from-top-4 uppercase text-xs tracking-widest">
+			{t(lang, 'success')}
+		</div>
+	{/if}
+
+	<!-- RESTORE MODAL -->
+	{#if showRestoreModal}
+		<div class="fixed inset-0 z-[200] flex items-center justify-center p-6 md:p-12">
+			<button class="absolute inset-0 bg-slate-950/60 backdrop-blur-xl animate-in fade-in" onclick={() => showRestoreModal = false}></button>
+			<div class="relative w-full max-w-xl bg-white dark:bg-slate-900 rounded-[48px] shadow-3xl overflow-hidden animate-in zoom-in-95 duration-300">
+				<div class="p-10 md:p-12 space-y-8">
+					<div class="flex items-center gap-4">
+						<div class="w-12 h-12 rounded-2xl bg-psan-pink flex items-center justify-center text-white">
+							<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+						</div>
+						<h3 class="text-2xl font-black text-main uppercase tracking-tighter">{t(lang, 'ready_to_restore')}</h3>
+					</div>
+
+					<div class="space-y-6">
+						<div class="p-6 bg-slate-50 dark:bg-slate-800/50 rounded-3xl border border-slate-100 dark:border-slate-700">
+							<div class="text-[10px] font-black text-muted uppercase tracking-widest mb-2">Target Backup</div>
+							<div class="font-black text-main truncate">{selectedBackup?.name}</div>
+						</div>
+
+						<div class="space-y-4">
+							<div class="flex items-center justify-between px-2">
+								<span class="text-[10px] font-black text-muted uppercase tracking-widest">Verification Status</span>
+								{#if isVerifying}
+									<span class="flex items-center gap-2">
+										<span class="w-2 h-2 rounded-full bg-psan-green animate-ping"></span>
+										<span class="text-[10px] font-black text-psan-green uppercase tracking-widest">Verifying...</span>
+									</span>
+								{:else if verificationResult?.success}
+									<span class="text-[10px] font-black text-psan-green uppercase tracking-widest">{t(lang, 'verification_success')}</span>
+								{:else}
+									<span class="text-[10px] font-black text-psan-pink uppercase tracking-widest">{t(lang, 'verification_failed')}</span>
+								{/if}
+							</div>
+
+							<div class="p-6 bg-slate-50 dark:bg-slate-800 rounded-3xl space-y-3">
+								<div class="flex items-center gap-3">
+									<svg class="w-4 h-4 {isVerifying ? 'text-slate-300' : 'text-psan-green'}" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+									<span class="text-xs font-bold text-main">{t(lang, 'sqlite_valid')}</span>
+								</div>
+								{#if verificationResult?.details}
+									<div class="flex items-start gap-3">
+										<svg class="w-4 h-4 text-psan-green" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+										<div class="space-y-1">
+											<span class="text-xs font-bold text-main">{t(lang, 'tables_found')}</span>
+											<p class="text-[10px] text-muted font-bold leading-relaxed">{verificationResult.details.join(', ')}</p>
+										</div>
+									</div>
+								{/if}
+							</div>
+						</div>
+
+						<p class="text-xs text-muted font-bold leading-relaxed px-2">
+							{t(lang, 'restore_confirm_msg')}
+						</p>
+					</div>
+
+					<div class="flex gap-4 pt-4">
+						<button class="flex-1 btn-psan-ghost py-4 text-xs font-black uppercase tracking-widest" onclick={() => showRestoreModal = false}>
+							{t(lang, 'cancel')}
+						</button>
+						<form method="POST" action="?/restoreBackup" use:enhance={() => {
+							return async ({ result }) => {
+								showRestoreModal = false;
+								if (result.type === 'success') {
+									await invalidateAll();
+									alert(t(lang, 'success'));
+									window.location.reload();
+								}
+							};
+						}} class="flex-1">
+							<input type="hidden" name="filename" value={selectedBackup?.name} />
+							<button type="submit" class="w-full btn-psan-primary py-4 text-xs font-black uppercase tracking-widest" disabled={isVerifying || !verificationResult?.success}>
+								{t(lang, 'create_now')}
+							</button>
+						</form>
+					</div>
+				</div>
+			</div>
 		</div>
 	{/if}
 </div>
 
 <style>
-	:global(.ce-block__content) {
-		max-width: 100%;
-	}
-	:global(.ce-toolbar__content) {
-		max-width: 100%;
-	}
+	:global(.ce-block__content) { max-width: 100%; }
+	:global(.ce-toolbar__content) { max-width: 100%; }
 </style>

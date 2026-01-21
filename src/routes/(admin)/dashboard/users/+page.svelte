@@ -1,194 +1,109 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
-	let { data, form } = $props();
+	import { t, type Language } from '$lib/i18n';
+	let { data } = $props();
+	const lang = $derived((data.settings?.site_language || 'ja') as Language);
 </script>
 
 <svelte:head>
-	<title>User Management | {data.settings?.site_title || 'Admin'}</title>
+	<title>{t(lang, 'users')} | {data.settings?.site_title || 'Admin'}</title>
 </svelte:head>
 
-<div class="max-w-6xl mx-auto">
-	<header class="mb-12 flex items-center justify-between">
-		<div>
-			<h2 class="text-4xl font-black tracking-tighter text-main uppercase">User Management</h2>
-			<p class="text-muted font-medium">ユーザーの権限を管理します。</p>
+<div class="max-w-7xl mx-auto space-y-12">
+	<header class="space-y-2">
+		<h2 class="text-4xl md:text-6xl font-black tracking-tighter text-main uppercase leading-none">{t(lang, 'users')}</h2>
+		<div class="flex items-center gap-3">
+			<span class="px-3 py-1 bg-psan-green/10 text-psan-green rounded-full text-[10px] font-black uppercase tracking-widest">Management</span>
+			<p class="text-xs text-muted font-bold">
+				{t(lang, 'users_desc')}
+			</p>
 		</div>
-		<button
-			class="btn-psan-primary px-6 py-2 text-xs"
-			onclick={() =>
-				(document.getElementById('create_user_modal') as HTMLDialogElement).showModal()}
-		>
-			+ CREATE USER
-		</button>
 	</header>
 
-	<dialog
-		id="create_user_modal"
-		class="bg-transparent backdrop:bg-black/50 p-0 rounded-[32px] shadow-2xl open:animate-in open:fade-in open:zoom-in-95 backdrop:animate-in backdrop:fade-in"
-	>
-		<div
-			class="bg-white dark:bg-slate-900 w-full max-w-lg p-8 rounded-[32px] border border-slate-100 dark:border-slate-800 space-y-6"
-		>
-			<div class="flex items-center justify-between">
-				<h3 class="text-xl font-black text-main uppercase italic">Create New User</h3>
-				<form method="dialog"><button class="btn-psan-ghost py-1 px-3 text-xs">✕</button></form>
+	<div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+		<!-- ROLE DESCRIPTIONS (Left Column) -->
+		<section class="lg:col-span-1 space-y-6">
+			<h3 class="text-xs font-black text-muted uppercase tracking-[0.3em] px-2">{t(lang, 'role_descriptions')}</h3>
+			<div class="card-dashboard p-8 space-y-8 bg-slate-50/50 dark:bg-slate-800/20">
+				<div class="space-y-2">
+					<div class="flex items-center gap-2">
+						<span class="px-2 py-0.5 bg-psan-green text-white text-[8px] font-black rounded-full uppercase">Admin</span>
+					</div>
+					<p class="text-xs font-bold text-main leading-relaxed">{t(lang, 'admin_desc')}</p>
+				</div>
+				<div class="space-y-2">
+					<div class="flex items-center gap-2">
+						<span class="px-2 py-0.5 bg-psan-pink text-white text-[8px] font-black rounded-full uppercase">Editor</span>
+					</div>
+					<p class="text-xs font-bold text-main leading-relaxed">{t(lang, 'editor_desc')}</p>
+				</div>
+				<div class="space-y-2">
+					<div class="flex items-center gap-2">
+						<span class="px-2 py-0.5 bg-psan-author text-white text-[8px] font-black rounded-full uppercase">Author</span>
+					</div>
+					<p class="text-xs font-bold text-main leading-relaxed">{t(lang, 'author_desc')}</p>
+				</div>
+				<div class="space-y-2">
+					<div class="flex items-center gap-2">
+						<span class="px-2 py-0.5 bg-slate-400 text-white text-[8px] font-black rounded-full uppercase">User</span>
+					</div>
+					<p class="text-xs font-bold text-main leading-relaxed">{t(lang, 'user_desc')}</p>
+				</div>
 			</div>
+		</section>
 
-			<form method="POST" action="?/createUser" use:enhance class="space-y-4">
-				<div class="space-y-2">
-					<label class="text-[10px] font-black uppercase text-muted" for="new_username"
-						>Username</label
-					>
-					<input
-						id="new_username"
-						name="username"
-						required
-						class="w-full bg-secondary dark:bg-slate-800 border-none rounded-xl p-3 font-bold text-main"
-						placeholder="username"
-						autocomplete="off"
-					/>
-				</div>
-				<div class="space-y-2">
-					<label class="text-[10px] font-black uppercase text-muted" for="new_password"
-						>Password</label
-					>
-					<input
-						id="new_password"
-						type="password"
-						name="password"
-						required
-						class="w-full bg-secondary dark:bg-slate-800 border-none rounded-xl p-3 font-bold text-main"
-						placeholder="••••••••"
-						autocomplete="new-password"
-					/>
-				</div>
-				<div class="space-y-2">
-					<label class="text-[10px] font-black uppercase text-muted" for="new_role">Role</label>
-					<select
-						id="new_role"
-						name="role"
-						class="w-full bg-secondary dark:bg-slate-800 border-none rounded-xl p-3 font-bold text-main"
-					>
-						<option value="user">User</option>
-						<option value="vip">VIP</option>
-						<option value="author">Author</option>
-						<option value="editor">Editor</option>
-						<option value="admin">Admin</option>
-					</select>
-				</div>
-				<button class="w-full btn-psan-primary py-3 font-black uppercase text-sm mt-4"
-					>Create Account</button
-				>
+		<!-- MEMBER LIST (Right Columns) -->
+		<section class="lg:col-span-2 space-y-6">
+			<h3 class="text-xs font-black text-muted uppercase tracking-[0.3em] px-2">{t(lang, 'member_list')}</h3>
+			<div class="grid gap-4">
+				{#if data.users && data.users.length > 0}
+					{#each data.users as user}
+						<div class="card-dashboard p-6 flex flex-col sm:flex-row items-center justify-between gap-6 group hover:border-psan-green transition-all">
+							<div class="flex items-center gap-5 flex-1 min-w-0 w-full sm:w-auto">
+								<div class="w-14 h-14 rounded-[20px] bg-slate-100 dark:bg-slate-800 flex items-center justify-center font-black text-muted group-hover:scale-110 transition-transform shrink-0 overflow-hidden shadow-sm">
+									{#if user.avatar_url}
+										<img src={user.avatar_url} alt="" class="w-full h-full object-cover" />
+									{:else}
+										<span class="text-lg opacity-40">{user.username.substring(0, 1).toUpperCase()}</span>
+									{/if}
+								</div>
+								<div class="min-w-0 flex-1">
+									<div class="font-black text-main uppercase text-base tracking-tight truncate">{user.nickname || user.username}</div>
+									<div class="flex items-center gap-2 mt-1">
+										<span class="text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full {user.role === 'admin' ? 'bg-psan-green/10 text-psan-green' : user.role === 'editor' ? 'bg-psan-pink/10 text-psan-pink' : user.role === 'author' ? 'bg-psan-author/10 text-psan-author' : 'bg-slate-100 text-slate-500'}">
+											{user.role}
+										</span>
+										{#if user.is_protected}
+											<span class="text-[8px] font-black text-slate-400 uppercase tracking-widest border border-slate-200 dark:border-slate-700 px-1.5 py-0.5 rounded">Protected</span>
+										{/if}
+									</div>
+								</div>
+							</div>
 
-				{#if form?.message}
-					<p class="text-center font-black text-psan-pink text-xs animate-bounce mt-2">
-						{form.message}
-					</p>
-				{/if}
-			</form>
-		</div>
-	</dialog>
-
-	<div class="grid lg:grid-cols-3 gap-8 items-start">
-		<div class="lg:col-span-2 space-y-4">
-			{#each data.users as user}
-				<div class="card-psan p-6 flex items-center justify-between">
-					<div>
-						<div class="flex items-center gap-2">
-							<span class="font-black text-xl text-main">{user.username}</span>
-							{#if user.is_protected}
-								<span
-									class="bg-psan-green text-psan-green-fg text-[8px] font-black px-2 py-0.5 rounded tracking-widest uppercase"
-									>System Protected</span
-								>
-							{/if}
+							<div class="w-full sm:w-auto border-t sm:border-t-0 pt-4 sm:pt-0 border-slate-100 dark:border-slate-800">
+								<form method="POST" action="?/updateRole" use:enhance class="flex items-center">
+									<input type="hidden" name="userId" value={user.id} />
+									<select
+										name="role"
+										disabled={user.is_protected}
+										onchange={(e) => e.currentTarget.form?.requestSubmit()}
+										class="w-full sm:w-auto bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-500 rounded-xl text-[10px] font-black p-3 pr-10 focus:ring-2 focus:ring-psan-green text-main cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed uppercase tracking-widest shadow-sm outline-none transition-all"
+									>
+										<option value="admin" selected={user.role === 'admin'}>ADMIN</option>
+										<option value="editor" selected={user.role === 'editor'}>EDITOR</option>
+										<option value="author" selected={user.role === 'author'}>AUTHOR</option>
+										<option value="user" selected={user.role === 'user'}>USER</option>
+									</select>
+								</form>
+							</div>
 						</div>
-						<span class="text-[10px] font-bold text-psan-pink uppercase tracking-widest"
-							>{user.role}</span
-						>
-						{#if user.created_at}
-							<span class="text-[10px] font-bold text-muted uppercase ml-2"
-								>• Joined {new Date(user.created_at).toLocaleDateString()}</span
-							>
-						{/if}
+					{/each}
+				{:else}
+					<div class="py-20 text-center card-dashboard border-dashed border-2">
+						<p class="font-black text-muted uppercase tracking-[0.3em] text-[10px]">{t(lang, 'no_data')}</p>
 					</div>
-
-					<div class="flex items-center gap-4">
-						{#if !user.is_protected}
-							<form method="POST" action="?/updateRole" use:enhance class="flex items-center gap-2">
-								<input type="hidden" name="userId" value={user.id} />
-								<select
-									name="role"
-									onchange={(e) => e.currentTarget.form?.requestSubmit()}
-									class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-none rounded-xl text-xs font-bold p-2 text-main"
-								>
-									<option value="user" selected={user.role === 'user'}>USER</option>
-									<option value="vip" selected={user.role === 'vip'}>VIP</option>
-									<option value="author" selected={user.role === 'author'}>AUTHOR</option>
-									<option value="editor" selected={user.role === 'editor'}>EDITOR</option>
-									<option value="admin" selected={user.role === 'admin'}>ADMIN</option>
-								</select>
-							</form>
-							<form
-								method="POST"
-								action="?/deleteUser"
-								use:enhance={({ cancel }) => {
-									if (
-										!confirm(
-											'このユーザーを完全に削除してもよろしいですか？関連するファイルもすべて削除されます。'
-										)
-									)
-										return cancel();
-									return async ({ update }) => {
-										await update();
-									};
-								}}
-							>
-								<input type="hidden" name="userId" value={user.id} />
-								<button class="text-xs font-bold text-red-500 hover:text-red-700 transition"
-									>DELETE</button
-								>
-							</form>
-						{/if}
-					</div>
-				</div>
-			{/each}
-		</div>
-
-		<aside class="card-psan p-8 space-y-6 bg-secondary dark:bg-slate-900 border-none">
-			<h3 class="font-black text-xs tracking-widest text-muted uppercase">Role Descriptions</h3>
-			<div class="space-y-4">
-				<div>
-					<div class="font-black text-psan-green text-sm">ADMIN</div>
-					<p class="text-xs font-medium text-main opacity-70">
-						サイト設定、ユーザー管理、すべてのコンテンツの操作が可能です。
-					</p>
-				</div>
-				<div>
-					<div class="font-black text-psan-pink text-sm">EDITOR</div>
-					<p class="text-xs font-medium text-main opacity-70">
-						記事の作成、編集、削除が可能です。サイト設定は操作できません。
-					</p>
-				</div>
-				<div>
-					<div class="font-black text-psan-green text-sm">AUTHOR</div>
-					<p class="text-xs font-medium text-main opacity-70">
-						記事の作成、自分の記事の編集（下書き/レビュー中のみ）が可能です。
-					</p>
-				</div>
-				<div>
-					<div class="font-black text-psan-green text-sm italic">VIP</div>
-					<p class="text-xs font-medium text-main opacity-70">
-						一般ユーザーの全機能に加え、VIP限定投稿の閲覧が可能です。
-					</p>
-				</div>
-				<div>
-					<div class="font-black text-muted text-sm uppercase">User</div>
-					<p class="text-xs font-medium text-main opacity-70">
-						記事の閲覧、コメントの投稿が可能です。管理画面には入れません。
-					</p>
-				</div>
+				{/if}
 			</div>
-		</aside>
+		</section>
 	</div>
 </div>

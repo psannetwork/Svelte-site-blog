@@ -3,9 +3,12 @@
 	import { enhance } from '$app/forms';
 	import { editorJsToHtml } from '$lib/utils/editor';
 	import { editorI18n } from '$lib/utils/editor_i18n';
+	import { t, type Language } from '$lib/i18n';
 	import type { ActionData, PageData } from './$types';
 
 	let { data, form } = $props<{ data: PageData; form: ActionData }>();
+	const lang = $derived((data.settings?.site_language || 'ja') as Language);
+
 	let editor: any;
 	let title = $state('');
 	let summary = $state('');
@@ -34,18 +37,13 @@
 	}
 
 	const buttonLabel = $derived.by(() => {
-		if (isSaving) return 'Saving...';
+		if (isSaving) return t(lang, 'saving');
 		switch (visibility) {
-			case 'draft':
-				return 'Save Draft';
-			case 'review':
-				return 'Request Review';
-			case 'public':
-				return 'Publish Now';
-			case 'vip':
-				return 'Publish as VIP';
-			default:
-				return 'Save Story';
+			case 'draft': return t(lang, 'draft');
+			case 'review': return t(lang, 'review');
+			case 'public': return t(lang, 'public');
+			case 'vip': return t(lang, 'vip');
+			default: return t(lang, 'save_changes');
 		}
 	});
 
@@ -105,9 +103,7 @@
 			let parsedData: { blocks: any[] } = { blocks: [] };
 			try {
 				const autosaved = localStorage.getItem('autosave_new_post');
-				if (autosaved) {
-					parsedData = JSON.parse(autosaved);
-				}
+				if (autosaved) parsedData = JSON.parse(autosaved);
 			} catch (e) {}
 
 			if (parsedData.blocks.length === 0) {
@@ -127,69 +123,18 @@
 						quote: { class: Quote, inlineToolbar: true },
 						code: Code,
 						raw: { class: RawTool, inlineToolbar: true },
-						marker: {
-							class: ColorPlugin,
-							inlineToolbar: true,
-							config: {
-								colorCollections: [
-									'#FFEB3B', '#FFC107', '#FF9800', '#FF5722', '#795548',
-									'#9E9E9E', '#607D8B', '#00CC99', '#EB2D8C', '#1A1A1A',
-									'#FF1313', '#2388FF', '#FFD300'
-								],
-								type: 'marker',
-								customPicker: true
-							}
-						},
+						marker: { class: ColorPlugin, inlineToolbar: true, config: { type: 'marker', customPicker: true } },
 						table: { class: Table, inlineToolbar: true },
 						checklist: { class: Checklist, inlineToolbar: true },
 						warning: Warning,
 						delimiter: Delimiter,
 						inlineCode: InlineCode,
 						underline: Underline,
-						color: {
-							class: ColorPlugin,
-							inlineToolbar: true,
-							config: {
-								colorCollections: [
-									'#00CC99', '#EB2D8C', '#1A1A1A', '#FF1313', '#2388FF',
-									'#FFD300', '#000000', '#444444', '#888888', '#CCCCCC',
-									'#FFFFFF', '#FF5733', '#FF8D1A', '#FFC300', '#DAF7A6',
-									'#C70039', '#900C3F', '#581845'
-								],
-								type: 'text',
-								customPicker: true
-							}
-						},
-						image: {
-							class: Image,
-							config: {
-								endpoints: { 
-									byFile: '/api/upload',
-									byUrl: '/api/upload/fetch' 
-								},
-								field: 'image',
-								types: 'image/*',
-								captionPlaceholder: 'キャプションを入力...'
-							}
-						},
+						color: { class: ColorPlugin, inlineToolbar: true, config: { type: 'text', customPicker: true } },
+						image: { class: Image, config: { endpoints: { byFile: '/api/upload', byUrl: '/api/upload/fetch' }, field: 'image', types: 'image/*' } },
 						linkTool: { class: LinkTool, config: { endpoint: '/api/link' } },
-						embed: {
-							class: Embed,
-							config: { services: { youtube: true, vimeo: true, twitter: true } }
-						},
-						anyTuneName: {
-							class: AlignmentTune,
-							config: {
-								default: 'left',
-								blocks: {
-									header: 'left',
-									paragraph: 'left',
-									quote: 'left',
-									list: 'left',
-									checklist: 'left'
-								}
-							}
-						}
+						embed: { class: Embed, config: { services: { youtube: true, vimeo: true, twitter: true } } },
+						anyTuneName: { class: AlignmentTune, config: { default: 'left', blocks: { header: 'left', paragraph: 'left', quote: 'left', list: 'left', checklist: 'left' } } }
 					},
 					tunes: ['anyTuneName'],
 					onReady: () => {
@@ -201,7 +146,7 @@
 					},
 					data: parsedData,
 					minHeight: 400,
-					placeholder: '執筆を開始...',
+					placeholder: '...',
 					defaultBlock: 'paragraph'
 				});
 			} catch (err) {
@@ -257,11 +202,9 @@
 				const saved = await editor.save();
 				formData.set('editorData', JSON.stringify(saved));
 			} catch (err) {
-				console.error('Save failed', err);
 				isSaving = false;
 				return cancel();
 			}
-
 			return async ({ result, update }) => {
 				isSaving = false;
 				if (result.type === 'success' || result.type === 'redirect') {
@@ -273,108 +216,57 @@
 	>
 		<header class="flex flex-col md:flex-row md:items-center justify-between gap-6">
 			<div>
-				<h2 class="text-4xl font-black tracking-tighter text-main uppercase">Create Story</h2>
-				<div class="flex gap-4 mt-2">
+				<h2 class="text-4xl font-black tracking-tighter text-main uppercase leading-none">{t(lang, 'create_story')}</h2>
+				<div class="flex gap-4 mt-3">
 					<select
 						name="visibility"
 						bind:value={visibility}
-						class="text-xs font-black bg-white dark:bg-slate-800 border border-slate-200 dark:border-none rounded-lg px-4 py-2 uppercase tracking-widest cursor-pointer text-main focus:ring-2 focus:ring-psan-green shadow-sm outline-none"
+						class="text-[10px] font-black bg-white dark:bg-slate-800 border border-slate-200 dark:border-none rounded-xl px-4 py-2 uppercase tracking-widest cursor-pointer text-main focus:ring-2 focus:ring-psan-green shadow-sm outline-none"
 					>
-						<option value="draft">📁 Draft</option>
-						<option value="review">⏳ Review</option>
+						<option value="draft">📁 {t(lang, 'draft')}</option>
+						<option value="review">⏳ {t(lang, 'review')}</option>
 						{#if data.user?.role === 'admin' || data.user?.role === 'editor'}
-							<option value="public">🌍 Public</option>
-							<option value="unlisted">🔗 Unlisted</option>
-							<option value="private">🔒 Private</option>
-							<option value="vip">💎 VIP</option>
+							<option value="public">🌍 {t(lang, 'public')}</option>
+							<option value="unlisted">🔗 {t(lang, 'unlisted')}</option>
+							<option value="private">🔒 {t(lang, 'private')}</option>
+							<option value="vip">💎 {t(lang, 'vip')}</option>
 						{/if}
 					</select>
 				</div>
 			</div>
 			<div class="flex gap-3">
-				<a href="/dashboard/posts" class="btn-psan-ghost text-xs py-2">Discard</a>
-				<button
-					type="button"
-					onclick={togglePreview}
-					class="btn-psan-ghost text-xs py-2 border-psan-green text-psan-green hover:bg-psan-green hover:text-psan-green-fg transition-all min-w-[100px]"
-				>
-					{isPreview ? 'Edit' : 'Preview'}
+				<a href="/dashboard/posts" class="btn-psan-ghost text-xs py-2">{t(lang, 'discard')}</a>
+				<button type="button" onclick={togglePreview} class="btn-psan-ghost text-xs py-2 border-psan-green text-psan-green hover:bg-psan-green hover:text-white transition-all min-w-[100px]">
+					{isPreview ? t(lang, 'edit') : t(lang, 'preview')}
 				</button>
-				<button
-					type="submit"
-					class="btn-psan-primary py-3 px-10 text-sm"
-					disabled={isSaving}
-				>
+				<button type="submit" class="btn-psan-primary py-3 px-10 text-sm" disabled={isSaving}>
 					{buttonLabel}
 				</button>
 			</div>
 		</header>
 
-		<div class="card-psan p-6 md:p-12 space-y-8">
-			<div class="flex flex-col md:flex-row gap-8 items-start">
+		<div class="card-dashboard p-6 md:p-12 space-y-10">
+			<div class="flex flex-col md:flex-row gap-10 items-start">
 				<div class="w-full md:w-64 shrink-0">
-					<span class="text-[10px] font-black text-muted uppercase block mb-2">Thumbnail</span>
-					<div
-						class="aspect-video rounded-2xl bg-secondary dark:bg-slate-800 overflow-hidden relative group border-2 border-dashed border-slate-200 dark:border-slate-700"
-					>
+					<span class="text-[10px] font-black text-muted uppercase block mb-3 tracking-widest">{t(lang, 'thumbnail')}</span>
+					<div class="aspect-video rounded-3xl bg-slate-50 dark:bg-slate-800 overflow-hidden relative group border-2 border-dashed border-slate-200 dark:border-slate-700">
 						{#if thumbnailUrl}
-							<img src={thumbnailUrl} alt="Thumbnail" class="w-full h-full object-cover" />
-							<button
-								type="button"
-								onclick={() => (thumbnailUrl = '')}
-								class="absolute top-2 right-2 p-1.5 bg-black/50 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-								>✕</button
-							>
+							<img src={thumbnailUrl} alt="" class="w-full h-full object-cover" />
+							<button type="button" onclick={() => (thumbnailUrl = '')} class="absolute top-3 right-3 w-8 h-8 bg-black/50 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity">✕</button>
 						{:else}
-							<label
-								class="absolute inset-0 flex flex-col items-center justify-center cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors"
-							>
-								<svg
-									class="w-8 h-8 text-muted opacity-60 mb-2"
-									fill="none"
-									stroke="currentColor"
-									viewBox="0 0 24 24"
-									><path
-										stroke-linecap="round"
-										stroke-linejoin="round"
-										stroke-width="2"
-										d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-									/></svg
-								>
-								<span class="text-[10px] font-black text-muted uppercase"
-									>{isUploadingThumb ? 'Uploading...' : 'Upload Image'}</span
-								>
-								<input
-									type="file"
-									accept="image/*"
-									class="hidden"
-									onchange={handleThumbnailUpload}
-									disabled={isUploadingThumb}
-								/>
+							<label class="absolute inset-0 flex flex-col items-center justify-center cursor-pointer hover:bg-psan-green/5 transition-colors">
+								<svg class="w-8 h-8 text-muted opacity-40 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+								<span class="text-[10px] font-black text-muted uppercase tracking-widest">{isUploadingThumb ? '...' : t(lang, 'upload')}</span>
+								<input type="file" accept="image/*" class="hidden" onchange={handleThumbnailUpload} disabled={isUploadingThumb} />
 							</label>
 						{/if}
 					</div>
 					<input type="hidden" name="thumbnail_url" value={thumbnailUrl} />
 				</div>
 
-				<div class="flex-1 space-y-4 w-full">
-					<input
-						id="title"
-						type="text"
-						name="title"
-						bind:value={title}
-						class="w-full text-4xl md:text-5xl font-black bg-transparent border-none focus:ring-0 p-0 text-main placeholder:text-muted/20 tracking-tighter"
-						placeholder="Untitled Story"
-					/>
-
-					<textarea
-						id="summary"
-						name="summary"
-						bind:value={summary}
-						rows="2"
-						class="w-full text-xl font-medium bg-transparent border-none focus:ring-0 p-0 text-muted placeholder:text-muted/20 resize-none"
-						placeholder="Write a short teaser for your story..."
-					></textarea>
+				<div class="flex-1 space-y-6 w-full">
+					<input type="text" name="title" bind:value={title} class="w-full text-4xl md:text-5xl font-black bg-transparent border-none focus:ring-0 p-0 text-main placeholder:text-slate-200 dark:placeholder:text-slate-800 tracking-tighter" placeholder={t(lang, 'title')} />
+					<textarea name="summary" bind:value={summary} rows="2" class="w-full text-xl font-bold bg-transparent border-none focus:ring-0 p-0 text-muted placeholder:text-slate-200 dark:placeholder:text-slate-800 resize-none" placeholder={t(lang, 'summary')}></textarea>
 				</div>
 			</div>
 

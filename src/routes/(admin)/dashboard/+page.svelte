@@ -1,9 +1,11 @@
 <script lang="ts">
+	import { t, type Language } from '$lib/i18n';
 	let { data } = $props();
 
 	const chartHeight = 120;
 	const chartWidth = 600;
 
+	const lang = $derived((data.settings?.site_language || 'ja') as Language);
 	const stats = $derived(data.stats);
 	const weekly = $derived([...stats.weekly].reverse());
 	const maxHits = $derived(Math.max(...weekly.map((d) => d.hits), 10));
@@ -21,7 +23,7 @@
 </script>
 
 <svelte:head>
-	<title>Overview | {data.settings?.site_title || 'Admin'}</title>
+	<title>{t(lang, 'overview')} | {data.settings?.site_title || 'Admin'}</title>
 </svelte:head>
 
 <div class="space-y-12">
@@ -29,7 +31,7 @@
 	<header class="flex flex-col md:flex-row md:items-end justify-between gap-6">
 		<div class="space-y-2">
 			<h2 class="text-4xl md:text-6xl font-black tracking-tighter uppercase text-main leading-none">
-				Overview
+				{t(lang, 'overview')}
 			</h2>
 			<div class="flex items-center gap-3">
 				<span class="px-3 py-1 bg-psan-green/10 text-psan-green rounded-full text-[10px] font-black uppercase tracking-widest">Live Stats</span>
@@ -41,7 +43,7 @@
 			</div>
 		</div>
 		<div class="hidden md:block text-right">
-			<p class="text-[10px] font-black text-muted uppercase tracking-[0.2em] mb-1">Last Updated</p>
+			<p class="text-[10px] font-black text-muted uppercase tracking-[0.2em] mb-1">{t(lang, 'last_updated')}</p>
 			<p class="text-xs font-black text-main uppercase">{new Date().toLocaleTimeString()}</p>
 		</div>
 	</header>
@@ -54,7 +56,7 @@
 					<svg class="w-48 h-48" fill="currentColor" viewBox="0 0 24 24"><path d="M16 6l2.29 2.29-4.88 4.88-4-4L2 16.59 3.41 18l6-6 4 4 6.3-6.29L22 12V6z"/></svg>
 				</div>
 				<div class="relative z-10 space-y-4">
-					<div class="text-[10px] font-black tracking-[0.3em] uppercase opacity-70">Total Reach</div>
+					<div class="text-[10px] font-black tracking-[0.3em] uppercase opacity-70">{t(lang, 'total_access')}</div>
 					<div class="text-5xl md:text-7xl font-black tracking-tighter">
 						{stats.totalHits.toLocaleString()}
 					</div>
@@ -70,7 +72,7 @@
 						<svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
 					</div>
 					<div class="text-right">
-						<div class="text-[10px] font-black text-muted uppercase tracking-widest mb-1">Today</div>
+						<div class="text-[10px] font-black text-muted uppercase tracking-widest mb-1">{t(lang, 'today_hits')}</div>
 						<div class="text-3xl font-black text-main leading-none">+{stats.todayHits.toLocaleString()}</div>
 					</div>
 				</div>
@@ -91,7 +93,7 @@
 						<svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
 					</div>
 					<div class="text-right">
-						<div class="text-[10px] font-black text-muted uppercase tracking-widest mb-1">Uniques</div>
+						<div class="text-[10px] font-black text-muted uppercase tracking-widest mb-1">{t(lang, 'uniques')}</div>
 						<div class="text-3xl font-black text-main leading-none">{stats.todayUniques.toLocaleString()}</div>
 					</div>
 				</div>
@@ -153,7 +155,7 @@
 	<div class="grid grid-cols-1 lg:grid-cols-2 gap-12 pb-40">
 		<section class="space-y-6">
 			<div class="flex items-center justify-between px-2">
-				<h3 class="font-black text-xs tracking-[0.3em] text-muted uppercase">Latest Stories</h3>
+				<h3 class="font-black text-xs tracking-[0.3em] text-muted uppercase">{t(lang, 'recent_posts')}</h3>
 				<a href="/dashboard/posts" class="text-[10px] font-black text-psan-green uppercase hover:underline tracking-widest">View All</a>
 			</div>
 			<div class="card-dashboard divide-y border-none shadow-xl shadow-slate-200/40 dark:shadow-none">
@@ -179,7 +181,7 @@
 					</a>
 				{:else}
 					<div class="p-20 text-center">
-						<p class="text-[10px] font-black text-muted uppercase tracking-widest">No stories found.</p>
+						<p class="text-[10px] font-black text-muted uppercase tracking-widest">{t(lang, 'no_data')}</p>
 					</div>
 				{/each}
 			</div>
@@ -187,7 +189,7 @@
 
 		<section class="space-y-6">
 			<div class="flex items-center justify-between px-2">
-				<h3 class="font-black text-xs tracking-[0.3em] text-psan-pink uppercase">Fresh Talk</h3>
+				<h3 class="font-black text-xs tracking-[0.3em] text-psan-pink uppercase">{t(lang, 'recent_comments')}</h3>
 				<a href="/dashboard/comments" class="text-[10px] font-black text-psan-pink uppercase hover:underline tracking-widest">Manage</a>
 			</div>
 			<div class="card-dashboard divide-y border-none shadow-xl shadow-psan-pink/5 dark:shadow-none">
@@ -204,7 +206,7 @@
 					</div>
 				{:else}
 					<div class="p-20 text-center">
-						<p class="text-[10px] font-black text-muted uppercase tracking-widest">Quiet in here...</p>
+						<p class="text-[10px] font-black text-muted uppercase tracking-widest">{t(lang, 'no_data')}</p>
 					</div>
 				{/each}
 			</div>
