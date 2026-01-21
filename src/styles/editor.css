@@ -1,3 +1,5 @@
+@reference "tailwindcss";
+
 @utility editor-container-psan {
 	@apply bg-transparent rounded-3xl p-4 md:p-8;
 }

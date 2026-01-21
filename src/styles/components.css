@@ -1,3 +1,5 @@
+@reference "tailwindcss";
+
 @utility text-main {
 	color: var(--text-main) !important;
 }
@@ -36,6 +38,14 @@
 
 @utility glass-card {
 	@apply bg-white/70 dark:bg-slate-900/70 backdrop-blur-lg border border-white/20 dark:border-slate-800/50 shadow-xl;
+}
+
+@utility card-dashboard {
+	@apply bg-[--card-bg] border border-[--border-color] rounded-[40px] shadow-2xl shadow-slate-200/50 dark:shadow-none overflow-hidden transition-all;
+}
+
+@utility card-stats-vibrant {
+	@apply p-8 rounded-[40px] text-white shadow-2xl relative overflow-hidden transition-all hover:scale-[1.02] active:scale-[0.98];
 }
 
 @utility btn-psan-danger {
