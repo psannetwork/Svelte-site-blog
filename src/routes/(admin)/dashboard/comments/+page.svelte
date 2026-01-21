@@ -51,8 +51,9 @@
 				<div class="p-6 bg-slate-50 dark:bg-slate-800/50 rounded-[24px] border border-slate-100 dark:border-slate-700">
 					<p class="text-main font-bold leading-relaxed">{comment.content}</p>
 					<div class="mt-4 pt-4 border-t border-slate-200 dark:border-slate-700 flex items-center gap-2 text-[10px] font-black text-muted uppercase tracking-widest">
-						<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.828a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>
-						On Post ID: {comment.post_id}
+						<svg class="w-3 h-3 text-psan-green" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.828a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>
+						<span class="text-psan-green">{t(lang, 'on_post')}</span>
+						<span class="text-main truncate">{comment.post_title}</span>
 					</div>
 				</div>
 			</div>

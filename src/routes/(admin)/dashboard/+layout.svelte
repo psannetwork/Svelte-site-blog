@@ -45,7 +45,6 @@
 		}
 	]);
 
-	// Mobile bottom nav items (Top 4)
 	const mobileItems = $derived(menuItems.slice(0, 4));
 
 	$effect(() => {
@@ -65,10 +64,10 @@
 </svelte:head>
 
 <div class="flex h-screen bg-slate-50 dark:bg-[#0b0f1a] transition-colors overflow-hidden font-sans">
-	<!-- DESKTOP SIDEBAR: Floating Style -->
+	<!-- DESKTOP SIDEBAR -->
 	<aside class="hidden lg:flex flex-col w-80 p-6 shrink-0">
 		<div class="flex-1 card-dashboard flex flex-col shadow-2xl shadow-psan-green/5">
-			<div class="p-8">
+			<div class="p-8 space-y-6">
 				<div class="flex items-center gap-4">
 					<div class="w-12 h-12 rounded-2xl bg-psan-green shadow-lg shadow-psan-green/30 flex items-center justify-center text-white">
 						<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
@@ -78,6 +77,11 @@
 						<span class="text-[9px] font-black uppercase tracking-[0.3em] text-psan-green">Console</span>
 					</div>
 				</div>
+
+				<a href="/" data-sveltekit-reload class="flex items-center gap-3 px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-psan-green transition-colors group">
+					<svg class="w-4 h-4 transition-transform group-hover:-translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+					<span class="text-[10px] font-black uppercase tracking-widest">{t(lang, 'home_page')}</span>
+				</a>
 			</div>
 
 			<nav class="flex-1 px-4 space-y-2 overflow-y-auto custom-scrollbar overflow-x-hidden">
@@ -104,8 +108,12 @@
 
 			<div class="p-6 mt-auto">
 				<div class="bg-slate-100 dark:bg-slate-800/50 rounded-3xl p-4 flex items-center gap-4">
-					<div class="w-10 h-10 rounded-xl bg-psan-green/20 flex items-center justify-center text-psan-green">
-						<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+					<div class="w-10 h-10 rounded-xl bg-psan-green/20 flex items-center justify-center text-psan-green font-black">
+						{#if data.user?.avatar_url}
+							<img src={data.user.avatar_url} alt="" class="w-full h-full object-cover rounded-xl" />
+						{:else}
+							{(data.user?.nickname || data.user?.username).substring(0, 1).toUpperCase()}
+						{/if}
 					</div>
 					<div class="min-w-0">
 						<div class="text-[10px] font-black text-main truncate uppercase">{data.user?.nickname || data.user?.username}</div>
@@ -133,7 +141,12 @@
 				</div>
 			</div>
 
-			<div class="flex items-center gap-4 md:gap-6">
+			<div class="flex items-center gap-3 md:gap-4">
+				<a href="/" target="_blank" class="hidden sm:flex items-center gap-2 px-5 py-2.5 bg-psan-green/10 text-psan-green rounded-2xl border border-psan-green/20 hover:bg-psan-green hover:text-white transition-all group shadow-sm">
+					<svg class="w-4 h-4 transition-transform group-hover:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+					<span class="text-[10px] font-black uppercase tracking-widest">{t(lang, 'visit_site')}</span>
+				</a>
+
 				<button
 					onclick={() => theme.toggle()}
 					class="w-12 h-12 rounded-2xl flex items-center justify-center transition-all bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-psan-green shadow-sm"
@@ -144,10 +157,8 @@
 						<svg class="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" /></svg>
 					{/if}
 				</button>
-				<a
-					href="/account"
-					class="w-12 h-12 rounded-2xl overflow-hidden bg-psan-green text-white shadow-lg shadow-psan-green/20 flex items-center justify-center font-black group transition-transform active:scale-90"
-				>
+				
+				<a href="/account" class="w-12 h-12 rounded-2xl overflow-hidden bg-psan-green text-white shadow-lg shadow-psan-green/20 flex items-center justify-center font-black group transition-transform active:scale-90">
 					{#if data.user?.avatar_url}
 						<img src={data.user.avatar_url} alt="" class="w-full h-full object-cover group-hover:scale-110 transition-transform" />
 					{:else}
@@ -179,19 +190,11 @@
 					<span class="text-[8px] font-black uppercase tracking-widest">{item.name}</span>
 				</a>
 			{/each}
-			<!-- Quick Profile -->
-			<a
-				href="/account"
-				class="flex flex-col items-center justify-center gap-1 text-slate-500 dark:text-slate-600"
-			>
-				<div class="w-10 h-10 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center overflow-hidden">
-					{#if data.user?.avatar_url}
-						<img src={data.user.avatar_url} alt="" class="w-full h-full object-cover" />
-					{:else}
-						<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
-					{/if}
+			<a href="/" data-sveltekit-reload class="flex flex-col items-center justify-center gap-1 text-slate-500 dark:text-slate-600">
+				<div class="w-10 h-10 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
+					<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
 				</div>
-				<span class="text-[8px] font-black uppercase tracking-widest">Me</span>
+				<span class="text-[8px] font-black uppercase tracking-widest">Home</span>
 			</a>
 		</nav>
 	</div>

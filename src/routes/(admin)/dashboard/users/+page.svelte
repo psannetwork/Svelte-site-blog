@@ -1,8 +1,17 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import { t, type Language } from '$lib/i18n';
+	import { invalidateAll } from '$app/navigation';
 	let { data } = $props();
 	const lang = $derived((data.settings?.site_language || 'ja') as Language);
+
+	let showCreateModal = $state(false);
+	let isCreating = $state(false);
+
+	// デバッグ用
+	$effect(() => {
+		console.log('User list:', data.users);
+	});
 </script>
 
 <svelte:head>
@@ -10,14 +19,22 @@
 </svelte:head>
 
 <div class="max-w-7xl mx-auto space-y-12">
-	<header class="space-y-2">
-		<h2 class="text-4xl md:text-6xl font-black tracking-tighter text-main uppercase leading-none">{t(lang, 'users')}</h2>
-		<div class="flex items-center gap-3">
-			<span class="px-3 py-1 bg-psan-green/10 text-psan-green rounded-full text-[10px] font-black uppercase tracking-widest">Management</span>
-			<p class="text-xs text-muted font-bold">
-				{t(lang, 'users_desc')}
-			</p>
+	<header class="flex flex-col md:flex-row md:items-center justify-between gap-6">
+		<div class="space-y-2">
+			<h2 class="text-4xl md:text-6xl font-black tracking-tighter text-main uppercase leading-none">{t(lang, 'users')}</h2>
+			<div class="flex items-center gap-3">
+				<span class="px-3 py-1 bg-psan-green/10 text-psan-green rounded-full text-[10px] font-black uppercase tracking-widest">Management</span>
+				<p class="text-xs text-muted font-bold">
+					{t(lang, 'users_desc')}
+				</p>
+			</div>
 		</div>
+		<button 
+			onclick={() => showCreateModal = true}
+			class="btn-psan-primary px-10 py-4 rounded-2xl shadow-xl shadow-psan-green/20 text-sm"
+		>
+			{t(lang, 'create_user')}
+		</button>
 	</header>
 
 	<div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -80,7 +97,7 @@
 								</div>
 							</div>
 
-							<div class="w-full sm:w-auto border-t sm:border-t-0 pt-4 sm:pt-0 border-slate-100 dark:border-slate-800">
+							<div class="flex items-center gap-4 w-full sm:w-auto border-t sm:border-t-0 pt-4 sm:pt-0 border-slate-100 dark:border-slate-800">
 								<form method="POST" action="?/updateRole" use:enhance class="flex items-center">
 									<input type="hidden" name="userId" value={user.id} />
 									<select
@@ -95,6 +112,18 @@
 										<option value="user" selected={user.role === 'user'}>USER</option>
 									</select>
 								</form>
+
+								{#if !user.is_protected}
+									<form method="POST" action="?/deleteUser" use:enhance={({ cancel }) => {
+										if (!confirm(t(lang, 'delete_confirm'))) return cancel();
+										return async ({ update }) => { await update(); };
+									}}>
+										<input type="hidden" name="userId" value={user.id} />
+										<button class="w-10 h-10 flex items-center justify-center text-psan-pink hover:bg-psan-pink/10 rounded-xl transition-all">
+											<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+										</button>
+									</form>
+								{/if}
 							</div>
 						</div>
 					{/each}
@@ -106,4 +135,59 @@
 			</div>
 		</section>
 	</div>
+
+	<!-- CREATE USER MODAL -->
+	{#if showCreateModal}
+		<div class="fixed inset-0 z-[200] flex items-center justify-center p-6 md:p-12">
+			<button class="absolute inset-0 bg-slate-950/60 backdrop-blur-xl animate-in fade-in" onclick={() => showCreateModal = false}></button>
+			<div class="relative w-full max-w-lg bg-white dark:bg-slate-900 rounded-[48px] shadow-3xl overflow-hidden animate-in zoom-in-95 duration-300">
+				<form method="POST" action="?/createUser" use:enhance={() => {
+					isCreating = true;
+					return async ({ result }) => {
+						isCreating = false;
+						if (result.type === 'success') {
+							showCreateModal = false;
+							await invalidateAll();
+						}
+					};
+				}} class="p-10 md:p-12 space-y-8">
+					<div class="flex items-center gap-4">
+						<div class="w-12 h-12 rounded-2xl bg-psan-green flex items-center justify-center text-white shadow-lg shadow-psan-green/20">
+							<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/></svg>
+						</div>
+						<h3 class="text-2xl font-black text-main uppercase tracking-tighter">{t(lang, 'create_user')}</h3>
+					</div>
+
+					<div class="space-y-6">
+						<div class="space-y-2">
+							<label class="text-[10px] font-black text-muted uppercase tracking-widest ml-2">{t(lang, 'username')}</label>
+							<input name="username" required class="w-full bg-slate-50 dark:bg-slate-800 rounded-2xl p-4 font-bold text-main border-none focus:ring-2 focus:ring-psan-green" placeholder="psan_user" />
+						</div>
+						<div class="space-y-2">
+							<label class="text-[10px] font-black text-muted uppercase tracking-widest ml-2">{t(lang, 'password')}</label>
+							<input name="password" type="password" required class="w-full bg-slate-50 dark:bg-slate-800 rounded-2xl p-4 font-bold text-main border-none focus:ring-2 focus:ring-psan-green" placeholder="••••••••" />
+						</div>
+						<div class="space-y-2">
+							<label class="text-[10px] font-black text-muted uppercase tracking-widest ml-2">{t(lang, 'role')}</label>
+							<select name="role" class="w-full bg-slate-50 dark:bg-slate-800 rounded-2xl p-4 font-black text-sm text-main border-none focus:ring-2 focus:ring-psan-green uppercase tracking-widest">
+								<option value="user">USER</option>
+								<option value="author">AUTHOR</option>
+								<option value="editor">EDITOR</option>
+								<option value="admin">ADMIN</option>
+							</select>
+						</div>
+					</div>
+
+					<div class="flex gap-4 pt-4">
+						<button type="button" class="flex-1 btn-psan-ghost py-4 text-xs font-black uppercase tracking-widest" onclick={() => showCreateModal = false}>
+							{t(lang, 'cancel')}
+						</button>
+						<button type="submit" class="flex-1 btn-psan-primary py-4 text-xs font-black uppercase tracking-widest" disabled={isCreating}>
+							{isCreating ? t(lang, 'saving') : t(lang, 'create_now')}
+						</button>
+					</div>
+				</form>
+			</div>
+		</div>
+	{/if}
 </div>
