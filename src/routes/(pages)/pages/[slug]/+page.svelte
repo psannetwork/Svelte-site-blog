@@ -135,10 +135,9 @@
 							>Admin</span
 						>
 					{/if}
-					{#if comment.parent_id}
-						{@const parent = data.comments.find((c) => c.id === comment.parent_id)}
-						{#if parent}
-							<span class="text-[10px] text-muted font-bold flex items-center gap-1">
+															{#if comment.parent_id}
+																	{@const parent = data.comments.find((c: any) => c.id === comment.parent_id)}
+																	{#if parent}							<span class="text-[10px] text-muted font-bold flex items-center gap-1">
 								<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"
 									><path
 										stroke-linecap="round"

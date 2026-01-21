@@ -1,5 +1,6 @@
 import { json, error } from '@sveltejs/kit';
-import { getSettings, setSettings } from '$lib/server/settings';
+import db from '$lib/server/db';
+import { getSetting, getSettings, setSettings } from '$lib/server/settings';
 import type { RequestHandler } from './$types';
 
 export const GET: RequestHandler = async ({ locals }) => {

@@ -120,8 +120,12 @@
 						method="POST"
 						action="?/updateNickname"
 						use:enhance={() => {
-							return async ({ result }) => {
-								if (result.type === 'success') await invalidateAll();
+							return async ({ result, update }) => {
+								await update({ reset: false });
+								if (result.type === 'success') {
+									// 更新成功時の処理
+									await invalidateAll();
+								}
 							};
 						}}
 						class="flex-1 space-y-4"
@@ -150,12 +154,12 @@
 							<input
 								type="checkbox"
 								name="notification_enabled"
-								checked={notificationEnabled}
+								bind:checked={notificationEnabled}
 								class="w-5 h-5 accent-psan-green"
 							/>
 						</label>
 
-						<button class="btn-psan-primary w-full">Save Profile</button>
+						<button class="btn-psan-primary w-full" disabled={isUploading}>Save Profile</button>
 					</form>
 				</div>
 			</section>

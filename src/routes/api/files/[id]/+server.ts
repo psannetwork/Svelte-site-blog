@@ -11,7 +11,7 @@ export const GET: RequestHandler = async ({ params }) => {
 	if (!file) throw error(404);
 
 	if (file.storage_type === 'database' && file.data) {
-		return new Response(file.data, {
+		return new Response(new Uint8Array(file.data), {
 			headers: {
 				'Content-Type': file.mime_type,
 				'Content-Length': file.size.toString(),

@@ -1,25 +1,42 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount, tick } from 'svelte';
 	import { enhance } from '$app/forms';
 	import { editorJsToHtml } from '$lib/utils/editor';
 	import { editorI18n } from '$lib/utils/editor_i18n';
 	import type { ActionData, PageData } from './$types';
 
 	let { data, form } = $props<{ data: PageData; form: ActionData }>();
-	const initialPost = $state.snapshot(data.post);
+	let initialPost = $state<any>(null);
+
+	$effect(() => {
+		if (data.post && !initialPost) {
+			initialPost = $state.snapshot(data.post);
+		}
+	});
 
 	let editor: any;
 	let formElement: HTMLFormElement;
 
-	let title = $state(initialPost.title);
-	let summary = $state(initialPost.summary || '');
-	let visibility = $state(initialPost.visibility);
-	let editorData = $state(initialPost.raw_json || initialPost.content || '');
-	let thumbnailUrl = $state(initialPost.thumbnail_url || '');
+	let title = $state('');
+	let summary = $state('');
+	let visibility = $state('draft');
+	let editorData = $state('');
+	let thumbnailUrl = $state('');
 	let isSaving = $state(false);
 	let isPreview = $state(false);
 	let previewHtml = $state('');
 	let isUploadingThumb = $state(false);
+
+	$effect(() => {
+		if (data.post && !initialPost) {
+			initialPost = $state.snapshot(data.post);
+			title = initialPost.title;
+			summary = initialPost.summary || '';
+			visibility = initialPost.visibility;
+			editorData = initialPost.raw_json || initialPost.content || '';
+			thumbnailUrl = initialPost.thumbnail_url || '';
+		}
+	});
 
 	async function handleThumbnailUpload(e: Event) {
 		const file = (e.target as HTMLInputElement).files?.[0];
@@ -63,30 +80,20 @@
 	}
 
 	async function handleKeydown(e: KeyboardEvent) {
-		if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+		if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
 			e.preventDefault();
-			await submitForm();
+			submitForm();
 		}
 	}
 
-	async function submitForm() {
+	function submitForm() {
 		if (!editor || isSaving) return;
-		isSaving = true;
-		try {
-			const saved = await editor.save();
-			const json = JSON.stringify(saved);
-			editorData = json;
-
-			setTimeout(() => {
-				formElement?.requestSubmit();
-			}, 20);
-		} catch (err) {
-			console.error('Save failed', err);
-			isSaving = false;
-		}
+		formElement?.requestSubmit();
 	}
 
 	onMount(() => {
+		window.addEventListener('keydown', handleKeydown, true);
+
 		(async () => {
 			if (editor) return;
 
@@ -132,164 +139,136 @@
 				parsedData.blocks.push({ type: 'paragraph', data: { text: '' } });
 			}
 
-			editor = new EditorJS({
-				holder: 'editorjs',
-				inlineToolbar: true,
-				i18n: settings?.site_language === 'ja' ? editorI18n : undefined,
-				tools: {
-					header: {
-						class: Header,
-						inlineToolbar: true
-					},
-					list: { class: List, inlineToolbar: true },
-					quote: { class: Quote, inlineToolbar: true },
-					code: Code,
-					raw: RawTool,
-					marker: {
-						class: ColorPlugin,
-						inlineToolbar: true,
-						config: {
-							colorCollections: [
-								'#FFEB3B',
-								'#FFC107',
-								'#FF9800',
-								'#FF5722',
-								'#795548',
-								'#9E9E9E',
-								'#607D8B',
-								'#00CC99',
-								'#EB2D8C',
-								'#1A1A1A',
-								'#FF1313',
-								'#2388FF',
-								'#FFD300'
-							],
-							type: 'marker',
-							customPicker: true
-						}
-					},
-					table: { class: Table, inlineToolbar: true },
-					checklist: Checklist,
-					warning: Warning,
-					delimiter: Delimiter,
-					inlineCode: InlineCode,
-					underline: Underline,
-					color: {
-						class: ColorPlugin,
-						inlineToolbar: true,
-						config: {
-							colorCollections: [
-								'#00CC99',
-								'#EB2D8C',
-								'#1A1A1A',
-								'#FF1313',
-								'#2388FF',
-								'#FFD300',
-								'#000000',
-								'#444444',
-								'#888888',
-								'#CCCCCC',
-								'#FFFFFF',
-								'#FF5733',
-								'#FF8D1A',
-								'#FFC300',
-								'#DAF7A6',
-								'#C70039',
-								'#900C3F',
-								'#581845'
-							],
-							type: 'text',
-							customPicker: true
-						}
-					},
-					image: {
-						class: Image,
-						config: {
-							endpoints: { byFile: '/api/upload' },
-							field: 'image',
-							types: 'image/*',
-							captionPlaceholder: 'キャプションを入力...'
-						}
-					},
-					linkTool: { class: LinkTool, config: { endpoint: '/api/link' } },
-					embed: {
-						class: Embed,
-						config: { services: { youtube: true, vimeo: true, twitter: true } }
-					},
-					anyTuneName: {
-						class: AlignmentTune,
-						config: {
-							default: 'left',
-							blocks: {
-								header: 'left',
-								list: 'left'
+			try {
+				editor = new EditorJS({
+					holder: 'editorjs',
+					inlineToolbar: true,
+					i18n: settings?.site_language === 'ja' ? editorI18n : undefined,
+					tools: {
+						header: {
+							class: Header,
+							inlineToolbar: true
+						},
+						list: { class: List, inlineToolbar: true },
+											quote: { class: Quote, inlineToolbar: true },
+											code: Code,
+											marker: {							class: ColorPlugin,
+							inlineToolbar: true,
+							config: {
+								colorCollections: [
+									'#FFEB3B',
+									'#FFC107',
+									'#FF9800',
+									'#FF5722',
+									'#795548',
+									'#9E9E9E',
+									'#607D8B',
+									'#00CC99',
+									'#EB2D8C',
+									'#1A1A1A',
+									'#FF1313',
+									'#2388FF',
+									'#FFD300'
+								],
+								type: 'marker',
+								customPicker: true
+							}
+						},
+						table: { class: Table, inlineToolbar: true },
+						checklist: Checklist,
+						warning: Warning,
+						delimiter: Delimiter,
+						inlineCode: InlineCode,
+						underline: Underline,
+						color: {
+							class: ColorPlugin,
+							inlineToolbar: true,
+							config: {
+								colorCollections: [
+									'#00CC99',
+									'#EB2D8C',
+									'#1A1A1A',
+									'#FF1313',
+									'#2388FF',
+									'#FFD300',
+									'#000000',
+									'#444444',
+									'#888888',
+									'#CCCCCC',
+									'#FFFFFF',
+									'#FF5733',
+									'#FF8D1A',
+									'#FFC300',
+									'#DAF7A6',
+									'#C70039',
+									'#900C3F',
+									'#581845'
+								],
+								type: 'text',
+								customPicker: true
+							}
+						},
+						image: {
+							class: Image,
+							config: {
+								endpoints: { 
+									byFile: '/api/upload',
+									byUrl: '/api/upload/fetch' 
+								},
+								field: 'image',
+								types: 'image/*',
+								captionPlaceholder: 'キャプションを入力...'
+							}
+						},
+						linkTool: { 
+							class: LinkTool, 
+							config: { 
+								endpoint: '/api/link' 
+							} 
+						},
+						raw: {
+							class: RawTool,
+							inlineToolbar: true
+						},
+						embed: {
+							class: Embed,
+							config: { services: { youtube: true, vimeo: true, twitter: true } }
+						},
+						anyTuneName: {
+							class: AlignmentTune,
+							config: {
+								default: 'left',
+								blocks: {
+									header: 'left',
+									paragraph: 'left',
+									quote: 'left',
+									list: 'left',
+									checklist: 'left'
+								}
 							}
 						}
-					}
-				},
-				tunes: ['anyTuneName'],
-				onReady: () => {
-					new Undo({ editor });
-					new DragDrop(editor);
-
-					// カラーピッカーを確実に行えるように改善
-					const observer = new MutationObserver(() => {
-						const popover = document.querySelector('.tc-popover');
-						if (popover) {
-							const items = popover.querySelectorAll('.tc-popover__item');
-							items.forEach((item) => {
-								if (item.querySelector('input[type="color"]')) return;
-								
-								const icon = item.querySelector('.tc-popover__item-icon');
-								if (icon) {
-									const picker = document.createElement('input');
-									picker.type = 'color';
-									picker.className = 'absolute inset-0 w-full h-full opacity-0 cursor-pointer';
-									picker.style.zIndex = '10';
-									
-									picker.addEventListener('input', (e) => {
-										e.stopPropagation();
-										(item as HTMLElement).click();
-									});
-									
-									(item as HTMLElement).style.position = 'relative';
-									item.appendChild(picker);
-								}
-							});
-						}
-					});
-					observer.observe(document.body, { childList: true, subtree: true });
-				},
-				onChange: async () => {
-					// オートセーブ
-					if (editor) {
-						const saved = await editor.save();
-						localStorage.setItem(`autosave_post_${initialPost.id}`, JSON.stringify(saved));
-					}
-				},
-				data: parsedData,
-				minHeight: 400,
-				placeholder: '執筆を開始...',
-				defaultBlock: 'paragraph'
-			});
-
-			const editorContainer = document.getElementById('editorjs');
-			editorContainer?.addEventListener('contextmenu', (e) => {
-				e.preventDefault();
-				const target = e.target as HTMLElement;
-				const block = target.closest('.ce-block');
-				if (block) {
-					const settingsBtn = block.querySelector('.ce-toolbar__settings-btn') as HTMLElement;
-					if (settingsBtn) {
-						settingsBtn.click();
-					}
-				}
-			});
+					},
+					tunes: ['anyTuneName'],
+					onReady: () => {
+						new Undo({ editor });
+						new DragDrop(editor);
+					},
+					onChange: () => {
+						// オートセーブ
+						debouncedAutosave();
+					},
+					data: parsedData,
+					minHeight: 400,
+					placeholder: '執筆を開始...',
+					defaultBlock: 'paragraph'
+				});
+			} catch (err) {
+				console.error('EditorJS initialization failed:', err);
+			}
 		})();
 
-		window.addEventListener('keydown', handleKeydown);
 		return () => {
-			window.removeEventListener('keydown', handleKeydown);
+			window.removeEventListener('keydown', handleKeydown, true);
 			if (editor) {
 				const currentEditor = editor;
 				editor = null;
@@ -301,8 +280,36 @@
 						.catch(() => {});
 				}
 			}
+			// Clear any pending debounced autosave
+			debouncedAutosave.clear();
 		};
 	});
+
+	// Debounce function
+	function debounce<T extends (...args: any[]) => any>(func: T, timeout = 300) {
+		let timer: ReturnType<typeof setTimeout>;
+		const debounced = function (this: any, ...args: Parameters<T>) {
+			clearTimeout(timer);
+			timer = setTimeout(() => {
+				func.apply(this, args);
+			}, timeout);
+		};
+		debounced.clear = () => {
+			clearTimeout(timer);
+		};
+		return debounced;
+	}
+
+	const debouncedAutosave = debounce(async () => {
+		if (editor) {
+			try {
+				const saved = await editor.save();
+				localStorage.setItem(`autosave_post_${initialPost.id}`, JSON.stringify(saved));
+			} catch (err) {
+				console.error('Autosave failed:', err);
+			}
+		}
+	}, 1000); // 1秒間入力がなければ保存
 </script>
 
 <svelte:head>
@@ -314,16 +321,25 @@
 		bind:this={formElement}
 		method="POST"
 		class="space-y-8"
-		use:enhance={() => {
+		use:enhance={async ({ formData, cancel }) => {
+			if (!editor) return cancel();
+			isSaving = true;
+			
+			try {
+				const saved = await editor.save();
+				formData.set('editorData', JSON.stringify(saved));
+			} catch (err) {
+				console.error('Save failed', err);
+				isSaving = false;
+				return cancel();
+			}
+
 			return async ({ result, update }) => {
-				if (result.type === 'success') {
-					isSaving = false;
+				isSaving = false;
+				if (result.type === 'success' || result.type === 'redirect') {
 					localStorage.removeItem(`autosave_post_${initialPost.id}`);
-					await update({ reset: false });
-				} else {
-					await update();
-					isSaving = false;
 				}
+				await update({ reset: false });
 			};
 		}}
 	>
@@ -361,8 +377,7 @@
 					{isPreview ? 'Edit' : 'Preview'}
 				</button>
 				<button
-					type="button"
-					onclick={submitForm}
+					type="submit"
 					class="btn-psan-primary py-3 px-10 text-sm"
 					disabled={isSaving}
 				>

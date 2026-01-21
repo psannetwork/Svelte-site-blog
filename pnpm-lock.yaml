@@ -41,6 +41,9 @@ importers:
       '@editorjs/marker':
         specifier: ^1.4.0
         version: 1.4.0
+      '@editorjs/paragraph':
+        specifier: ^2.11.7
+        version: 2.11.7
       '@editorjs/quote':
         specifier: ^2.7.6
         version: 2.7.6
@@ -65,6 +68,9 @@ importers:
       editorjs-drag-drop:
         specifier: ^1.1.16
         version: 1.1.16
+      editorjs-style:
+        specifier: ^3.0.3
+        version: 3.0.3
       editorjs-text-alignment-blocktune:
         specifier: ^1.0.3
         version: 1.0.3
@@ -220,6 +226,9 @@ packages:
 
   '@editorjs/marker@1.4.0':
     resolution: {integrity: sha512-5ipEXfL44jTTRzgNp/p/YjMO7jT08S5z4V8qA3FFJTfdhKgQyM3mvP1zpdYKw47ZZpVWMCncvk5Nto3BxihEtg==}
+
+  '@editorjs/paragraph@2.11.7':
+    resolution: {integrity: sha512-qD6bbWvRc4VvP0mXDOm+hOhzzhUYR9ZjcAvgCuKWcCbUMpCvhVF1s8NX40zdjekPi6JEnuHTamCncTrSzVsVhw==}
 
   '@editorjs/quote@2.7.6':
     resolution: {integrity: sha512-D01KUMSDj2r+6Z+xjDkQqI+y6URpeHCvj0+P4pah+GtkG040lWjFb2H4pgHFXuol2cbfyAoraYSw85fuPheCvw==}
@@ -1165,6 +1174,9 @@ packages:
   editorjs-drag-drop@1.1.16:
     resolution: {integrity: sha512-yOyKZqqZepkdbDQbAw1bZr3mQewkT4a9QgufWW3Aoy1qcTka8uHR01T/dGHqrpyYrF56ykyidPyp0LX79LEHHQ==}
 
+  editorjs-style@3.0.3:
+    resolution: {integrity: sha512-Ur+lAu5g3oaGKzWh7oJx+DsjaUNAwKouHGJDbE6+ZCF6QTxNj8EjE22DQXjtX26qL1YHt54ku2sC3lhVhm8MKQ==}
+
   editorjs-text-alignment-blocktune@1.0.3:
     resolution: {integrity: sha512-DAJ2LJP+WjETvU4lVOJCqZ1kZkKHp0GkujkqZgza9DRv7bO46m1M/s2d5Ba5hPFdmqk1vA/ci++MQXgWD7mWYw==}
 
@@ -1895,6 +1907,10 @@ snapshots:
   '@editorjs/marker@1.4.0':
     dependencies:
       '@codexteam/icons': 0.0.5
+
+  '@editorjs/paragraph@2.11.7':
+    dependencies:
+      '@codexteam/icons': 0.0.4
 
   '@editorjs/quote@2.7.6':
     dependencies:
@@ -2666,6 +2682,8 @@ snapshots:
   devalue@5.6.1: {}
 
   editorjs-drag-drop@1.1.16: {}
+
+  editorjs-style@3.0.3: {}
 
   editorjs-text-alignment-blocktune@1.0.3: {}
 

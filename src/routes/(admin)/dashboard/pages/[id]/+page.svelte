@@ -1,21 +1,28 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount, tick } from 'svelte';
 	import { enhance } from '$app/forms';
 	import { editorJsToHtml } from '$lib/utils/editor';
 	import { editorI18n } from '$lib/utils/editor_i18n';
 	import type { ActionData, PageData } from './$types';
 
 	let { data, form } = $props<{ data: PageData; form: ActionData }>();
-	const { page: initialPage } = data;
-
+	
+	// Svelte 5 state management
 	let editor: any;
 	let formElement: HTMLFormElement;
 
-	let title = $state(initialPage.title);
-	let editorData = $state(initialPage.raw_json || initialPage.content || '');
+	let title = $state('');
+	let editorData = $state('');
 	let isSaving = $state(false);
 	let isPreview = $state(false);
 	let previewHtml = $state('');
+
+	$effect(() => {
+		if (data.page && title === '') {
+			title = data.page.title;
+			editorData = data.page.raw_json || data.page.content || '';
+		}
+	});
 
 	async function togglePreview() {
 		if (!isPreview) {
@@ -30,28 +37,20 @@
 	}
 
 	async function handleKeydown(e: KeyboardEvent) {
-		if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+		if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
 			e.preventDefault();
-			await submitForm();
+			submitForm();
 		}
 	}
 
-	async function submitForm() {
+	function submitForm() {
 		if (!editor || isSaving) return;
-		isSaving = true;
-		try {
-			const saved = await editor.save();
-			editorData = JSON.stringify(saved);
-			setTimeout(() => {
-				formElement?.requestSubmit();
-			}, 50);
-		} catch (err) {
-			console.error('Save failed', err);
-			isSaving = false;
-		}
+		formElement?.requestSubmit();
 	}
 
 	onMount(() => {
+		window.addEventListener('keydown', handleKeydown, true);
+
 		(async () => {
 			if (editor) return;
 
@@ -70,6 +69,8 @@
 			const Underline = (await import('@editorjs/underline')).default;
 			const ColorPlugin = (await import('editorjs-text-color-plugin')).default;
 			const Undo = (await import('editorjs-undo')).default;
+			const DragDrop = (await import('editorjs-drag-drop')).default;
+			const Paragraph = (await import('@editorjs/paragraph')).default;
 
 			let parsedData: { blocks: any[] } = { blocks: [] };
 			try {
@@ -85,56 +86,87 @@
 				parsedData.blocks.push({ type: 'paragraph', data: { text: '' } });
 			}
 
-			editor = new EditorJS({
-				holder: 'editorjs',
-				i18n: data?.settings?.site_language === 'ja' ? editorI18n : undefined,
-				tools: {
-					header: Header,
-					list: List,
-					quote: Quote,
-					code: Code,
-					marker: Marker,
-					table: Table,
-					checklist: Checklist,
-					warning: Warning,
-					delimiter: Delimiter,
-					inlineCode: InlineCode,
-					underline: Underline,
-					color: {
-						class: ColorPlugin,
-						config: {
-							colorCollections: ['#00CC99', '#EB2D8C', '#1A1A1A', '#FF1313', '#2388FF', '#FFD300'],
-							type: 'text',
-							customPicker: true
-						}
+			try {
+				editor = new EditorJS({
+					holder: 'editorjs',
+					inlineToolbar: true,
+					i18n: data?.settings?.site_language === 'ja' ? editorI18n : undefined,
+					tools: {
+						paragraph: { class: Paragraph, inlineToolbar: true },
+						header: { class: Header, inlineToolbar: true },
+						list: { class: List, inlineToolbar: true },
+						quote: { class: Quote, inlineToolbar: true },
+						code: Code,
+						marker: {
+							class: Marker,
+							inlineToolbar: true
+						},
+						table: { class: Table, inlineToolbar: true },
+						checklist: { class: Checklist, inlineToolbar: true },
+						warning: Warning,
+						delimiter: Delimiter,
+						inlineCode: InlineCode,
+						underline: Underline,
+						color: {
+							class: ColorPlugin,
+							config: {
+								colorCollections: ['#00CC99', '#EB2D8C', '#1A1A1A', '#FF1313', '#2388FF', '#FFD300'],
+								type: 'text',
+								customPicker: true
+							}
+						},
+						image: { class: Image, config: { endpoints: { byFile: '/api/upload' } } }
 					},
-					image: { class: Image, config: { endpoints: { byFile: '/api/upload' } } }
-				},
-				onReady: () => {
-					new Undo({ editor });
-				},
-				data: parsedData,
-				placeholder: 'Build your page content...',
-				defaultBlock: 'paragraph'
-			});
+					onReady: () => {
+						new Undo({ editor });
+						new DragDrop(editor);
+					},
+					onChange: () => {
+						debouncedAutosave();
+					},
+					data: parsedData,
+					placeholder: 'Build your page content...',
+					defaultBlock: 'paragraph'
+				});
+			} catch (err) {
+				console.error('EditorJS initialization failed:', err);
+			}
 		})();
 
-		window.addEventListener('keydown', handleKeydown);
 		return () => {
-			window.removeEventListener('keydown', handleKeydown);
-			if (editor) {
-				const currentEditor = editor;
+			window.removeEventListener('keydown', handleKeydown, true);
+			if (editor && typeof editor.destroy === 'function') {
+				editor.destroy();
 				editor = null;
-				if (typeof currentEditor.destroy === 'function') {
-					currentEditor.isReady
-						.then(() => {
-							currentEditor.destroy();
-						})
-						.catch(() => {});
-				}
 			}
+			debouncedAutosave.clear();
 		};
 	});
+
+	function debounce<T extends (...args: any[]) => any>(func: T, timeout = 300) {
+		let timer: ReturnType<typeof setTimeout>;
+		const debounced = function(this: any, ...args: Parameters<T>) {
+			clearTimeout(timer);
+			timer = setTimeout(() => {
+				func.apply(this, args);
+			}, timeout);
+		};
+		debounced.clear = () => {
+			clearTimeout(timer);
+		};
+		return debounced;
+	}
+
+	const debouncedAutosave = debounce(async () => {
+		if (editor) {
+			try {
+				await editor.save();
+				// Pages don't currently use localStorage autosave, but we could add it here
+			} catch (err) {
+				console.error('Autosave failed:', err);
+			}
+		}
+	}, 1000);
 </script>
 
 <svelte:head>
@@ -147,22 +179,28 @@
 		method="POST"
 		action="?/savePage"
 		class="space-y-8"
-		use:enhance={() => {
+		use:enhance={async ({ formData, cancel }) => {
+			if (!editor) return cancel();
+			isSaving = true;
+			try {
+				const saved = await editor.save();
+				formData.set('content', JSON.stringify(saved));
+			} catch (err) {
+				console.error('Save failed', err);
+				isSaving = false;
+				return cancel();
+			}
+
 			return async ({ result, update }) => {
-				if (result.type === 'success') {
-					isSaving = false;
-					await update({ reset: false });
-				} else {
-					await update();
-					isSaving = false;
-				}
+				isSaving = false;
+				await update({ reset: false });
 			};
 		}}
 	>
 		<header class="flex flex-col md:flex-row md:items-center justify-between gap-6">
 			<div>
 				<h2 class="text-4xl font-black tracking-tighter uppercase text-psan-green">Edit Page</h2>
-				<p class="text-xs text-muted font-bold mt-1">ID: {data.page.id}</p>
+				<p class="text-xs text-muted font-bold mt-1 uppercase tracking-widest">ID: {data.page.id}</p>
 			</div>
 			<div class="flex gap-3">
 				<a
@@ -178,8 +216,7 @@
 					{isPreview ? 'Edit' : 'Preview'}
 				</button>
 				<button
-					type="button"
-					onclick={submitForm}
+					type="submit"
 					class="btn-psan-primary py-3 px-10 text-sm"
 					disabled={isSaving}
 				>
@@ -194,14 +231,14 @@
 				type="text"
 				name="title"
 				bind:value={title}
-				class="w-full text-4xl md:text-6xl font-black bg-transparent border-none focus:ring-0 p-0 text-main"
+				class="w-full text-4xl md:text-6xl font-black bg-transparent border-none focus:ring-0 p-0 text-main placeholder:text-muted/20 tracking-tighter"
 				placeholder="Page Title..."
 			/>
 
-			<div class="prose dark:prose-invert max-w-none min-h-[500px]">
+			<div class="editor-container-psan min-h-[500px]">
 				<div id="editorjs" class="text-main {isPreview ? 'hidden' : 'block'}"></div>
 				{#if isPreview}
-					<div class="preview-content animate-in fade-in duration-300">
+					<div class="prose dark:prose-invert max-w-none preview-content animate-in fade-in duration-300">
 						{@html previewHtml}
 					</div>
 				{/if}
@@ -211,9 +248,9 @@
 		<input type="hidden" name="content" value={editorData} />
 		{#if form?.success}
 			<div
-				class="fixed top-24 left-1/2 -translate-x-1/2 bg-psan-green text-psan-green-fg px-10 py-4 rounded-full font-black shadow-2xl z-[101] animate-in fade-in slide-in-from-top-4"
+				class="fixed top-24 left-1/2 -translate-x-1/2 bg-psan-green text-psan-green-fg px-10 py-4 rounded-full font-black shadow-2xl z-[101] animate-in fade-in slide-in-from-top-4 uppercase text-xs tracking-widest"
 			>
-				PAGE SAVED!
+				Page Saved!
 			</div>
 		{/if}
 	</form>

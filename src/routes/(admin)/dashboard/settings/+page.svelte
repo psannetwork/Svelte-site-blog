@@ -16,21 +16,31 @@
 	let storageStats = $state({ local: 0, database: 0 });
 	let migrationStatus = $state({ active: false, progress: 0, message: '' });
 
-	// 最新のサーバー状態を保持
-	let baseSettings = $state($state.snapshot(data.settings) || {});
-
-	let siteTitle = $state($state.snapshot(data.settings?.site_title) || '');
-	let siteDescription = $state($state.snapshot(data.settings?.site_description) || '');
-	let accentColor = $state($state.snapshot(data.settings?.accent_color) || '#00CC99');
-	let siteLanguage = $state($state.snapshot(data.settings?.site_language) || 'ja');
-	let allowedExtensions = $state(
-		$state.snapshot(data.settings?.allowed_extensions) || '.jpg,.jpeg,.png,.gif,.webp,.svg,.ico'
-	);
-	let siteIconUrl = $state($state.snapshot(data.settings?.site_icon_url) || '');
-	let storageType = $state($state.snapshot(data.settings?.storage_type) || 'local');
+	let siteTitle = $state('');
+	let siteDescription = $state('');
+	let accentColor = $state('#00CC99');
+	let siteLanguage = $state('ja');
+	let allowedExtensions = $state('.jpg,.jpeg,.png,.gif,.webp,.svg,.ico');
+	let siteIconUrl = $state('');
+	let storageType = $state('local');
 
 	let userEdited = $state<Record<string, boolean>>({});
 	let lastSyncTime = $state(0);
+
+	// Svelte 5: Use $effect for initialization from props
+	$effect(() => {
+		if (data.settings && lastSyncTime === 0) {
+			const s = data.settings;
+			siteTitle = s.site_title || '';
+			siteDescription = s.site_description || '';
+			accentColor = s.accent_color || '#00CC99';
+			siteLanguage = s.site_language || 'ja';
+			allowedExtensions = s.allowed_extensions || '.jpg,.jpeg,.png,.gif,.webp,.svg,.ico';
+			siteIconUrl = s.site_icon_url || '';
+			storageType = s.storage_type || 'local';
+			lastSyncTime = parseInt(s._updated || '0');
+		}
+	});
 
 	onMount(() => {
 		if (data.settings) {
@@ -222,7 +232,6 @@
 
 			const result = await res.json();
 			if (result.success && result.settings) {
-				baseSettings = { ...result.settings }; // 最新状態で更新
 				lastSyncTime = parseInt(result.settings._updated || '0');
 				userEdited = {};
 				showSuccess = true;
