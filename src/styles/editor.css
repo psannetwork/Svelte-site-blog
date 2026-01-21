@@ -1,0 +1,146 @@
+@utility editor-container-psan {
+	@apply bg-transparent rounded-3xl p-4 md:p-8;
+}
+
+/* Editor.js Core UI Colors */
+.codex-editor, .ce-paragraph, .ce-header, .ce-list__item, .cdx-input, .ce-inline-tool, .ce-settings__plugin-zone {
+	color: var(--text-main);
+}
+
+.dark .codex-editor, .dark .ce-paragraph, .dark .ce-header, .dark .ce-list__item, .dark .cdx-input, .dark .ce-inline-tool {
+	color: #ffffff;
+}
+
+/* Toolbar & Buttons */
+.ce-toolbar__plus, .ce-toolbar__settings-btn {
+	color: var(--text-main) !important;
+}
+
+.ce-paragraph[data-placeholder]:empty::before {
+	color: var(--text-muted) !important;
+	opacity: 0.6;
+}
+
+.dark .ce-paragraph[data-placeholder]:empty::before {
+	color: #a0a0a0 !important;
+	opacity: 0.8;
+}
+
+/* Dark Mode Overrides */
+.dark .ce-toolbar__plus { background-color: var(--psan-pink) !important; }
+.dark .ce-toolbar__settings-btn { background-color: var(--psan-green) !important; }
+
+.dark .ce-popover, .dark .ce-popover__container, .dark .ce-inline-toolbar, 
+.dark .ce-conversion-toolbar, .dark .ce-settings, .dark .ce-toolbox, .dark .cdx-settings-button {
+	background-color: var(--bg-secondary) !important;
+	border-color: var(--border-color) !important;
+}
+
+.dark .ce-popover__item-label, .dark .ce-popover__item-secondary-label, 
+.dark .ce-inline-tool, .dark .ce-settings__button, .dark .ce-toolbox__button, .dark .cdx-settings-button {
+	color: #ffffff !important;
+}
+
+.dark .ce-popover__search-field {
+	background-color: var(--bg-main) !important;
+	border: 1px solid var(--border-color) !important;
+	color: #ffffff !important;
+}
+
+/* Code Blocks in Editor */
+.ce-code__textarea {
+	background-color: #0d1117 !important;
+	color: #79c0ff !important;
+	border-radius: 1.5rem !important;
+	padding: 2.5rem 2rem 2rem !important;
+	font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important;
+	border: 1px solid rgba(255, 255, 255, 0.1) !important;
+	line-height: 1.6 !important;
+}
+
+.dark .ce-code__textarea { background-color: #010409 !important; }
+
+.ce-code::after {
+	content: 'CODE';
+	position: absolute;
+	right: 2rem;
+	top: 1rem;
+	font-size: 10px;
+	font-weight: 900;
+	color: #79c0ff;
+	opacity: 0.5;
+	letter-spacing: 0.1em;
+}
+
+/* Public View Code Blocks */
+.code-block-container pre {
+	background-color: #0d1117 !important;
+	color: #79c0ff !important;
+	border: 1px solid rgba(255, 255, 255, 0.1) !important;
+	padding: 2.5rem 2rem 2rem !important;
+	border-radius: 2rem !important;
+	margin: 0 !important;
+}
+
+.code-block-container pre code {
+	background-color: transparent !important;
+	color: inherit !important;
+	padding: 0 !important;
+	border-radius: 0 !important;
+	font-size: 0.9em !important;
+}
+
+/* Image Tool Adjustments */
+.ce-block .ce-block__content img {
+	border-radius: 20px;
+	transition: all 0.3s ease;
+	max-width: 70%;
+	margin: 0 auto;
+	display: block;
+}
+
+.ce-block--stretched .ce-block__content { max-width: 100% !important; }
+.ce-block--stretched img { max-width: 100% !important; width: 100% !important; }
+
+/* Selection & Alignment */
+.ce-block--selected .ce-block__content {
+	background-color: var(--psan-green) !important;
+	border-radius: 1rem;
+}
+.ce-block--selected .ce-block__content * { color: white !important; }
+
+.ce-block__content--align-left { text-align: left; }
+.ce-block__content--align-center { text-align: center; }
+.ce-block__content--align-right { text-align: right; }
+
+/* Layout fixes */
+.codex-editor__redactor {
+	padding-left: 60px !important;
+	padding-right: 60px !important;
+	padding-bottom: 100px !important;
+}
+
+.ce-toolbar__actions {
+	transform: translateX(-100%) translateX(-10px) !important;
+}
+
+@media (max-width: 650px) {
+	.codex-editor__redactor {
+		padding-left: 60px !important;
+		padding-right: 15px !important;
+	}
+}
+
+/* Prose (Public Content) Styles */
+.prose {
+	overflow-x: hidden;
+	overflow-wrap: anywhere;
+	word-break: break-word;
+	width: 100%;
+	max-width: 100%;
+}
+
+.prose table {
+	display: block;
+	overflow-x: auto;
+}

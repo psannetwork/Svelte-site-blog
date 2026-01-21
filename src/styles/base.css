@@ -1,0 +1,22 @@
+@layer base {
+	body {
+		@apply bg-[--bg-main] text-[--text-main] transition-colors duration-300 min-h-screen font-sans;
+		overflow-x: hidden;
+		width: 100%;
+	}
+
+	html {
+		overflow-x: hidden;
+		width: 100%;
+	}
+
+	h1, h2, h3, h4, h5, h6, p, span, a, label, input, select, textarea, div {
+		border-color: var(--border-color);
+	}
+
+	.dark select,
+	.dark input,
+	.dark textarea {
+		@apply bg-[#1e293b] border-slate-600 text-white focus:border-psan-green focus:ring-1 focus:ring-psan-green outline-none;
+	}
+}
