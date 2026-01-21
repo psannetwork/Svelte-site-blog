@@ -37,7 +37,7 @@
 				</div>
 
 				<div class="flex items-center gap-3 border-t md:border-t-0 pt-6 md:pt-0 border-slate-100 dark:border-slate-800">
-					<a href="/pages/{page.id}" target="_blank" class="px-6 py-3 bg-slate-100 dark:bg-slate-800 text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-slate-200 transition-all text-muted">{t(lang, 'view_site')}</a>
+					<a href="/{page.id}" target="_blank" class="px-6 py-3 bg-slate-100 dark:bg-slate-800 text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-slate-200 transition-all text-muted">{t(lang, 'view_site')}</a>
 					<a href="/dashboard/pages/{page.id}" class="px-8 py-3 bg-psan-green text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:scale-105 transition-all shadow-lg shadow-psan-green/20">Edit</a>
 				</div>
 			</div>
