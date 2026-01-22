@@ -195,20 +195,30 @@
 
 		<section class="space-y-6">
 			<div class="flex items-center justify-between px-2">
-				<h3 class="font-black text-xs tracking-[0.3em] text-psan-pink uppercase">{t(lang, 'recent_comments')}</h3>
+				<div class="flex items-center gap-3">
+					<div class="w-8 h-8 rounded-full bg-psan-pink/10 flex items-center justify-center text-psan-pink">
+						<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M8 10h.01M12 10h.01M16 10h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+					</div>
+					<h3 class="font-black text-xs tracking-[0.3em] text-psan-pink uppercase">{t(lang, 'latest_talk')}</h3>
+				</div>
 				<a href="/dashboard/comments" class="text-[10px] font-black text-psan-pink uppercase hover:underline tracking-widest">{t(lang, 'manage')}</a>
 			</div>
 			<div class="card-dashboard divide-y border-none shadow-xl shadow-psan-pink/5 dark:shadow-none">
 				{#each data.comments.slice(0, 4) as comment}
-					<div class="p-6 md:p-8 hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-all group">
-						<div class="flex justify-between items-center mb-3">
-							<div class="flex items-center gap-2">
-								<div class="w-2 h-2 rounded-full bg-psan-pink"></div>
-								<span class="text-xs font-black uppercase text-main">{comment.username}</span>
+					<div class="p-6 md:p-10 hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-all group relative overflow-hidden">
+						<div class="flex justify-between items-start mb-4">
+							<div class="flex flex-col gap-1">
+								<div class="flex items-center gap-2 px-2.5 py-1 bg-psan-pink/10 dark:bg-psan-pink/20 rounded-full border border-psan-pink/20 dark:border-psan-pink/40 text-psan-pink transition-all duration-500 ease-out hover:-translate-y-2 hover:scale-105 hover:bg-psan-pink hover:text-white cursor-default w-fit">
+									<svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+									<span class="text-[9px] font-black italic uppercase tracking-tighter">{comment.username}</span>
+								</div>
+								<span class="text-[10px] font-bold text-muted opacity-40 ml-1">{t(lang, 'on_post')}: {comment.post_title}</span>
 							</div>
-							<span class="text-[9px] font-black text-muted uppercase">{new Date(comment.created_at).toLocaleDateString()}</span>
+							<span class="text-[9px] font-black text-muted uppercase bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded">{new Date(comment.created_at).toLocaleDateString()}</span>
 						</div>
-						<p class="text-sm font-bold text-muted group-hover:text-main transition-colors leading-relaxed line-clamp-2">{comment.content}</p>
+						<p class="text-sm md:text-base font-bold text-muted group-hover:text-main transition-colors leading-relaxed line-clamp-3">
+							“{comment.content}”
+						</p>
 					</div>
 				{:else}
 					<div class="p-20 text-center">

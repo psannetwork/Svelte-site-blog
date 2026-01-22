@@ -17,22 +17,9 @@ export const load: LayoutServerLoad = async ({ locals }) => {
 	}
 
 	const settings = getSettings();
-	
-	// 最新のコメントを3件取得（サイドバーのプレビュー用）
-	const latestComments = db.prepare(`
-		SELECT 
-			c.content, 
-			COALESCE(u.nickname, u.username, 'Anonymous') as author_name, 
-			c.created_at
-		FROM comment c
-		LEFT JOIN user u ON c.author_id = u.id
-		ORDER BY c.created_at DESC
-		LIMIT 3
-	`).all() as any[];
 
 	return {
 		user: locals.user,
-		settings,
-		latestComments
+		settings
 	};
 };

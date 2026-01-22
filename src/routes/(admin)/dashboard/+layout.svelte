@@ -98,34 +98,6 @@
 			{/each}
 		</nav>
 
-		<!-- LATEST TALK PREVIEW (NEW!) -->
-		{#if data.latestComments && data.latestComments.length > 0}
-			<div class="px-8 mb-6 mt-10">
-				<div class="flex items-center justify-between mb-4">
-					<div class="flex items-center gap-2">
-						<svg class="w-3.5 h-3.5 text-psan-pink" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M8 10h.01M12 10h.01M16 10h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
-						<h3 class="text-[10px] font-black text-muted uppercase tracking-[0.2em]">{t(lang, 'latest_talk')}</h3>
-					</div>
-					<div class="w-1 h-1 rounded-full bg-psan-pink animate-pulse"></div>
-				</div>
-				<div class="space-y-4">
-					{#each data.latestComments as comment}
-						<div class="group/talk cursor-default">
-							<div class="flex items-center gap-2 mb-1.5">
-								<div class="px-2 py-0.5 bg-psan-pink/10 rounded-full border border-psan-pink/20 text-psan-pink text-[8px] font-black italic transition-all duration-500 hover:animate-soft-float hover:bg-psan-pink hover:text-white">
-									{t(lang, 'by_author').replace('{author}', comment.author_name)}
-								</div>
-								<span class="text-[8px] font-bold text-muted opacity-50">{new Date(comment.created_at).toLocaleDateString()}</span>
-							</div>
-							<p class="text-[10px] font-bold text-muted line-clamp-1 leading-tight group-hover/talk:text-psan-pink transition-colors pl-1">
-								{comment.content}
-							</p>
-						</div>
-					{/each}
-				</div>
-			</div>
-		{/if}
-
 		<div class="p-6 mt-auto">
 			<div class="bg-slate-100 dark:bg-slate-800/50 rounded-3xl p-4 flex items-center gap-4">
 				<div class="w-10 h-10 rounded-xl bg-psan-green/20 flex items-center justify-center text-psan-green font-black">
