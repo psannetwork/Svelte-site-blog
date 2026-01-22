@@ -18,22 +18,40 @@ export const GET: RequestHandler = async ({ url, locals }) => {
 			const Database = (await import('libsql')).default;
 			const tempDb = new Database(path);
 			try {
-				// sqlite_master からテーブル名を取得
-				const tables = tempDb.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'").all() as any[];
-				
-				// 結果がオブジェクトの配列であることを考慮して抽出
-				const details = tables.map((t: any) => {
-					if (typeof t === 'string') return t;
-					return t.name || t[Object.keys(t)[0]]; // fallback to first key if name is missing
-				}).filter(Boolean);
+				let tableNames: string[] = [];
 
-				console.log('[BACKUP VERIFY] Tables found:', details);
+				// Method 1: PRAGMA table_list (Modern SQLite)
+				try {
+					const pragmaTables = tempDb.prepare("PRAGMA table_list").all() as any[];
+					tableNames = pragmaTables
+						.filter(t => t.type === 'table' && t.schema === 'main' && !t.name.startsWith('sqlite_'))
+						.map(t => t.name);
+				} catch (e) {
+					console.log('[BACKUP VERIFY] PRAGMA table_list failed, falling back...');
+				}
+
+				// Method 2: sqlite_master (Classic fallback)
+				if (tableNames.length === 0) {
+					const masterTables = tempDb.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'").all() as any[];
+					tableNames = masterTables.map(t => typeof t === 'string' ? t : (t.name || t.NAME || Object.values(t)[0] as string));
+				}
+				
+				const details = tableNames.filter(Boolean);
+				console.log('[BACKUP VERIFY] Raw result count:', details.length, 'Tables:', details);
 				
 				tempDb.close();
-				return json({ success: true, details: details.length > 0 ? details : ['(No tables)'] });
+				// 最小限必要なテーブル（user, post等）が含まれているかもチェックするとより安全
+				const hasEssentialTables = ['user', 'post', 'settings'].every(t => details.includes(t));
+				
+				return json({ 
+					success: true, 
+					details: details.length > 0 ? details : ['(No user tables found)'],
+					essential: hasEssentialTables
+				});
 			} catch (e) {
 				tempDb.close();
-				throw e;
+				console.error('[BACKUP VERIFY ERROR]', e);
+				return json({ success: false, error: 'Failed to read table schema' });
 			}
 		}
 		
