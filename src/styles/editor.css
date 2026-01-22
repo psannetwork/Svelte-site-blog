@@ -127,7 +127,7 @@
 }
 
 /* Color Picker Overlay Fixes */
-.tc-popover {
+.tc-popover, .ce-popover--opened {
 	position: absolute !important;
 	z-index: 9999 !important;
 	background-color: #ffffff !important;
@@ -136,11 +136,6 @@
 	border-radius: 16px !important;
 	padding: 12px !important;
 	min-width: 180px !important;
-	display: none;
-}
-
-.tc-popover--opened {
-	display: block !important;
 }
 
 .dark .tc-popover {
@@ -148,14 +143,16 @@
 	border: 1px solid rgba(255, 255, 255, 0.1) !important;
 }
 
-.tc-color-picker {
-	display: grid !important;
-	grid-template-columns: repeat(4, 1fr) !important;
-	gap: 10px !important;
+xy-color-picker {
+	display: block !important;
 	padding: 8px !important;
 }
 
-.tc-color-picker__item {
+/* Custom color picker button inside the shadow DOM might be hard to style, 
+   but we can style the host and some parts if exposed. 
+   For now, let's focus on the classes we can control. */
+
+.tc-color-picker__item, .color-cube {
 	width: 32px !important;
 	height: 32px !important;
 	border-radius: 10px !important;
@@ -164,40 +161,32 @@
 	transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
 }
 
-.tc-color-picker__item:hover {
+.tc-color-picker__item:hover, .color-cube:hover {
 	transform: scale(1.15) !important;
 	border-color: var(--psan-green) !important;
 	z-index: 2 !important;
 }
 
-.tc-popover__item-label {
-	font-size: 11px !important;
-	font-weight: 800 !important;
-	text-transform: uppercase !important;
-	letter-spacing: 0.05em !important;
-	margin-bottom: 8px !important;
-	color: var(--text-muted) !important;
+.colorPlugin #color-left-btn:hover {
+	background: rgba(0, 0, 0, 0.05) !important;
+	border-radius: 4px 0 0 4px;
 }
 
-.dark .tc-popover__item-label {
-	color: #94a3b8 !important;
+.dark .colorPlugin #color-left-btn:hover {
+	background: rgba(255, 255, 255, 0.1) !important;
 }
 
-/* Custom color picker button */
-.tc-color-picker__button {
-	grid-column: span 4 !important;
-	margin-top: 12px !important;
-	padding: 10px !important;
-	border-radius: 12px !important;
-	background: var(--psan-green) !important;
-	color: white !important;
-	font-size: 10px !important;
-	font-weight: 900 !important;
-	text-transform: uppercase !important;
-	letter-spacing: 0.1em !important;
+.colorPlugin xy-color-picker:hover {
+	background: rgba(var(--psan-green-rgb, 0, 204, 153), 0.2) !important;
+	border-radius: 0 4px 4px 0;
+}
+
+#custom-picker.rainbow-mask, .rainbow-mask {
+	background: linear-gradient(45deg, #f06, #f90, #ff0, #0f0, #0ff, #00f, #90f, #f06) !important;
 	border: none !important;
+	border-radius: 8px !important;
 	cursor: pointer !important;
-	box-shadow: 0 4px 12px rgba(0, 204, 153, 0.3) !important;
+	box-shadow: 0 2px 5px rgba(0,0,0,0.2) !important;
 }
 
 @media (max-width: 650px) {
