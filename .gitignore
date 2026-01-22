@@ -39,3 +39,5 @@ static/uploads/*
 puppeteer-profile/
 
 qa_tools
+
+*.zip
