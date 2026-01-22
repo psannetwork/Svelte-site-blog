@@ -51,21 +51,35 @@ h6.ce-header { font-size: 1.125rem; font-weight: 900; line-height: 1.5; }
 	box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5) !important;
 }
 
-.dark .ce-popover__item-label, .dark .ce-popover__item-secondary-label, 
-.dark .ce-inline-tool, .dark .ce-settings__button, .dark .ce-toolbox__button, .dark .cdx-settings-button {
+.dark .ce-popover__item-label, 
+.dark .ce-popover__item-secondary-label,
+.dark .ce-popover-item__title,
+.dark .ce-popover-item__secondary-title,
+.dark .ce-popover__no-found,
+.dark .ce-inline-tool, 
+.dark .ce-settings__button, 
+.dark .ce-toolbox__button, 
+.dark .cdx-settings-button {
 	color: #f8fafc !important;
 }
 
-.dark .ce-popover__item-icon, .dark .ce-popover__item-secondary-label {
+.dark .ce-popover__item-icon, 
+.dark .ce-popover-item__icon,
+.dark .ce-popover__item-secondary-label {
 	color: #94a3b8 !important;
 }
 
-.dark .ce-popover__item:hover, .dark .ce-popover__item--active {
-	background-color: rgba(255, 255, 255, 0.05) !important;
+.dark .ce-popover__item:hover, 
+.dark .ce-popover__item--active,
+.dark .ce-popover-item:hover,
+.dark .ce-popover-item--active {
+	background-color: rgba(255, 255, 255, 0.1) !important;
 }
 
 .dark .ce-popover__item:hover .ce-popover__item-label,
-.dark .ce-popover__item--active .ce-popover__item-label {
+.dark .ce-popover__item--active .ce-popover__item-label,
+.dark .ce-popover-item:hover .ce-popover-item__title,
+.dark .ce-popover-item--active .ce-popover-item__title {
 	color: var(--psan-green) !important;
 }
 
