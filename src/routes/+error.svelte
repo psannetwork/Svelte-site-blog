@@ -2,7 +2,13 @@
 	import { page } from '$app/state';
 
 	const status = $derived(page.status);
-	const errorHtml = $derived(status === 404 ? page.data.error404Html : page.data.error500Html);
+	const errorHtml = $derived.by(() => {
+		try {
+			return status === 404 ? page.data?.error404Html : page.data?.error500Html;
+		} catch (e) {
+			return null;
+		}
+	});
 	const defaultMessage = $derived(
 		status === 404
 			? 'お探しのページは見つかりませんでした。'
