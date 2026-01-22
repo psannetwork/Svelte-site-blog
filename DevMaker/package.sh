@@ -1,14 +1,18 @@
 #!/bin/bash
 
-# 出力ファイル名
+# スクリプトの場所を基準にカレントディレクトリをプロジェクトルートに合わせる
+# (DevMakerディレクトリ内で実行しても、ルートから実行しても動くように調整)
+cd "$(dirname "$0")/.." || exit
+
+# 出力ファイル名と一時ディレクトリ
 OUTPUT_FILE="package.zip"
 DIST_DIR="dist_temp"
 
-# クリーンアップ
+# クリーンアップ（古いファイルがあれば削除）
 rm -rf "$DIST_DIR" "$OUTPUT_FILE"
 mkdir -p "$DIST_DIR"
 
-# 必要なファイルとディレクトリのリスト
+# 必要なファイルとディレクトリのリスト（ルートディレクトリ基準）
 FILES=(
     "src"
     "Docs"
@@ -30,23 +34,26 @@ FILES=(
     "setup.sh"
 )
 
-echo "Copying files..."
+echo "Copying files from $(pwd)..."
 
 for item in "${FILES[@]}"; do
-    if [ -e "../$item" ]; then
-        cp -r "../$item" "$DIST_DIR/"
+    if [ -e "$item" ]; then
+        # ディレクトリ構造を維持してコピー
+        cp -r "$item" "$DIST_DIR/"
+        echo "Copied: $item"
     else
         echo "Warning: $item not found, skipping."
     fi
 done
 
-# 不要なファイルの削除（static/uploadsの中身など）
+# static/uploads ディレクトリの整合性確保
+mkdir -p "$DIST_DIR/static/uploads"
 rm -rf "$DIST_DIR/static/uploads/"*
 touch "$DIST_DIR/static/uploads/.gitkeep"
 
 echo "Creating ZIP file..."
 
-# Pythonを使用してZIPを作成（zipコマンドがない場合のため）
+# Pythonを使用してZIPを作成
 python3 -c "
 import os
 import zipfile
@@ -62,7 +69,10 @@ with zipfile.ZipFile('$OUTPUT_FILE', 'w', zipfile.ZIP_DEFLATED) as zipf:
     zipdir('$DIST_DIR', zipf)
 "
 
-# クリーンアップ
+# 一時ディレクトリの削除
 rm -rf "$DIST_DIR"
 
-echo "Done! $OUTPUT_FILE has been created in DevMaker directory."
+echo "------------------------------------------"
+echo "Done! $OUTPUT_FILE has been created."
+echo "Location: $(pwd)/$OUTPUT_FILE"
+echo "------------------------------------------"
