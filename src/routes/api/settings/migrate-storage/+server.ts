@@ -10,9 +10,15 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 	const { target } = await request.json();
 	if (target !== 'local' && target !== 'database') throw error(400);
 
+	const BATCH_SIZE = 5;
 	const files = db
-		.prepare('SELECT * FROM file_storage WHERE storage_type != ?')
-		.all(target) as any[];
+		.prepare('SELECT * FROM file_storage WHERE storage_type != ? LIMIT ?')
+		.all(target, BATCH_SIZE) as any[];
+	
+	const totalRemaining = db
+		.prepare('SELECT COUNT(*) as count FROM file_storage WHERE storage_type != ?')
+		.get(target) as { count: number };
+
 	let successCount = 0;
 
 	for (const file of files) {
@@ -39,7 +45,6 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 					} catch (e) {}
 					successCount++;
 				} else {
-					// ファイルがディスクにない場合はDBのタイプだけ更新して不整合を防ぐ
 					db.prepare("UPDATE file_storage SET storage_type = 'database' WHERE id = ?").run(file.id);
 				}
 			}
@@ -48,5 +53,10 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 		}
 	}
 
-	return json({ success: true, migrated: successCount, total: files.length });
+	return json({ 
+		success: true, 
+		migrated: successCount, 
+		remaining: totalRemaining.count - successCount,
+		total_initial: totalRemaining.count 
+	});
 };

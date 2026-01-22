@@ -99,27 +99,42 @@
 		if (!confirm(t(lang, 'migration_confirm'))) return;
 
 		migrationStatus.active = true;
-		migrationStatus.progress = 10;
+		migrationStatus.progress = 0;
 		migrationStatus.message = t(lang, 'saving');
 
 		try {
 			await saveAll();
-			migrationStatus.progress = 30;
-			migrationStatus.message = 'Processing...';
+			
+			let remaining = 1;
+			let total = 0;
+			let processed = 0;
 
-			const res = await fetch('/api/settings/migrate-storage', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ target })
-			});
-			const result = await res.json();
-			if (result.success) {
-				migrationStatus.progress = 100;
-				migrationStatus.message = t(lang, 'success');
-				await invalidateAll();
-				setTimeout(() => migrationStatus.active = false, 5000);
+			while (remaining > 0) {
+				const res = await fetch('/api/settings/migrate-storage', {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({ target })
+				});
+				const result = await res.json();
+				
+				if (!result.success) throw new Error('Migration failed');
+				
+				if (total === 0) total = result.total_initial;
+				processed += result.migrated;
+				remaining = result.remaining;
+				
+				migrationStatus.progress = total > 0 ? Math.round((processed / total) * 100) : 100;
+				migrationStatus.message = `Migrating... ${processed} / ${total}`;
+				
+				if (result.migrated === 0 && remaining > 0) break; 
 			}
+
+			migrationStatus.progress = 100;
+			migrationStatus.message = t(lang, 'success');
+			await invalidateAll();
+			setTimeout(() => migrationStatus.active = false, 5000);
 		} catch (e) {
+			console.error(e);
 			migrationStatus.message = t(lang, 'error');
 		}
 	}
@@ -334,11 +349,25 @@
 								<span>DB: {storageStats.database}</span>
 							</div>
 						</div>
-						<div class="flex-1 flex gap-3">
-							{#if storageType === 'database'}
-								<button type="button" onclick={() => runMigration('database')} class="flex-1 btn-psan-primary py-3 text-[10px] uppercase tracking-widest">{t(lang, 'move_to_db')}</button>
-							{:else}
-								<button type="button" onclick={() => runMigration('local')} class="flex-1 btn-psan bg-psan-pink text-white py-3 text-[10px] uppercase tracking-widest rounded-2xl">{t(lang, 'move_to_local')}</button>
+						<div class="flex-1 flex flex-col gap-4">
+							<div class="flex gap-3">
+								{#if storageType === 'database'}
+									<button type="button" onclick={() => runMigration('database')} class="flex-1 btn-psan-primary py-3 text-[10px] uppercase tracking-widest" disabled={migrationStatus.active}>{t(lang, 'move_to_db')}</button>
+								{:else}
+									<button type="button" onclick={() => runMigration('local')} class="flex-1 btn-psan bg-psan-pink text-white py-3 text-[10px] uppercase tracking-widest rounded-2xl" disabled={migrationStatus.active}>{t(lang, 'move_to_local')}</button>
+								{/if}
+							</div>
+							
+							{#if migrationStatus.active}
+								<div class="space-y-2 animate-in fade-in slide-in-from-top-2">
+									<div class="flex justify-between items-end">
+										<span class="text-[9px] font-black text-psan-green uppercase tracking-widest">{migrationStatus.message}</span>
+										<span class="text-[10px] font-black text-main">{migrationStatus.progress}%</span>
+									</div>
+									<div class="w-full h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden border border-slate-200/50 dark:border-slate-700/50">
+										<div class="h-full bg-psan-green transition-all duration-500 ease-out shadow-[0_0_10px_rgba(0,204,153,0.5)]" style="width: {migrationStatus.progress}%"></div>
+									</div>
+								</div>
 							{/if}
 						</div>
 					</div>
@@ -349,19 +378,19 @@
 			<section class="card-dashboard p-10 space-y-8 border-psan-pink/20 border-2">
 				<h3 class="text-2xl font-black text-psan-pink italic uppercase tracking-tighter">{t(lang, 'access_control')}</h3>
 				<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-					<label class="flex items-center justify-between p-6 bg-slate-50 dark:bg-slate-800/50 rounded-[24px] cursor-pointer">
+					<label for="is_site_public" class="flex items-center justify-between p-6 bg-slate-50 dark:bg-slate-800/50 rounded-[24px] cursor-pointer">
 						<span class="text-xs font-black text-main uppercase tracking-widest">{t(lang, 'force_login')}</span>
-						<input type="checkbox" name="is_site_public" checked={data.settings?.is_site_public === 'false'} onchange={() => markEdited('is_site_public')} class="w-6 h-6 accent-psan-pink" />
+						<input type="checkbox" id="is_site_public" name="is_site_public" checked={data.settings?.is_site_public === 'false'} onchange={() => markEdited('is_site_public')} class="w-6 h-6 accent-psan-pink" />
 					</label>
 					{#each [{ id: 'allow_signup', key: 'allow_signup' }, { id: 'allow_comments', key: 'allow_comments' }, { id: 'allow_anonymous_comments', key: 'allow_anonymous_comments' }, { id: 'allow_account_deletion', key: 'allow_account_deletion' }, { id: 'show_footer_auth', key: 'show_footer_auth' }] as item}
-						<label class="flex items-center justify-between p-6 bg-slate-50 dark:bg-slate-800/50 rounded-[24px] cursor-pointer">
+						<label for={item.id} class="flex items-center justify-between p-6 bg-slate-50 dark:bg-slate-800/50 rounded-[24px] cursor-pointer">
 							<span class="text-xs font-black text-main uppercase tracking-widest">{t(lang, item.key as any)}</span>
-							<input type="checkbox" name={item.id} checked={data.settings?.[item.id] === 'true'} onchange={() => markEdited(item.id)} class="w-6 h-6 accent-psan-green" />
+							<input type="checkbox" id={item.id} name={item.id} checked={data.settings?.[item.id] === 'true'} onchange={() => markEdited(item.id)} class="w-6 h-6 accent-psan-green" />
 						</label>
 					{/each}
 					<div class="space-y-2 md:col-span-2">
-						<label class="text-[10px] font-black text-muted uppercase tracking-widest ml-2">{t(lang, 'anonymous_name')}</label>
-						<input name="anonymous_name" value={data.settings?.anonymous_name || 'Anonymous'} oninput={() => markEdited('anonymous_name')} class="w-full bg-slate-50 dark:bg-slate-800/50 border-none rounded-2xl p-4 font-bold text-main" />
+						<label for="anonymous_name" class="text-[10px] font-black text-muted uppercase tracking-widest ml-2">{t(lang, 'anonymous_name')}</label>
+						<input id="anonymous_name" name="anonymous_name" value={data.settings?.anonymous_name || 'Anonymous'} oninput={() => markEdited('anonymous_name')} class="w-full bg-slate-50 dark:bg-slate-800/50 border-none rounded-2xl p-4 font-bold text-main" />
 					</div>
 				</div>
 			</section>
@@ -377,17 +406,17 @@
 					</div>
 				{:else}
 					<div class="grid grid-cols-1 md:grid-cols-3 gap-8 items-end">
-						<label class="flex items-center justify-between p-6 bg-slate-50 dark:bg-slate-800/50 rounded-[24px] cursor-pointer">
+						<label for="enable_backup" class="flex items-center justify-between p-6 bg-slate-50 dark:bg-slate-800/50 rounded-[24px] cursor-pointer">
 							<span class="text-xs font-black text-main uppercase tracking-widest">{t(lang, 'auto_backup')}</span>
-							<input type="checkbox" name="enable_backup" checked={data.settings?.enable_backup === 'true'} class="w-6 h-6 accent-psan-green" />
+							<input type="checkbox" id="enable_backup" name="enable_backup" checked={data.settings?.enable_backup === 'true'} class="w-6 h-6 accent-psan-green" />
 						</label>
 						<div class="space-y-3">
-							<label class="text-[10px] font-black text-muted uppercase tracking-widest">{t(lang, 'interval_hours')}</label>
-							<input type="number" name="backup_interval" value={data.settings?.backup_interval} class="w-full bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700 rounded-2xl p-4 font-black text-main" />
+							<label for="backup_interval" class="text-[10px] font-black text-muted uppercase tracking-widest">{t(lang, 'interval_hours')}</label>
+							<input type="number" id="backup_interval" name="backup_interval" value={data.settings?.backup_interval} class="w-full bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700 rounded-2xl p-4 font-black text-main" />
 						</div>
 						<div class="space-y-3">
-							<label class="text-[10px] font-black text-muted uppercase tracking-widest">{t(lang, 'keep_count')}</label>
-							<input type="number" name="backup_keep_count" value={data.settings?.backup_keep_count} class="w-full bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700 rounded-2xl p-4 font-black text-main" />
+							<label for="backup_keep_count" class="text-[10px] font-black text-muted uppercase tracking-widest">{t(lang, 'keep_count')}</label>
+							<input type="number" id="backup_keep_count" name="backup_keep_count" value={data.settings?.backup_keep_count} class="w-full bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700 rounded-2xl p-4 font-black text-main" />
 						</div>
 					</div>
 				{/if}
@@ -419,10 +448,10 @@
 							</div>
 						</div>
 						<div class="flex gap-2">
-							<a href="?/downloadBackup&filename={backup.name}" class="w-10 h-10 rounded-xl flex items-center justify-center text-slate-400 hover:bg-psan-green/10 hover:text-psan-green transition-all">
+							<a href="?/downloadBackup&filename={backup.name}" class="w-10 h-10 rounded-xl flex items-center justify-center text-slate-400 hover:bg-psan-green/10 hover:text-psan-green transition-all" title="Download">
 								<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
 							</a>
-							<button onclick={() => startRestoreFlow(backup)} class="w-10 h-10 rounded-xl flex items-center justify-center text-slate-400 hover:bg-psan-pink/10 hover:text-psan-pink transition-all">
+							<button onclick={() => startRestoreFlow(backup)} class="w-10 h-10 rounded-xl flex items-center justify-center text-slate-400 hover:bg-psan-pink/10 hover:text-psan-pink transition-all" title="Restore">
 								<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.001 0 01-15.357-2m15.357 2H15"/></svg>
 							</button>
 						</div>
@@ -444,7 +473,7 @@
 
 	{#if showRestoreModal}
 		<div class="fixed inset-0 z-[200] flex items-center justify-center p-6 md:p-12">
-			<button class="absolute inset-0 bg-slate-950/60 backdrop-blur-xl animate-in fade-in" onclick={() => showRestoreModal = false}></button>
+			<button class="absolute inset-0 bg-slate-950/60 backdrop-blur-xl animate-in fade-in" onclick={() => showRestoreModal = false} aria-label="Close modal"></button>
 			<div class="relative w-full max-w-xl bg-white dark:bg-slate-900 rounded-[48px] shadow-3xl overflow-hidden animate-in zoom-in-95 duration-300">
 				<div class="p-10 md:p-12 space-y-8">
 					<div class="flex items-center gap-4">
