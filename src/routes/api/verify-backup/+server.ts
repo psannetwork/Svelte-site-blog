@@ -15,13 +15,26 @@ export const GET: RequestHandler = async ({ url, locals }) => {
 		const result = verifyDatabase(path);
 		
 		if (result.success) {
-			// 詳細なテーブルリストを取得
 			const Database = (await import('libsql')).default;
 			const tempDb = new Database(path);
-			const tables = tempDb.prepare("SELECT name FROM sqlite_master WHERE type='table'").all() as any[];
-			const details = tables.map((t: any) => t.name).filter((n: string) => !n.startsWith('sqlite_'));
-			tempDb.close();
-			return json({ success: true, details });
+			try {
+				// sqlite_master からテーブル名を取得
+				const tables = tempDb.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'").all() as any[];
+				
+				// 結果がオブジェクトの配列であることを考慮して抽出
+				const details = tables.map((t: any) => {
+					if (typeof t === 'string') return t;
+					return t.name || t[Object.keys(t)[0]]; // fallback to first key if name is missing
+				}).filter(Boolean);
+
+				console.log('[BACKUP VERIFY] Tables found:', details);
+				
+				tempDb.close();
+				return json({ success: true, details: details.length > 0 ? details : ['(No tables)'] });
+			} catch (e) {
+				tempDb.close();
+				throw e;
+			}
 		}
 		
 		return json(result);
