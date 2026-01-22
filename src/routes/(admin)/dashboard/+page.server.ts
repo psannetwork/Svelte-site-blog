@@ -56,6 +56,14 @@ export const load: PageServerLoad = async ({ locals }) => {
 		? []
 		: (db.prepare('SELECT * FROM analytics ORDER BY date DESC LIMIT 7').all() as any[]);
 
+	const currentMonth = new Date().toISOString().substring(0, 7); // YYYY-MM
+	const monthlyStats = isAuthor
+		? { total: 0 }
+		: (db.prepare('SELECT SUM(hits) as total FROM analytics WHERE date LIKE ?').get(`${currentMonth}%`) as { total: number });
+
+	const monthlyGoal = parseInt(settings.monthly_goal_hits || '1000');
+	const monthlyProgress = Math.min(Math.round(((monthlyStats?.total || 0) / monthlyGoal) * 100), 100);
+
 	return {
 		posts,
 		comments,
@@ -65,7 +73,10 @@ export const load: PageServerLoad = async ({ locals }) => {
 			totalHits: totalHits?.total || 0,
 			todayHits: todayStats?.hits || 0,
 			todayUniques: todayStats?.unique_visitors || 0,
-			weekly: weeklyStats
+			weekly: weeklyStats,
+			monthlyHits: monthlyStats?.total || 0,
+			monthlyGoal,
+			monthlyProgress
 		}
 	};
 };

@@ -30,5 +30,6 @@ export const DEFAULT_SETTINGS: Record<string, string> = {
 	error_500_content: JSON.stringify({
 		blocks: [{ type: 'header', data: { text: '500 Server Error', level: 2 } }]
 	}),
-	custom_css: ''
+	custom_css: '',
+	monthly_goal_hits: '1000'
 };

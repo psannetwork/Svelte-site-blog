@@ -78,11 +78,11 @@
 				</div>
 				<div class="mt-8 space-y-2">
 					<div class="flex justify-between text-[10px] font-black uppercase tracking-widest text-muted">
-						<span>{t(lang, 'daily_goal')}</span>
-						<span>75%</span>
+						<span>{t(lang, 'monthly_goal')}</span>
+						<span>{stats.monthlyProgress}%</span>
 					</div>
 					<div class="w-full h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-						<div class="h-full bg-psan-green w-[75%]" ></div>
+						<div class="h-full bg-psan-green transition-all duration-1000" style="width: {stats.monthlyProgress}%"></div>
 					</div>
 				</div>
 			</div>
@@ -176,8 +176,8 @@
 								<span class="block font-black text-base text-main truncate mb-1 group-hover:text-psan-green transition-colors">{post.title}</span>
 								<div class="flex items-center gap-3">
 									<span class="text-[10px] font-black text-muted uppercase tracking-widest">{new Date(post.created_at).toLocaleDateString()}</span>
-									<div class="flex items-center gap-1.5 px-2 py-0.5 bg-psan-pink/10 dark:bg-psan-pink/20 rounded-full border border-psan-pink/20 dark:border-psan-pink/40 text-psan-pink transition-all duration-500 ease-out hover:-translate-y-2 hover:scale-110 hover:shadow-xl hover:shadow-psan-pink/30 hover:bg-psan-pink hover:text-white cursor-default">
-										<svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+									<div class="flex items-center gap-1.5 text-muted/40">
+										<svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
 										<span class="text-[8px] font-black italic uppercase tracking-tighter">{t(lang, 'by_author').replace('{author}', post.author_name)}</span>
 									</div>
 								</div>
@@ -208,8 +208,8 @@
 					<div class="p-6 md:p-10 hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-all group relative overflow-hidden">
 						<div class="flex justify-between items-start mb-4">
 							<div class="flex flex-col gap-1">
-								<div class="flex items-center gap-2 px-2.5 py-1 bg-psan-pink/10 dark:bg-psan-pink/20 rounded-full border border-psan-pink/20 dark:border-psan-pink/40 text-psan-pink transition-all duration-500 ease-out hover:-translate-y-2 hover:scale-105 hover:bg-psan-pink hover:text-white cursor-default w-fit">
-									<svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+								<div class="flex items-center gap-1.5 text-psan-pink/60">
+									<svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
 									<span class="text-[9px] font-black italic uppercase tracking-tighter">{comment.username}</span>
 								</div>
 								<span class="text-[10px] font-bold text-muted opacity-40 ml-1">{t(lang, 'on_post')}: {comment.post_title}</span>

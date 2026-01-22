@@ -274,9 +274,9 @@
 			{data.post.title}
 		</h1>
 		{#if data.post.author_name}
-			<div class="mt-6 flex items-center gap-2 px-4 py-1.5 bg-psan-pink/10 dark:bg-psan-pink/20 rounded-full border border-psan-pink/20 dark:border-psan-pink/40 w-fit text-psan-pink transition-all duration-500 ease-out hover:-translate-y-2 hover:scale-110 hover:shadow-2xl hover:shadow-psan-pink/30 hover:bg-psan-pink hover:text-white cursor-default">
-				<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
-				<span class="text-xs font-black uppercase tracking-widest italic">
+			<div class="mt-6 flex items-center gap-1.5 text-muted/60">
+				<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+				<span class="text-[10px] font-bold uppercase tracking-widest italic">
 					{t(lang, 'by_author').replace('{author}', data.post.author_name)}
 				</span>
 			</div>

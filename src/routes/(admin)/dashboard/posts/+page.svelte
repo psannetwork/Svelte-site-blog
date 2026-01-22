@@ -70,8 +70,8 @@
 						>
 							{post.title}
 						</h3>
-						<div class="mt-2 flex items-center gap-1.5 px-3 py-1 bg-psan-pink/10 dark:bg-psan-pink/20 rounded-full border-2 border-psan-pink/30 dark:border-psan-pink/50 w-fit text-psan-pink transition-all duration-500 ease-out hover:animate-soft-float hover:shadow-2xl hover:shadow-psan-pink/40 hover:bg-psan-pink hover:text-white cursor-default">
-							<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+						<div class="mt-2 flex items-center gap-1.5 text-muted/40">
+							<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
 							<span class="text-[9px] font-black uppercase tracking-widest italic">{t(lang, 'by_author').replace('{author}', post.author_name)}</span>
 						</div>
 					</div>
