@@ -13,6 +13,18 @@
 	color: #ffffff;
 }
 
+/* Header Styles in Editor */
+.ce-header[contenteditable="true"][data-placeholder]:empty::before {
+	color: var(--text-muted) !important;
+}
+
+h1.ce-header { font-size: 3rem; font-weight: 900; line-height: 1.1; letter-spacing: -0.05em; margin-top: 2rem; margin-bottom: 1rem; }
+h2.ce-header { font-size: 2.25rem; font-weight: 900; line-height: 1.2; letter-spacing: -0.04em; margin-top: 1.5rem; margin-bottom: 0.75rem; }
+h3.ce-header { font-size: 1.875rem; font-weight: 900; line-height: 1.3; letter-spacing: -0.03em; margin-top: 1.25rem; margin-bottom: 0.5rem; }
+h4.ce-header { font-size: 1.5rem; font-weight: 900; line-height: 1.4; margin-top: 1rem; margin-bottom: 0.5rem; }
+h5.ce-header { font-size: 1.25rem; font-weight: 900; line-height: 1.5; }
+h6.ce-header { font-size: 1.125rem; font-weight: 900; line-height: 1.5; }
+
 /* Toolbar & Buttons */
 .ce-toolbar__plus, .ce-toolbar__settings-btn {
 	color: var(--text-main) !important;
@@ -34,18 +46,32 @@
 
 .dark .ce-popover, .dark .ce-popover__container, .dark .ce-inline-toolbar, 
 .dark .ce-conversion-toolbar, .dark .ce-settings, .dark .ce-toolbox, .dark .cdx-settings-button {
-	background-color: var(--bg-secondary) !important;
-	border-color: var(--border-color) !important;
+	background-color: #0f172a !important;
+	border: 1px solid rgba(255, 255, 255, 0.1) !important;
+	box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5) !important;
 }
 
 .dark .ce-popover__item-label, .dark .ce-popover__item-secondary-label, 
 .dark .ce-inline-tool, .dark .ce-settings__button, .dark .ce-toolbox__button, .dark .cdx-settings-button {
-	color: #ffffff !important;
+	color: #f8fafc !important;
+}
+
+.dark .ce-popover__item-icon, .dark .ce-popover__item-secondary-label {
+	color: #94a3b8 !important;
+}
+
+.dark .ce-popover__item:hover, .dark .ce-popover__item--active {
+	background-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+.dark .ce-popover__item:hover .ce-popover__item-label,
+.dark .ce-popover__item--active .ce-popover__item-label {
+	color: var(--psan-green) !important;
 }
 
 .dark .ce-popover__search-field {
-	background-color: var(--bg-main) !important;
-	border: 1px solid var(--border-color) !important;
+	background-color: #1e293b !important;
+	border: 1px solid rgba(255, 255, 255, 0.1) !important;
 	color: #ffffff !important;
 }
 

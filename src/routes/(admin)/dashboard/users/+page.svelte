@@ -119,7 +119,7 @@
 										return async ({ update }) => { await update(); };
 									}}>
 										<input type="hidden" name="userId" value={user.id} />
-										<button class="w-10 h-10 flex items-center justify-center text-psan-pink hover:bg-psan-pink/10 rounded-xl transition-all">
+										<button aria-label={t(lang, 'delete')} class="w-10 h-10 flex items-center justify-center text-psan-pink hover:bg-psan-pink/10 rounded-xl transition-all">
 											<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
 										</button>
 									</form>
@@ -139,7 +139,7 @@
 	<!-- CREATE USER MODAL -->
 	{#if showCreateModal}
 		<div class="fixed inset-0 z-[200] flex items-center justify-center p-6 md:p-12">
-			<button class="absolute inset-0 bg-slate-950/60 backdrop-blur-xl animate-in fade-in" onclick={() => showCreateModal = false}></button>
+			<button aria-label={t(lang, 'close')} class="absolute inset-0 bg-slate-950/60 backdrop-blur-xl animate-in fade-in" onclick={() => showCreateModal = false}></button>
 			<div class="relative w-full max-w-lg bg-white dark:bg-slate-900 rounded-[48px] shadow-3xl overflow-hidden animate-in zoom-in-95 duration-300">
 				<form method="POST" action="?/createUser" use:enhance={() => {
 					isCreating = true;
@@ -160,16 +160,16 @@
 
 					<div class="space-y-6">
 						<div class="space-y-2">
-							<label class="text-[10px] font-black text-muted uppercase tracking-widest ml-2">{t(lang, 'username')}</label>
-							<input name="username" required class="w-full bg-slate-50 dark:bg-slate-800 rounded-2xl p-4 font-bold text-main border-none focus:ring-2 focus:ring-psan-green" placeholder="psan_user" />
+							<label for="username" class="text-[10px] font-black text-muted uppercase tracking-widest ml-2">{t(lang, 'username')}</label>
+							<input id="username" name="username" required class="w-full bg-slate-50 dark:bg-slate-800 rounded-2xl p-4 font-bold text-main border-none focus:ring-2 focus:ring-psan-green" placeholder="psan_user" />
 						</div>
 						<div class="space-y-2">
-							<label class="text-[10px] font-black text-muted uppercase tracking-widest ml-2">{t(lang, 'password')}</label>
-							<input name="password" type="password" required class="w-full bg-slate-50 dark:bg-slate-800 rounded-2xl p-4 font-bold text-main border-none focus:ring-2 focus:ring-psan-green" placeholder="••••••••" />
+							<label for="password" class="text-[10px] font-black text-muted uppercase tracking-widest ml-2">{t(lang, 'password')}</label>
+							<input id="password" name="password" type="password" required class="w-full bg-slate-50 dark:bg-slate-800 rounded-2xl p-4 font-bold text-main border-none focus:ring-2 focus:ring-psan-green" placeholder="••••••••" />
 						</div>
 						<div class="space-y-2">
-							<label class="text-[10px] font-black text-muted uppercase tracking-widest ml-2">{t(lang, 'role')}</label>
-							<select name="role" class="w-full bg-slate-50 dark:bg-slate-800 rounded-2xl p-4 font-black text-sm text-main border-none focus:ring-2 focus:ring-psan-green uppercase tracking-widest">
+							<label for="role" class="text-[10px] font-black text-muted uppercase tracking-widest ml-2">{t(lang, 'role')}</label>
+							<select id="role" name="role" class="w-full bg-slate-50 dark:bg-slate-800 rounded-2xl p-4 font-black text-sm text-main border-none focus:ring-2 focus:ring-psan-green uppercase tracking-widest">
 								<option value="user">USER</option>
 								<option value="author">AUTHOR</option>
 								<option value="editor">EDITOR</option>

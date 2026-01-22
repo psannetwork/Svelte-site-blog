@@ -122,7 +122,7 @@
 		</a>
 		{#each mobileItems as item}
 			{@const isActive = page.url.pathname === item.href}
-			<a href={item.href} class="p-4 transition-all relative {isActive ? 'text-psan-green scale-110' : 'text-slate-400'}" aria-label={t(lang, item.label as any)}>
+			<a href={item.href} class="p-4 transition-all relative {isActive ? 'text-psan-green scale-110' : 'text-slate-400'}" aria-label={item.name}>
 				<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d={item.icon}/></svg>
 				{#if isActive}
 					<div class="absolute -top-1 left-1/2 -translate-x-1/2 w-1 h-1 bg-psan-green rounded-full"></div>
@@ -142,8 +142,6 @@
 </div>
 
 <style>
-	@reference "tailwindcss";
-
 	.custom-scrollbar::-webkit-scrollbar {
 		width: 4px;
 	}
@@ -151,6 +149,11 @@
 		background: transparent;
 	}
 	.custom-scrollbar::-webkit-scrollbar-thumb {
-		@apply bg-slate-200/50 dark:bg-slate-800/50 rounded-full;
+		background: rgba(226, 232, 240, 0.5);
+		border-radius: 9999px;
+	}
+
+	:global(.dark) .custom-scrollbar::-webkit-scrollbar-thumb {
+		background: rgba(30, 41, 59, 0.5);
 	}
 </style>
