@@ -2,8 +2,10 @@
 	import type { PageData, ActionData } from './$types';
 	import { enhance } from '$app/forms';
 	import { theme } from '$lib/theme.svelte';
+	import { t, type Language } from '$lib/i18n';
 
 	let { data, form } = $props<{ data: PageData; form: ActionData }>();
+	const lang = $derived((data.settings?.site_language || 'ja') as Language);
 	let replyingTo = $state<string | null>(null);
 	let isPosting = $state(false);
 
@@ -271,6 +273,11 @@
 		<h1 class="text-4xl md:text-6xl font-black tracking-tighter dark:text-white leading-[1.1]">
 			{data.post.title}
 		</h1>
+		{#if data.post.author_name}
+			<p class="text-sm font-black text-psan-green uppercase tracking-[0.2em] mt-4">
+				{t(lang, 'by_author').replace('{author}', data.post.author_name)}
+			</p>
+		{/if}
 	</header>
 
 	<div
