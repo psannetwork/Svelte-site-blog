@@ -12,14 +12,17 @@ export const load: PageServerLoad = async ({ locals }) => {
 		.prepare(
 			`
 		SELECT 
-			comment.*, 
-			COALESCE(user.nickname, user.username, ?) as author_name, 
-			user.avatar_url,
-			post.title as post_title 
-		FROM comment 
-		LEFT JOIN user ON comment.author_id = user.id 
-		JOIN post ON comment.post_id = post.id
-		ORDER BY created_at DESC
+			c.*, 
+			COALESCE(u.nickname, u.username, ?) as author_name, 
+			u.avatar_url,
+			p.title as post_title,
+			COALESCE(pu.nickname, pu.username) as parent_author_name
+		FROM comment c
+		LEFT JOIN user u ON c.author_id = u.id 
+		JOIN post p ON c.post_id = p.id
+		LEFT JOIN comment pc ON c.parent_id = pc.id
+		LEFT JOIN user pu ON pc.author_id = pu.id
+		ORDER BY c.created_at DESC
 	`
 		)
 		.all(anonymousName) as any[];

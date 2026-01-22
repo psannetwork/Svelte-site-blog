@@ -26,7 +26,15 @@
 							<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"/></svg>
 						</div>
 						<div>
-							<span class="block font-black text-main uppercase text-sm tracking-tight">{comment.username}</span>
+							<div class="flex items-center gap-2 mb-1">
+								<span class="block font-black text-main uppercase text-sm tracking-tight">{comment.author_name}</span>
+								{#if comment.parent_author_name}
+									<div class="flex items-center gap-1.5 px-2.5 py-0.5 bg-slate-100 dark:bg-slate-800 rounded-lg text-[9px] font-black text-muted uppercase tracking-widest border border-slate-200 dark:border-slate-700">
+										<svg class="w-2.5 h-2.5 text-psan-green" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"/></svg>
+										{t(lang, 'replied_to')} {comment.parent_author_name}
+									</div>
+								{/if}
+							</div>
 							<span class="text-[10px] font-black text-muted uppercase tracking-widest">{new Date(comment.created_at).toLocaleString()}</span>
 						</div>
 					</div>
