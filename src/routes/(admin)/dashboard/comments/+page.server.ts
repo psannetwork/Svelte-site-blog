@@ -16,7 +16,8 @@ export const load: PageServerLoad = async ({ locals }) => {
 			COALESCE(u.nickname, u.username, ?) as author_name, 
 			u.avatar_url,
 			p.title as post_title,
-			COALESCE(pu.nickname, pu.username) as parent_author_name
+			COALESCE(pu.nickname, pu.username) as parent_author_name,
+			pc.content as parent_content
 		FROM comment c
 		LEFT JOIN user u ON c.author_id = u.id 
 		JOIN post p ON c.post_id = p.id
