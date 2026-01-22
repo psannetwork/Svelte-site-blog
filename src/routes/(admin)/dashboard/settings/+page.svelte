@@ -130,7 +130,7 @@
 		isVerifying = true;
 		verificationResult = null;
 		try {
-			const res = await fetch(`/api/backup/verify?filename=${backup.name}`);
+			const res = await fetch(`/api/verify-backup?filename=${backup.name}`);
 			verificationResult = await res.json();
 		} catch (e) {
 			verificationResult = { success: false, error: 'Network Error' };
