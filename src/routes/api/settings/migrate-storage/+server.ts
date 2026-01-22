@@ -22,7 +22,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 				if (file.data) {
 					const dir = dirname(fullPath);
 					if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
-					writeFileSync(fullPath, file.data);
+					writeFileSync(fullPath, Buffer.from(file.data));
 					db.prepare(
 						"UPDATE file_storage SET data = NULL, storage_type = 'local' WHERE id = ?"
 					).run(file.id);
