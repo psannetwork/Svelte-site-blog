@@ -98,6 +98,29 @@
 			{/each}
 		</nav>
 
+		<!-- LATEST TALK PREVIEW (NEW!) -->
+		{#if data.latestComments && data.latestComments.length > 0}
+			<div class="px-8 mb-6 mt-10">
+				<div class="flex items-center justify-between mb-4">
+					<h3 class="text-[10px] font-black text-muted uppercase tracking-[0.2em]">{t(lang, 'latest_talk')}</h3>
+					<div class="w-1 h-1 rounded-full bg-psan-pink animate-pulse"></div>
+				</div>
+				<div class="space-y-4">
+					{#each data.latestComments as comment}
+						<div class="group/talk cursor-default">
+							<div class="flex items-center gap-2 mb-1">
+								<span class="text-[9px] font-black text-main uppercase truncate max-w-[100px]">{comment.author_name}</span>
+								<span class="text-[8px] font-bold text-muted opacity-50">{new Date(comment.created_at).toLocaleDateString()}</span>
+							</div>
+							<p class="text-[10px] font-bold text-muted line-clamp-1 leading-tight group-hover/talk:text-psan-pink transition-colors">
+								{comment.content}
+							</p>
+						</div>
+					{/each}
+				</div>
+			</div>
+		{/if}
+
 		<div class="p-6 mt-auto">
 			<div class="bg-slate-100 dark:bg-slate-800/50 rounded-3xl p-4 flex items-center gap-4">
 				<div class="w-10 h-10 rounded-xl bg-psan-green/20 flex items-center justify-center text-psan-green font-black">
