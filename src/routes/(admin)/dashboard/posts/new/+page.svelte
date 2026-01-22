@@ -130,6 +130,7 @@
 								type: 'marker', 
 								customPicker: true,
 								colorCollections: ['#FFCC00', '#FF9900', '#FF6666', '#CC99FF', '#99CCFF', '#99FFCC', '#00CC99', '#CCCCCC'],
+								colors: ['#FFCC00', '#FF9900', '#FF6666', '#CC99FF', '#99CCFF', '#99FFCC', '#00CC99', '#CCCCCC'],
 								defaultColor: '#FFCC00',
 							} 
 						},
@@ -146,6 +147,7 @@
 								type: 'text', 
 								customPicker: true,
 								colorCollections: ['#000000', '#FF0000', '#0000FF', '#00CC99', '#FF00FF', '#0099FF', '#666666', '#FFFFFF'],
+								colors: ['#000000', '#FF0000', '#0000FF', '#00CC99', '#FF00FF', '#0099FF', '#666666', '#FFFFFF'],
 								defaultColor: '#FF0000',
 							} 
 						},
