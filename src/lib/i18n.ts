@@ -19,7 +19,7 @@ export const translations = {
 		today_hits: '今日のヒット',
 		uniques: 'ユニーク',
 		recent_posts: '最近の投稿',
-		recent_comments: '最近のコメント',
+		recent_comments: '最新のコメント',
 		no_data: 'データがありません',
 		system_online: 'システム稼働中',
 		admin_console: '管理者コンソール',
@@ -61,7 +61,7 @@ export const translations = {
 		active_users_msg: '現在、サイトを閲覧しているアクティブなユーザー。',
 		daily_goal: '今日の目標',
 		lifetime_access: '通算アクセス数',
-		latest_stories: '最新の記事',
+		live_stats: 'ライブ統計',
 		view_all: 'すべて表示',
 		manage: '管理',
 		role_descriptions: '権限の説明',
@@ -69,6 +69,7 @@ export const translations = {
 		comments_desc: '読者からのフィードバックを管理。',
 		users_desc: 'チームメンバーと権限の管理。',
 		by_author: '著者: {author}',
+		latest_stories: '最新の記事',
 		create_story: 'ストーリーを作成',
 		create_page: 'ページを作成',
 		create_user: 'ユーザーを作成',
@@ -100,7 +101,6 @@ export const translations = {
 		username: 'ユーザー名',
 		password: 'パスワード',
 		role: '役割',
-		// 追加分
 		connection_details: '接続詳細',
 		turso_connected: '✅ リモートデータベース (Turso) 接続中。',
 		local_db_in_use: '🏠 ローカルデータベース使用中。',
@@ -132,14 +132,15 @@ export const translations = {
 		target_backup: '復元対象',
 		verification_status: '検証ステータス',
 		verifying: '検証中...',
-		no_icon: 'アイコン未設定'
+		no_icon: 'アイコン未設定',
+		personal_report: '個人のアクティビティレポート。'
 	},
 	en: {
 		dashboard: 'Dashboard',
 		overview: 'Overview',
 		posts: 'Stories',
 		pages: 'Pages',
-		comments: 'Talk',
+		comments: 'Comments',
 		users: 'Users',
 		settings: 'Settings',
 		view_site: 'View Site',
@@ -147,14 +148,14 @@ export const translations = {
 		home_page: 'Home Page',
 		save_changes: 'Save Changes',
 		cancel: 'Cancel',
-		saving: 'Saving...',
+		saving: 'Saving...', 
 		success: 'Success!',
 		error: 'An error occurred',
 		total_access: 'Total Reach',
 		today_hits: 'Today',
 		uniques: 'Uniques',
 		recent_posts: 'Latest Stories',
-		recent_comments: 'Fresh Talk',
+		recent_comments: 'Latest Comments',
 		no_data: 'No data found',
 		system_online: 'System Online',
 		admin_console: 'Admin Console',
@@ -196,7 +197,7 @@ export const translations = {
 		active_users_msg: 'Active users exploring your content right now.',
 		daily_goal: 'Daily Goal',
 		lifetime_access: 'Lifetime access',
-		latest_stories: 'Latest Stories',
+		live_stats: 'Live Stats',
 		view_all: 'View All',
 		manage: 'Manage',
 		role_descriptions: 'Role Descriptions',
@@ -204,6 +205,7 @@ export const translations = {
 		comments_desc: 'Manage feedback from your readers.',
 		users_desc: 'Manage team members and permissions.',
 		by_author: 'By {author}',
+		latest_stories: 'Latest Stories',
 		create_story: 'Create Story',
 		create_page: 'Create Page',
 		create_user: 'Create User',
@@ -235,7 +237,6 @@ export const translations = {
 		username: 'Username',
 		password: 'Password',
 		role: 'Role',
-		// Added
 		connection_details: 'Connection Details',
 		turso_connected: '✅ Remote database (Turso) connected.',
 		local_db_in_use: '🏠 Local database in use.',
@@ -267,7 +268,8 @@ export const translations = {
 		target_backup: 'Target Backup',
 		verification_status: 'Verification Status',
 		verifying: 'Verifying...', 
-		no_icon: 'No Icon'
+		no_icon: 'No Icon',
+		personal_report: 'Your personal activity report.'
 	}
 };
 

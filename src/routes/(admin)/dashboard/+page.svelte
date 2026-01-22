@@ -34,11 +34,11 @@
 				{t(lang, 'overview')}
 			</h2>
 			<div class="flex items-center gap-3">
-				<span class="px-3 py-1 bg-psan-green/10 text-psan-green rounded-full text-[10px] font-black uppercase tracking-widest">Live Stats</span>
+				<span class="px-3 py-1 bg-psan-green/10 text-psan-green rounded-full text-[10px] font-black uppercase tracking-widest">{t(lang, 'live_stats')}</span>
 				<p class="text-xs text-muted font-bold">
 					{data.user?.role === 'author'
-						? 'Your personal activity report.'
-						: 'Real-time performance analytics.'}
+						? t(lang, 'personal_report')
+						: t(lang, 'performance_analytics')}
 				</p>
 			</div>
 		</div>
@@ -61,7 +61,7 @@
 						{stats.totalHits.toLocaleString()}
 					</div>
 					<div class="pt-4">
-						<span class="px-3 py-1 bg-white/20 rounded-full text-[9px] font-black uppercase">Lifetime access</span>
+						<span class="px-3 py-1 bg-white/20 rounded-full text-[9px] font-black uppercase">{t(lang, 'lifetime_access')}</span>
 					</div>
 				</div>
 			</div>
@@ -78,7 +78,7 @@
 				</div>
 				<div class="mt-8 space-y-2">
 					<div class="flex justify-between text-[10px] font-black uppercase tracking-widest text-muted">
-						<span>Daily Goal</span>
+						<span>{t(lang, 'daily_goal')}</span>
 						<span>75%</span>
 					</div>
 					<div class="w-full h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
@@ -98,7 +98,7 @@
 					</div>
 				</div>
 				<p class="mt-8 text-[10px] font-black text-muted uppercase leading-relaxed">
-					Active users exploring your content right now.
+					{t(lang, 'active_users_msg')}
 				</p>
 			</div>
 		</div>
@@ -106,7 +106,7 @@
 		<!-- MODERN ANALYTICS -->
 		<section class="space-y-6">
 			<div class="flex items-center justify-between px-2">
-				<h3 class="font-black text-xs tracking-[0.3em] text-muted uppercase">Traffic Flow</h3>
+				<h3 class="font-black text-xs tracking-[0.3em] text-muted uppercase">{t(lang, 'traffic_flow')}</h3>
 				<div class="flex gap-2">
 					<div class="flex items-center gap-1">
 						<span class="w-2 h-2 rounded-full bg-psan-green"></span>
@@ -156,7 +156,7 @@
 		<section class="space-y-6">
 			<div class="flex items-center justify-between px-2">
 				<h3 class="font-black text-xs tracking-[0.3em] text-muted uppercase">{t(lang, 'recent_posts')}</h3>
-				<a href="/dashboard/posts" class="text-[10px] font-black text-psan-green uppercase hover:underline tracking-widest">View All</a>
+				<a href="/dashboard/posts" class="text-[10px] font-black text-psan-green uppercase hover:underline tracking-widest">{t(lang, 'view_all')}</a>
 			</div>
 			<div class="card-dashboard divide-y border-none shadow-xl shadow-slate-200/40 dark:shadow-none">
 				{#each data.posts.slice(0, 4) as post}
@@ -190,7 +190,7 @@
 		<section class="space-y-6">
 			<div class="flex items-center justify-between px-2">
 				<h3 class="font-black text-xs tracking-[0.3em] text-psan-pink uppercase">{t(lang, 'recent_comments')}</h3>
-				<a href="/dashboard/comments" class="text-[10px] font-black text-psan-pink uppercase hover:underline tracking-widest">Manage</a>
+				<a href="/dashboard/comments" class="text-[10px] font-black text-psan-pink uppercase hover:underline tracking-widest">{t(lang, 'manage')}</a>
 			</div>
 			<div class="card-dashboard divide-y border-none shadow-xl shadow-psan-pink/5 dark:shadow-none">
 				{#each data.comments.slice(0, 4) as comment}
