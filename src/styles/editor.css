@@ -249,3 +249,24 @@ xy-color-picker {
 	display: block;
 	overflow-x: auto;
 }
+
+
+/* ポップオーバー内のアイテムがスクロールしないようにする */
+.ce-popover__items {
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+}
+
+/* ポップオーバー自体のスクロールも防止 */
+.ce-popover {
+    overflow: visible !important;
+    height: auto !important;
+    max-height: none !important;
+}
+
+/* 各項目の折り返し設定（念のため） */
+.ce-popover__item {
+    flex-shrink: 0 !important; /* 項目が潰れないように固定 */
+    white-space: nowrap !important; /* テキストを一行で表示したい場合 */
+}
