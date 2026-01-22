@@ -78,50 +78,29 @@
 					</div>
 				</div>
 
-				<a href="/" data-sveltekit-reload class="flex items-center gap-3 px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-psan-green transition-colors group">
-					<svg class="w-4 h-4 transition-transform group-hover:-translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
-					<span class="text-[10px] font-black uppercase tracking-widest">{t(lang, 'home_page')}</span>
-				</a>
-			</div>
-
-			<nav class="flex-1 px-4 space-y-2 overflow-y-auto custom-scrollbar overflow-x-hidden">
-				{#each menuItems as item}
-					{@const isDisabled = item.adminOnly && (data.user?.role === 'editor' || data.user?.role === 'author')}
-					{@const isActive = page.url.pathname === item.href}
-					<a
-						href={isDisabled ? 'javascript:void(0)' : item.href}
-						class="flex items-center gap-4 px-6 py-4 rounded-[24px] font-black text-xs transition-all duration-300 group
-						{isDisabled
-							? 'opacity-20 grayscale cursor-not-allowed'
-							: isActive
-								? 'bg-psan-green text-white shadow-xl shadow-psan-green/20'
-								: 'text-slate-600 dark:text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800/50 hover:text-psan-green dark:hover:text-white'}"
-					>
-						<svg class="w-5 h-5 transition-transform group-hover:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d={item.icon}/></svg>
-						{item.name}
-						{#if isActive}
-							<div class="ml-auto w-1.5 h-1.5 rounded-full bg-white animate-pulse"></div>
-						{/if}
-					</a>
-				{/each}
-			</nav>
-
-			<div class="p-6 mt-auto">
-				<div class="bg-slate-100 dark:bg-slate-800/50 rounded-3xl p-4 flex items-center gap-4">
-					<div class="w-10 h-10 rounded-xl bg-psan-green/20 flex items-center justify-center text-psan-green font-black">
-						{#if data.user?.avatar_url}
-							<img src={data.user.avatar_url} alt="" class="w-full h-full object-cover rounded-xl" />
-						{:else}
-							{(data.user?.nickname || data.user?.username).substring(0, 1).toUpperCase()}
-						{/if}
-					</div>
-					<div class="min-w-0">
-						<div class="text-[10px] font-black text-main truncate uppercase">{data.user?.nickname || data.user?.username}</div>
-						<div class="text-[8px] font-black text-psan-green uppercase tracking-widest">{data.user?.role}</div>
-					</div>
-				</div>
-			</div>
-		</div>
+				                <a href="/" data-sveltekit-reload class="flex items-center gap-3 px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-400 hover:text-psan-green transition-colors group">
+				                    <svg class="w-4 h-4 transition-transform group-hover:-translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+				                    <span class="text-[10px] font-black uppercase tracking-widest">{t(lang, 'home_page')}</span>
+				                </a>
+				            </div>
+				
+				            <nav class="flex-1 px-4 space-y-2 overflow-y-auto custom-scrollbar overflow-x-hidden">
+				...
+				            <div class="p-6 mt-auto">
+				                <div class="bg-slate-100 dark:bg-slate-800/50 rounded-3xl p-4 flex items-center gap-4">
+				                    <div class="w-10 h-10 rounded-xl bg-psan-green/20 flex items-center justify-center text-psan-green font-black">
+				                        {#if data.user?.avatar_url}
+				                            <img src={data.user.avatar_url} alt="" class="w-full h-full object-cover rounded-xl" />
+				                        {:else}
+				                            {(data.user?.nickname || data.user?.username).substring(0, 1).toUpperCase()}
+				                        {/if}
+				                    </div>
+				                    <div class="min-w-0">
+				                        <div class="text-[10px] font-black text-slate-800 dark:text-slate-200 truncate uppercase">{data.user?.nickname || data.user?.username}</div>
+				                        <div class="text-[8px] font-black text-psan-green uppercase tracking-widest">{data.user?.role}</div>
+				                    </div>
+				                </div>
+				            </div>		</div>
 	</aside>
 
 	<!-- MAIN AREA -->
