@@ -76,9 +76,9 @@
 									<span class="text-psan-green">ARTICLE</span>
 								{/if}
 								<span class="w-1.5 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full"></span>
-								<div class="flex items-center gap-1.5 px-2.5 py-1 bg-slate-100 dark:bg-slate-800 rounded-full border border-slate-200 dark:border-slate-700 text-main transition-colors group-hover:border-psan-green group-hover:bg-psan-green/5">
-									<svg class="w-3 h-3 text-psan-green" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
-									<span class="text-[9px] font-black">{t(lang, 'by_author').replace('{author}', post.author_name)}</span>
+								<div class="flex items-center gap-1.5 px-2.5 py-1 bg-psan-pink/[0.03] dark:bg-psan-pink/10 rounded-full border border-psan-pink/20 dark:border-psan-pink/30 text-psan-pink transition-all duration-300 hover:-translate-y-0.5 hover:shadow-sm hover:shadow-psan-pink/20 hover:bg-psan-pink/5">
+									<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+									<span class="text-[9px] font-black italic tracking-tight">{t(lang, 'by_author').replace('{author}', post.author_name)}</span>
 								</div>
 							</div>
 							<h3
