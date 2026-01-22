@@ -1,10 +1,15 @@
 import db from '$lib/server/db';
-import { error } from '@sveltejs/kit';
+import { error, redirect } from '@sveltejs/kit';
 import { getSetting } from '$lib/server/settings';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ params, locals }) => {
 	const { slug } = params;
+
+	// homeへの直接アクセスはルートへリダイレクト
+	if (slug === 'home') {
+		throw redirect(301, '/');
+	}
 
 	// 静的アセットへのリクエストを除外
 	if (slug.includes('.') || slug.includes('_') || slug === 'favicon.svg' || slug === 'robots.txt') {
@@ -23,7 +28,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 				updated_at: page.updated_at
 			},
 			pageTitle: page.title,
-			comments: [], // 固定ページにはコメント機能なし（必要なら後で実装）
+			comments: [], // 固定ページにはコメント機能なし
 			user: locals.user,
 			settings: {
 				allow_comments: false,
