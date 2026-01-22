@@ -95,14 +95,32 @@
 					list: { class: List, inlineToolbar: true },
 					quote: { class: Quote, inlineToolbar: true },
 					code: Code,
-					marker: { class: ColorPlugin, inlineToolbar: true, config: { type: 'marker', customPicker: true } },
+					marker: { 
+						class: ColorPlugin, 
+						inlineToolbar: true, 
+						config: { 
+							type: 'marker', 
+							customPicker: true,
+							colorCollections: ['#FFCC00', '#FF9900', '#FF6666', '#CC99FF', '#99CCFF', '#99FFCC', '#00CC99', '#CCCCCC'],
+							defaultColor: '#FFCC00',
+						} 
+					},
 					table: { class: Table, inlineToolbar: true },
 					checklist: Checklist,
 					warning: Warning,
 					delimiter: Delimiter,
 					inlineCode: InlineCode,
 					underline: Underline,
-					color: { class: ColorPlugin, inlineToolbar: true, config: { type: 'text', customPicker: true } },
+					color: { 
+						class: ColorPlugin, 
+						inlineToolbar: true, 
+						config: { 
+							type: 'text', 
+							customPicker: true,
+							colorCollections: ['#000000', '#FF0000', '#0000FF', '#00CC99', '#FF00FF', '#0099FF', '#666666', '#FFFFFF'],
+							defaultColor: '#FF0000',
+						} 
+					},
 					image: { class: Image, config: { endpoints: { byFile: '/api/upload', byUrl: '/api/upload/fetch' }, field: 'image', types: 'image/*' } },
 					linkTool: { class: LinkTool, config: { endpoint: '/api/link' } },
 					raw: { class: RawTool, inlineToolbar: true },
