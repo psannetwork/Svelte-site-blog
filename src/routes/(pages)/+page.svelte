@@ -41,7 +41,7 @@
 	<div class="max-w-7xl mx-auto px-4">
 		<div class="flex items-end justify-between mb-16 px-4">
 			<div>
-				<h2 class="text-3xl font-black uppercase tracking-tighter">LATEST STORIES</h2>
+				<h2 class="text-3xl font-black uppercase tracking-tighter">{t(lang, 'latest_stories')}</h2>
 				<div class="h-1.5 w-12 bg-psan-pink mt-2"></div>
 			</div>
 		</div>
@@ -49,10 +49,11 @@
 		<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
 			{#each data.posts as post}
 				<article class="group px-4">
-					                    <a href="/{post.id}" class="block">
-					                        <div
-					                            class="w-full aspect-video rounded-3xl bg-psan-green/10 dark:bg-slate-800 mb-6 overflow-hidden flex items-center justify-center relative group-hover:scale-[1.02] transition-transform duration-500"
-					                        >							{#if post.thumbnail_url}
+					<a href="/{post.id}" class="block">
+						<div
+							class="w-full aspect-video rounded-3xl bg-psan-green/10 dark:bg-slate-800 mb-6 overflow-hidden flex items-center justify-center relative group-hover:scale-[1.02] transition-transform duration-500"
+						>
+							{#if post.thumbnail_url}
 								<img src={post.thumbnail_url} alt="" class="w-full h-full object-cover" />
 							{:else}
 								<span
@@ -74,6 +75,8 @@
 								{:else}
 									<span class="text-psan-green">ARTICLE</span>
 								{/if}
+								<span class="w-1 h-1 bg-psan-green rounded-full"></span>
+								<span class="text-main">{t(lang, 'by_author').replace('{author}', post.author_name)}</span>
 							</div>
 							<h3
 								class="text-2xl font-black leading-tight group-hover:text-psan-green transition-colors"
@@ -90,7 +93,7 @@
 				<div
 					class="col-span-full py-32 text-center border-2 border-dashed border-[--border-color] rounded-[40px]"
 				>
-					<p class="text-muted font-bold tracking-tighter uppercase">No stories published yet.</p>
+					<p class="text-muted font-bold tracking-tighter uppercase">{t(lang, 'no_data')}</p>
 				</div>
 			{/each}
 		</div>

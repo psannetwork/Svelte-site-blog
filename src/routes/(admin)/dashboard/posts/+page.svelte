@@ -70,7 +70,7 @@
 						>
 							{post.title}
 						</h3>
-						<p class="text-[10px] text-muted font-black uppercase mt-1 tracking-widest">By {post.author_name}</p>
+						<p class="text-[10px] text-muted font-black uppercase mt-1 tracking-widest">{t(lang, 'by_author').replace('{author}', post.author_name)}</p>
 					</div>
 				</div>
 
