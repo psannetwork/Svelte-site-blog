@@ -174,7 +174,13 @@
 							</div>
 							<div class="min-w-0">
 								<span class="block font-black text-base text-main truncate mb-1 group-hover:text-psan-green transition-colors">{post.title}</span>
-								<span class="text-[10px] font-black text-muted uppercase tracking-widest">{new Date(post.created_at).toLocaleDateString()}</span>
+								<div class="flex items-center gap-3">
+									<span class="text-[10px] font-black text-muted uppercase tracking-widest">{new Date(post.created_at).toLocaleDateString()}</span>
+									<div class="flex items-center gap-1.5 px-2 py-0.5 bg-psan-pink/10 dark:bg-psan-pink/20 rounded-full border border-psan-pink/20 dark:border-psan-pink/40 text-psan-pink transition-all duration-500 hover:-translate-y-1 hover:shadow-lg hover:shadow-psan-pink/20">
+										<svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+										<span class="text-[8px] font-black italic uppercase tracking-tighter">{t(lang, 'by_author').replace('{author}', post.author_name)}</span>
+									</div>
+								</div>
 							</div>
 						</div>
 						<svg class="w-5 h-5 text-slate-300 group-hover:text-psan-green group-hover:translate-x-2 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M9 5l7 7-7 7"/></svg>
