@@ -51,6 +51,53 @@ h6.ce-header { font-size: 1.125rem; font-weight: 900; line-height: 1.5; }
 	box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5) !important;
 }
 
+/* Popover Sizing & Item Adjustments */
+.ce-popover {
+	max-height: 600px !important; 
+	width: 300px !important; 
+	border-radius: 24px !important;
+	padding: 12px !important;
+	overflow-y: auto !important;
+}
+
+.ce-popover__items {
+	padding: 0 !important;
+}
+
+.ce-popover__item, 
+.ce-popover-item {
+	padding: 14px 18px !important; 
+	margin-bottom: 4px !important;
+	border-radius: 16px !important;
+	display: flex !important;
+	align-items: center !important;
+}
+
+.ce-popover__item-label, 
+.ce-popover-item__title {
+	font-size: 15px !important;
+	font-weight: 800 !important;
+	letter-spacing: -0.01em !important;
+}
+
+.ce-popover__item-icon, 
+.ce-popover-item__icon {
+	width: 32px !important;
+	height: 32px !important;
+	margin-right: 14px !important;
+	background: rgba(0, 0, 0, 0.05) !important;
+	border-radius: 10px !important;
+	display: flex !important;
+	align-items: center !important;
+	justify-content: center !important;
+	flex-shrink: 0 !important;
+}
+
+.dark .ce-popover__item-icon, 
+.dark .ce-popover-item__icon {
+	background: rgba(255, 255, 255, 0.05) !important;
+}
+
 .dark .ce-popover__item-label, 
 .dark .ce-popover__item-secondary-label,
 .dark .ce-popover-item__title,

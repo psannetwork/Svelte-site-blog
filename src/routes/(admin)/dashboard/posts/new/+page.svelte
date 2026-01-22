@@ -110,15 +110,23 @@
 				parsedData.blocks.push({ type: 'paragraph', data: { text: '' } });
 			}
 
-			try {
-				editor = new EditorJS({
-					holder: 'editorjs',
-					inlineToolbar: true,
-					i18n: data?.settings?.site_language === 'ja' ? editorI18n : undefined,
-					tools: {
-						style: { class: Style },
-						paragraph: { class: Paragraph, inlineToolbar: true },
-						header: { class: Header, inlineToolbar: true },
+							try {
+
+							editor = new EditorJS({
+
+								holder: 'editorjs',
+
+								inlineToolbar: true,
+
+								i18n: data?.settings?.site_language === 'ja' ? editorI18n : undefined,
+
+								tools: {
+
+									paragraph: { class: Paragraph, inlineToolbar: true },
+
+									header: { class: Header, inlineToolbar: true },
+
+			
 						list: { class: List, inlineToolbar: true },
 						quote: { class: Quote, inlineToolbar: true },
 						code: Code,
