@@ -102,7 +102,10 @@
 		{#if data.latestComments && data.latestComments.length > 0}
 			<div class="px-8 mb-6 mt-10">
 				<div class="flex items-center justify-between mb-4">
-					<h3 class="text-[10px] font-black text-muted uppercase tracking-[0.2em]">{t(lang, 'latest_talk')}</h3>
+					<div class="flex items-center gap-2">
+						<svg class="w-3.5 h-3.5 text-psan-pink" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M8 10h.01M12 10h.01M16 10h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+						<h3 class="text-[10px] font-black text-muted uppercase tracking-[0.2em]">{t(lang, 'latest_talk')}</h3>
+					</div>
 					<div class="w-1 h-1 rounded-full bg-psan-pink animate-pulse"></div>
 				</div>
 				<div class="space-y-4">
