@@ -45,9 +45,18 @@
 }
 
 @utility card-stats-vibrant {
-	@apply p-8 rounded-[40px] text-white shadow-2xl relative overflow-hidden transition-all hover:scale-[1.02] active:scale-[0.98];
+	@apply relative overflow-hidden p-10 rounded-[48px] text-white shadow-2xl transition-all duration-500 hover:scale-[1.02] hover:shadow-psan-green/20;
+}
+
+@utility animate-soft-float {
+	animation: soft-float 2s ease-in-out infinite;
 }
 
 @utility btn-psan-danger {
 	@apply px-8 py-3 rounded-2xl bg-red-600 text-white font-black hover:bg-red-700 active:scale-[0.98] transition-all shadow-lg shadow-red-600/20 flex items-center justify-center gap-2;
+}
+
+@keyframes soft-float {
+	0%, 100% { transform: translateY(-0.5rem) scale(1.1); }
+	50% { transform: translateY(-0.7rem) scale(1.1); }
 }

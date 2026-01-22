@@ -111,11 +111,13 @@
 				<div class="space-y-4">
 					{#each data.latestComments as comment}
 						<div class="group/talk cursor-default">
-							<div class="flex items-center gap-2 mb-1">
-								<span class="text-[9px] font-black text-main uppercase truncate max-w-[100px]">{comment.author_name}</span>
+							<div class="flex items-center gap-2 mb-1.5">
+								<div class="px-2 py-0.5 bg-psan-pink/10 rounded-full border border-psan-pink/20 text-psan-pink text-[8px] font-black italic transition-all duration-500 hover:animate-soft-float hover:bg-psan-pink hover:text-white">
+									{t(lang, 'by_author').replace('{author}', comment.author_name)}
+								</div>
 								<span class="text-[8px] font-bold text-muted opacity-50">{new Date(comment.created_at).toLocaleDateString()}</span>
 							</div>
-							<p class="text-[10px] font-bold text-muted line-clamp-1 leading-tight group-hover/talk:text-psan-pink transition-colors">
+							<p class="text-[10px] font-bold text-muted line-clamp-1 leading-tight group-hover/talk:text-psan-pink transition-colors pl-1">
 								{comment.content}
 							</p>
 						</div>
