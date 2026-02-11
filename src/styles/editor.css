@@ -270,3 +270,13 @@ xy-color-picker {
     flex-shrink: 0 !important; /* 項目が潰れないように固定 */
     white-space: nowrap !important; /* テキストを一行で表示したい場合 */
 }
+
+/* ネストされたポップオーバーをコンテナの後ろに配置 */
+.ce-popover.ce-popover--nested.ce-popover--opened.ce-popover--nested-level-1 {
+    z-index: -1 !important;
+}
+
+.ce-popover__container {
+    position: relative;
+    z-index: 1;
+}

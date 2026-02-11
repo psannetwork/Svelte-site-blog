@@ -41,7 +41,7 @@ export const GET: RequestHandler = async ({ url, locals }) => {
 				
 				tempDb.close();
 				// 最小限必要なテーブル（user, post等）が含まれているかもチェックするとより安全
-				const hasEssentialTables = ['user', 'post', 'settings'].every(t => details.includes(t));
+				const hasEssentialTables = ['user', 'post', 'site_settings'].every(t => details.includes(t));
 				
 				return json({ 
 					success: true, 

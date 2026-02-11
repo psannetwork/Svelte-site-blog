@@ -532,7 +532,7 @@
 							};
 						}} class="flex-1">
 							<input type="hidden" name="filename" value={selectedBackup?.name} />
-							<button type="submit" class="w-full btn-psan-primary py-4 text-xs font-black uppercase tracking-widest" disabled={isVerifying || !verificationResult?.success}>{t(lang, 'create_now')}</button>
+							<button type="submit" class="w-full btn-psan-primary py-4 text-xs font-black uppercase tracking-widest" disabled={isVerifying || !verificationResult?.success}>{t(lang, 'restore_now')}</button>
 						</form>
 					</div>
 				</div>

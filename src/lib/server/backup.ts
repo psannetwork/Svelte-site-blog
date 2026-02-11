@@ -18,28 +18,43 @@ export function isValidSqlite(buffer: Buffer): boolean {
  */
 export function verifyDatabase(path: string): { success: boolean; error?: string } {
 	try {
+		if (!existsSync(path)) {
+			return { success: false, error: 'ファイルが存在しません。' };
+		}
+
+		const stat = statSync(path);
+		if (stat.size === 0) {
+			return { success: false, error: 'ファイルが空です。' };
+		}
+
 		// 一時的なコネクションで開いてみる
 		const tempDb = new Database(path);
 		
-		// 必須テーブルの存在確認
-		const requiredTables = ['user', 'post', 'site_settings', 'comment'];
-		const tables = tempDb.prepare("SELECT name FROM sqlite_master WHERE type='table'").all() as any[];
-		const tableNames = tables.map(t => t.name);
-		
-		const missingTables = requiredTables.filter(name => !tableNames.includes(name));
-		
-		tempDb.close();
+		try {
+			// 必須テーブルの存在確認
+			const requiredTables = ['user', 'post', 'site_settings', 'comment'];
+			const tables = tempDb.prepare("SELECT name FROM sqlite_master WHERE type='table'").all() as any[];
+			const tableNames = tables.map(t => t.name || t.NAME || (typeof t === 'string' ? t : ''));
+			
+			const missingTables = requiredTables.filter(name => !tableNames.includes(name));
+			
+			tempDb.close();
 
-		if (missingTables.length > 0) {
-			return { 
-				success: false, 
-				error: `不完全なデータベースです。不足テーブル: ${missingTables.join(', ')}` 
-			};
+			if (missingTables.length > 0) {
+				return { 
+					success: false, 
+					error: `不完全なデータベースです。不足テーブル: ${missingTables.join(', ')}` 
+				};
+			}
+
+			return { success: true };
+		} catch (dbError) {
+			try { tempDb.close(); } catch (e) {}
+			throw dbError;
 		}
-
-		return { success: true };
 	} catch (e) {
-		return { success: false, error: 'データベースファイルの検証に失敗しました。' };
+		console.error('[VERIFY ERROR]', e);
+		return { success: false, error: 'データベースファイルの検証に失敗しました。ファイルが壊れている可能性があります。' };
 	}
 }
 
