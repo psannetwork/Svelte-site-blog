@@ -116,12 +116,11 @@
 					inlineToolbar: true,
 					i18n: data?.settings?.site_language === 'ja' ? editorI18n : undefined,
 					tools: {
-						style: { class: Style },
 						paragraph: { class: Paragraph, inlineToolbar: true },
 						header: { class: Header, inlineToolbar: true },
 						list: { class: List, inlineToolbar: true },
 						quote: { class: Quote, inlineToolbar: true },
-						code: Code,
+						code: { class: Code },
 						raw: { class: RawTool, inlineToolbar: true },
 						marker: { 
 							class: ColorPlugin, 
@@ -136,10 +135,10 @@
 						},
 						table: { class: Table, inlineToolbar: true },
 						checklist: { class: Checklist, inlineToolbar: true },
-						warning: Warning,
-						delimiter: Delimiter,
-						inlineCode: InlineCode,
-						underline: Underline,
+						warning: { class: Warning },
+						delimiter: { class: Delimiter },
+						inlineCode: { class: InlineCode },
+						underline: { class: Underline },
 						color: { 
 							class: ColorPlugin, 
 							inlineToolbar: true, 
@@ -158,11 +157,17 @@
 					},
 					tunes: ['anyTuneName'],
 					onReady: () => {
-						new Undo({ editor });
-						new DragDrop(editor);
+						// editorが初期化されていることを確認
+						if (editor) {
+							new Undo({ editor });
+							new DragDrop(editor);
+						}
 					},
 					onChange: () => {
-						debouncedAutosave();
+						// editorが初期化されていることを確認
+						if (editor) {
+							debouncedAutosave();
+						}
 					},
 					data: parsedData,
 					minHeight: 400,

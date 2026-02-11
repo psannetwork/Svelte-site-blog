@@ -128,11 +128,17 @@
 						image: { class: Image, config: { endpoints: { byFile: '/api/upload' } } }
 					},
 					onReady: () => {
-						new Undo({ editor });
-						new DragDrop(editor);
+						// editorが初期化されていることを確認
+						if (editor) {
+							new Undo({ editor });
+							new DragDrop(editor);
+						}
 					},
 					onChange: () => {
-						debouncedAutosave();
+						// editorが初期化されていることを確認
+						if (editor) {
+							debouncedAutosave();
+						}
 					},
 					data: parsedData,
 					placeholder: 'Build your page content...',

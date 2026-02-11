@@ -68,6 +68,7 @@
 		const LinkTool = (await import('@editorjs/link')).default;
 		const RawTool = (await import('@editorjs/raw')).default;
 		const DragDrop = (await import('editorjs-drag-drop')).default;
+		const Paragraph = (await import('@editorjs/paragraph')).default;
 
 		let parsedData: { blocks: any[] } = { blocks: [] };
 		try {
@@ -91,10 +92,11 @@
 				inlineToolbar: true,
 				i18n: settings?.site_language === 'ja' ? editorI18n : undefined,
 				tools: {
+					paragraph: { class: Paragraph, inlineToolbar: true },
 					header: { class: Header, inlineToolbar: true },
 					list: { class: List, inlineToolbar: true },
 					quote: { class: Quote, inlineToolbar: true },
-					code: Code,
+					code: { class: Code },
 					marker: { 
 						class: ColorPlugin, 
 						inlineToolbar: true, 
@@ -107,11 +109,11 @@
 						} 
 					},
 					table: { class: Table, inlineToolbar: true },
-					checklist: Checklist,
-					warning: Warning,
-					delimiter: Delimiter,
-					inlineCode: InlineCode,
-					underline: Underline,
+					checklist: { class: Checklist, inlineToolbar: true },
+					warning: { class: Warning },
+					delimiter: { class: Delimiter },
+					inlineCode: { class: InlineCode },
+					underline: { class: Underline },
 					color: { 
 						class: ColorPlugin, 
 						inlineToolbar: true, 
@@ -131,11 +133,17 @@
 				},
 				tunes: ['anyTuneName'],
 				onReady: () => {
-					new Undo({ editor });
-					new DragDrop(editor);
+					// editorが初期化されていることを確認
+					if (editor) {
+						new Undo({ editor });
+						new DragDrop(editor);
+					}
 				},
 				onChange: () => {
-					debouncedAutosave();
+					// editorが初期化されていることを確認
+					if (editor) {
+						debouncedAutosave();
+					}
 				},
 				data: parsedData,
 				minHeight: 400,

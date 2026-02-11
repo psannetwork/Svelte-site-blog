@@ -1,7 +1,7 @@
 import db from '$lib/server/db';
-import { error, redirect } from '@sveltejs/kit';
+import { error, redirect, fail } from '@sveltejs/kit';
 import { getSetting } from '$lib/server/settings';
-import type { PageServerLoad } from './$types';
+import type { PageServerLoad, Actions } from './$types';
 
 export const load: PageServerLoad = async ({ params, locals }) => {
 	const { slug } = params;
@@ -69,6 +69,218 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		};
 	}
 
-	// どちらにも見つからない場合は404
-	throw error(404, 'Page Not Found');
-};
+		// どちらにも見つからない場合は404
+
+		throw error(404, 'Page Not Found');
+
+	};
+
+	
+
+	export const actions: Actions = {
+
+	
+
+		addComment: async ({ request, params, locals }) => {
+
+	
+
+			const allowComments = getSetting('allow_comments', 'true') === 'true';
+
+	
+
+			if (!allowComments) return fail(403, { message: 'コメントは許可されていません。' });
+
+	
+
+	
+
+	
+
+			const formData = await request.formData();
+
+	
+
+			const content = formData.get('content') as string;
+
+	
+
+			const parent_id = (formData.get('parentId') || formData.get('parent_id')) as string | null;
+
+	
+
+			const { slug } = params;
+
+	
+
+	
+
+	
+
+			if (!content || content.trim().length === 0) {
+
+	
+
+				return fail(400, { message: 'コメント内容を入力してください。' });
+
+	
+
+			}
+
+	
+
+	
+
+	
+
+			const userId = locals.user?.id || null;
+
+	
+
+			const allowAnonymous = getSetting('allow_anonymous_comments', 'false') === 'true';
+
+	
+
+	
+
+	
+
+			if (!userId && !allowAnonymous) {
+
+	
+
+				return fail(403, { message: 'コメントを投稿するにはログインが必要です。' });
+
+	
+
+			}
+
+	
+
+	
+
+	
+
+			try {
+
+	
+
+				const id = crypto.randomUUID();
+
+	
+
+				db.prepare(
+
+	
+
+					'INSERT INTO comment (id, post_id, parent_id, author_id, content, created_at) VALUES (?, ?, ?, ?, ?, ?)'
+
+	
+
+				).run(id, slug, parent_id, userId, content, Date.now());
+
+	
+
+	
+
+	
+
+				return { success: true };
+
+	
+
+			} catch (err) {
+
+	
+
+				console.error('[COMMENT ERROR]', err);
+
+	
+
+				return fail(500, { message: 'エラーが発生しました。' });
+
+	
+
+			}
+
+	
+
+		},
+
+	
+
+		deleteComment: async ({ request, locals }) => {
+
+	
+
+			if (!locals.user || !['admin', 'editor'].includes(locals.user.role)) {
+
+	
+
+				return fail(403, { message: '権限がありません。' });
+
+	
+
+			}
+
+	
+
+	
+
+	
+
+			const formData = await request.formData();
+
+	
+
+			const id = formData.get('id') as string;
+
+	
+
+	
+
+	
+
+			if (!id) return fail(400);
+
+	
+
+	
+
+	
+
+			try {
+
+	
+
+				db.prepare('DELETE FROM comment WHERE id = ?').run(id);
+
+	
+
+				return { success: true };
+
+	
+
+			} catch (err) {
+
+	
+
+				return fail(500);
+
+	
+
+			}
+
+	
+
+		}
+
+	
+
+	};
+
+	
+
+	
+
+	

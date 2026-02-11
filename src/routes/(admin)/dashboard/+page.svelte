@@ -11,15 +11,17 @@
 	const maxHits = $derived(Math.max(...weekly.map((d) => d.hits), 10));
 
 	const points = $derived(
-		weekly.map((day, i) => {
-			const x = (i / (weekly.length - 1)) * chartWidth;
-			const y = chartHeight - (day.hits / maxHits) * chartHeight;
-			return { x, y, hits: day.hits, date: day.date };
-		})
+		weekly.length > 1 
+			? weekly.map((day, i) => {
+				const x = (i / (weekly.length - 1)) * chartWidth;
+				const y = chartHeight - (day.hits / maxHits) * chartHeight;
+				return { x, y, hits: day.hits, date: day.date };
+			})
+			: weekly.map((day) => ({ x: chartWidth / 2, y: chartHeight / 2, hits: day.hits, date: day.date }))
 	);
 
-	const linePath = $derived(points.map((p) => `${p.x},${p.y}`).join(' '));
-	const areaPath = $derived(`0,${chartHeight} ${linePath} ${chartWidth},${chartHeight}`);
+	const linePath = $derived(points.length > 0 ? points.map((p) => `${p.x},${p.y}`).join(' ') : '0,0');
+	const areaPath = $derived(points.length > 0 ? `0,${chartHeight} ${linePath} ${chartWidth},${chartHeight}` : '0,0');
 </script>
 
 <svelte:head>
