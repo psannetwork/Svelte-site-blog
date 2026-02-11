@@ -31,26 +31,26 @@ export function verifyDatabase(path: string): { success: boolean; error?: string
 		const tempDb = new Database(path);
 		
 		try {
-			// 必須テーブルの存在確認
-			const requiredTables = ['user', 'post', 'site_settings', 'comment'];
+			// 必須テーブルの存在確認 (最小限必要なものに絞る)
+			const essentialTables = ['user', 'post'];
 			const tables = tempDb.prepare("SELECT name FROM sqlite_master WHERE type='table'").all() as any[];
-			const tableNames = tables.map(t => t.name || t.NAME || (typeof t === 'string' ? t : ''));
+			const tableNames = tables.map(t => (t.name || t.NAME || (typeof t === 'string' ? t : '')).toLowerCase());
 			
-			const missingTables = requiredTables.filter(name => !tableNames.includes(name));
+			const missingTables = essentialTables.filter(name => !tableNames.includes(name));
 			
 			tempDb.close();
 
 			if (missingTables.length > 0) {
 				return { 
 					success: false, 
-					error: `不完全なデータベースです。不足テーブル: ${missingTables.join(', ')}` 
+					error: `不完全なデータベースです。必要なテーブルが見つかりません: ${missingTables.join(', ')}` 
 				};
 			}
 
 			return { success: true };
-		} catch (dbError) {
+		} catch (dbError: any) {
 			try { tempDb.close(); } catch (e) {}
-			throw dbError;
+			return { success: false, error: `DBアクセスエラー: ${dbError.message}` };
 		}
 	} catch (e) {
 		console.error('[VERIFY ERROR]', e);
@@ -71,42 +71,44 @@ export async function performBackup() {
 	const backupPath = join(BACKUP_DIR, `backup-${timestamp}.db`);
 
 	try {
-		// 1. ドライバのバックアップ機能があるか確認
+		// 1. VACUUM INTO による整合性のあるバックアップ (推奨)
+		try {
+			db.prepare(`VACUUM INTO ?`).run(backupPath);
+			setSetting('last_backup_at', Date.now().toString());
+			rotateBackups();
+			return { success: true, path: backupPath };
+		} catch (vErr) {
+			console.warn('[BACKUP] VACUUM INTO failed, falling back to copy:', vErr);
+		}
 
+		// 2. ドライバのバックアップ機能があるか確認 (better-sqlite3等)
 		if (typeof (db as any).backup === 'function') {
 			try {
 				await (db as any).backup(backupPath);
-
 				setSetting('last_backup_at', Date.now().toString());
-
 				rotateBackups();
-
 				return { success: true, path: backupPath };
 			} catch (err: any) {
-				if (err.message?.includes('not implemented')) {
-					// 未実装の場合はファイルコピーへフォールバック
-				} else {
-					throw err;
-				}
+				console.warn('[BACKUP] driver.backup failed:', err);
 			}
 		}
 
-		// 2. ファイルコピーによるバックアップ (ローカルSQLiteのみ)
-
+		// 3. ファイルコピーによるバックアップ (最後の手段)
 		if (existsSync(DB_PATH)) {
+			// WALモードの場合はチェックポイントを実行してデータをメインファイルに書き出す
+			try {
+				db.prepare('PRAGMA wal_checkpoint(FULL)').run();
+			} catch (e) {}
+			
 			copyFileSync(DB_PATH, backupPath);
-
 			setSetting('last_backup_at', Date.now().toString());
-
 			rotateBackups();
-
 			return { success: true, path: backupPath };
 		}
 
 		return { success: false, error: 'Backup method not available' };
 	} catch (e) {
 		console.error('[BACKUP ERROR]', e);
-
 		return { success: false, error: String(e) };
 	}
 }

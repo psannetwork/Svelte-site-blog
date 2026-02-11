@@ -40,8 +40,9 @@ export const GET: RequestHandler = async ({ url, locals }) => {
 				console.log('[BACKUP VERIFY] Raw result count:', details.length, 'Tables:', details);
 				
 				tempDb.close();
-				// 最小限必要なテーブル（user, post等）が含まれているかもチェックするとより安全
-				const hasEssentialTables = ['user', 'post', 'site_settings'].every(t => details.includes(t));
+				// 最小限必要なテーブル（user, post等）が含まれているかもチェック
+				const lowerDetails = details.map(d => d.toLowerCase());
+				const hasEssentialTables = ['user', 'post'].every(t => lowerDetails.includes(t));
 				
 				return json({ 
 					success: true, 

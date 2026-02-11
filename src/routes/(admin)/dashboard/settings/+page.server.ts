@@ -87,8 +87,9 @@ export const actions: Actions = {
 		}
 	},
 	createBackup: async () => {
-		performBackup();
-		return { success: true };
+		const res = await performBackup();
+		if (res.success) return { success: true };
+		return fail(500, { message: res.error || 'Backup failed' });
 	},
 	uploadBackup: async ({ request }) => {
 		const formData = await request.formData();

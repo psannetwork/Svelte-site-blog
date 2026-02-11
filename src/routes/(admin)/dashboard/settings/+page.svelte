@@ -498,7 +498,12 @@
 								{:else if verificationResult?.success}
 									<span class="text-[10px] font-black text-psan-green uppercase tracking-widest">{t(lang, 'verification_success')}</span>
 								{:else}
-									<span class="text-[10px] font-black text-psan-pink uppercase tracking-widest">{t(lang, 'verification_failed')}</span>
+									<div class="flex flex-col items-end">
+										<span class="text-[10px] font-black text-psan-pink uppercase tracking-widest">{t(lang, 'verification_failed')}</span>
+										{#if verificationResult?.error}
+											<span class="text-[9px] font-bold text-psan-pink/70 mt-1">{verificationResult.error}</span>
+										{/if}
+									</div>
 								{/if}
 							</div>
 							<div class="p-6 bg-slate-50 dark:bg-slate-800 rounded-3xl space-y-3">
