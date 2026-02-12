@@ -12,15 +12,9 @@ const config = {
 			precompress: true
 		}),
 		csrf: {
-			// プレビュー環境やプロキシ環境でのPOSTエラーを防ぐため、既知のオリジンを許可
-			checkOrigin: true,
-			trustedOrigins: [
-				'http://localhost:5173',
-				'http://localhost:5174',
-				'http://localhost:5892',
-				'https://blogtest.psannetwork.net',
-				'https://blog.psannetwork.net'
-			]
+			// Cloudflare Tunnelやプロキシ環境でのPOSTエラーを確実に回避するため、
+			// 非推奨ですがオリジンチェックを無効化します。
+			checkOrigin: false
 		}
 	}
 };
