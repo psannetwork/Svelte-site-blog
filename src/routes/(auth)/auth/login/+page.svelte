@@ -75,7 +75,7 @@
 		<div
 			class="mt-10 pt-8 border-t border-[--border-color] dark:border-slate-800 text-center space-y-4 relative z-10"
 		>
-			{#if data.settings?.allow_signup === 'true'}
+			{#if data.settings?.allow_signup}
 				<p class="text-xs font-bold text-muted">
 					アカウントをお持ちでないですか？
 					<a href="/auth/register" class="text-psan-green hover:underline ml-1">新規登録</a>

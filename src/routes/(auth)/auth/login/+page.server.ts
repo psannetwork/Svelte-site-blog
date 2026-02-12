@@ -8,6 +8,7 @@ import type { Actions, PageServerLoad } from './$types';
 export const load: PageServerLoad = async () => {
 	return {
 		settings: {
+			allow_signup: getSetting('allow_signup', 'true') === 'true',
 			enable_turnstile: getSetting('enable_turnstile') === 'true',
 			turnstile_site_key: getSetting('turnstile_site_key')
 		}

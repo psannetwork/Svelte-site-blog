@@ -131,7 +131,7 @@
 						class="text-xs font-black opacity-70 hover:opacity-100 uppercase tracking-widest"
 						>Login</a
 					>
-					{#if data.settings?.allow_signup === 'true'}
+					{#if String(data.settings?.allow_signup) === 'true'}
 						<a href="/auth/register" class="btn-psan-primary py-2 px-6 text-[10px]">SIGN UP</a>
 					{/if}
 				{/if}
@@ -165,7 +165,9 @@
 				</form>
 			{:else}
 				<a href="/auth/login" class="block font-black">LOGIN</a>
-				<a href="/auth/register" class="block font-black text-psan-green">SIGN UP</a>
+				{#if String(data.settings?.allow_signup) === 'true'}
+					<a href="/auth/register" class="block font-black text-psan-green">SIGN UP</a>
+				{/if}
 			{/if}
 		</div>
 	{/if}

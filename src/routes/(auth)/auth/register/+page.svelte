@@ -24,7 +24,7 @@
 			<p class="mt-2 text-sm font-medium text-muted">新しいアカウントを作成</p>
 		</div>
 
-		{#if data.settings?.allow_signup === 'true'}
+		{#if data.settings?.allow_signup}
 			<form method="POST" use:enhance class="space-y-6 relative z-10">
 				<div class="space-y-4">
 					<div class="space-y-2">
