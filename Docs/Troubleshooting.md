@@ -103,23 +103,45 @@ export default defineConfig({
 
 ### 原因: CSRF保護によるブロック
 
-SvelteKit のセキュリティ機能（CSRF保護）が、リクエストの送信元が正しくない（あるいは不明）と判断して POST 送信をブロックしています。主にリバースプロキシ（Cloudflare等）を通した際に発生します。
+SvelteKit のセキュリティ機能（CSRF保護）が、リクエストの送信元が正しくない（あるいは不明）と判断して POST 送信をブロックしています。主に Cloudflare Tunnel などのリバースプロキシを通した際や、プレビューモード実行時に発生します。
 
 ### 解決策:
 
 #### 方法1: `ORIGIN` 環境変数を設定する（最推奨）
 
-本番環境（Render.com 等）の環境変数に `ORIGIN` を追加します。これが最も安全で正しい解決策です。
+実行環境（Render.com やサーバーの環境変数）に `ORIGIN` を追加します。これが最も安全で正しい解決策です。
 
 - **Key**: `ORIGIN`
 - **Value**: `https://your-domain.com` (自分のサイトのURL)
 
-#### 方法2: `svelte.config.js` でチェックを無効にする
+#### 方法2: `svelte.config.js` で特定のオリジンを許可する（推奨）
 
-環境変数の設定が難しい場合、コードから直接チェックを無効にできます（※SvelteKit 側で非推奨の警告が出ますが動作します）。
+特定のドメインからのアクセスを許可します。`checkOrigin: false` よりも安全で、非推奨の警告も出ません。
 
 1.  `svelte.config.js` を開きます。
-2.  `kit` セクションの中に `csrf: { checkOrigin: false }` を追記します。
+2.  `kit` セクションに `csrf.trustedOrigins` を追加します。
+
+```javascript
+// svelte.config.js
+const config = {
+	kit: {
+		csrf: {
+			checkOrigin: true, // オリジンチェックを有効にする（デフォルト）
+			trustedOrigins: [
+				'https://blog.psannetwork.net',
+				'http://localhost:5892' // 必要に応じて追加
+			]
+		}
+	}
+};
+```
+
+#### 方法3: `svelte.config.js` でチェックを完全に無効にする
+
+Cloudflare Tunnel などでオリジンが動的に変わる場合や、手っ取り早く解決したい場合に有効です。
+
+1.  `svelte.config.js` を開きます。
+2.  `kit` セクションの中に以下を追記します。
 
 ```javascript
 // svelte.config.js
@@ -128,10 +150,10 @@ const config = {
 		csrf: {
 			checkOrigin: false
 		}
-		// ...
 	}
 };
 ```
+※ SvelteKit のバージョンによっては非推奨の警告が出ますが、動作に支障はありません。
 
 ---
 
