@@ -9,6 +9,12 @@
 	let replyingTo = $state<string | null>(null);
 	let isPosting = $state(false);
 
+	// コメントの表示を 1000 文字に制限
+	function truncateComment(str: string, maxLength = 1000): string {
+		if (!str || str.length <= maxLength) return str;
+		return str.slice(0, maxLength) + '...';
+	}
+
 	// Turnstileを手動でレンダリングするアクション
 	function turnstileAction(node: HTMLElement) {
 		if (data.settings.enable_turnstile !== 'true') return;
@@ -158,9 +164,10 @@
 				>
 			</div>
 			<div
-				class="text-base font-medium leading-relaxed dark:text-slate-300 whitespace-pre-wrap relative z-10"
+				class="text-base font-medium leading-relaxed dark:text-slate-300 whitespace-pre-wrap relative z-10 break-words max-w-full overflow-wrap-anywhere"
+				style="word-break: break-word; overflow-wrap: break-word;"
 			>
-				{comment.content}
+				{@html truncateComment(comment.content)}
 			</div>
 
 			<div class="flex items-center gap-2 mt-3">

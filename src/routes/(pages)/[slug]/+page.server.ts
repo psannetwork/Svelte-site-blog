@@ -3,6 +3,16 @@ import { error, redirect, fail } from '@sveltejs/kit';
 import { getSetting } from '$lib/server/settings';
 import type { PageServerLoad, Actions } from './$types';
 
+// HTML エスケープ関数
+function escapeHtml(str: string): string {
+	return str
+		.replace(/&/g, '&amp;')
+		.replace(/</g, '&lt;')
+		.replace(/>/g, '&gt;')
+		.replace(/"/g, '&quot;')
+		.replace(/'/g, '&#039;');
+}
+
 export const load: PageServerLoad = async ({ params, locals }) => {
 	const { slug } = params;
 
@@ -77,135 +87,57 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 
 	
 
-	export const actions: Actions = {
+export const actions: Actions = {
+	addComment: async ({ request, params, locals }) => {
+		const allowComments = getSetting('allow_comments', 'true') === 'true';
 
-	
+		if (!allowComments) return fail(403, { message: 'コメントは許可されていません。' });
 
-		addComment: async ({ request, params, locals }) => {
+		const formData = await request.formData();
+		let content = formData.get('content') as string;
+		const parent_id = (formData.get('parentId') || formData.get('parent_id')) as string | null;
+		const { slug } = params;
 
-	
+		if (!content || content.trim().length === 0) {
+			return fail(400, { message: 'コメント内容を入力してください。' });
+		}
 
-			const allowComments = getSetting('allow_comments', 'true') === 'true';
+		// 長さ制限（1000 文字）
+		if (content.length > 1000) {
+			return fail(400, { message: 'コメントは 1000 文字以内で入力してください。' });
+		}
 
-	
-
-			if (!allowComments) return fail(403, { message: 'コメントは許可されていません。' });
-
-	
-
-	
-
-	
-
-			const formData = await request.formData();
-
-	
-
-			const content = formData.get('content') as string;
-
-	
-
-			const parent_id = (formData.get('parentId') || formData.get('parent_id')) as string | null;
-
-	
-
-			const { slug } = params;
-
-	
-
-	
-
-	
-
-			if (!content || content.trim().length === 0) {
-
-	
-
-				return fail(400, { message: 'コメント内容を入力してください。' });
-
-	
-
+		// XSS 対策：危険なプロトコルのブロック
+		const dangerousProtocols = ['javascript:', 'data:', 'vbscript:', 'file:'];
+		const contentLower = content.toLowerCase();
+		for (const protocol of dangerousProtocols) {
+			if (contentLower.includes(protocol)) {
+				return fail(400, { message: '無効なコンテンツが含まれています。' });
 			}
+		}
 
-	
+		// XSS 対策：HTML エスケープ
+		content = escapeHtml(content);
 
-	
+		const userId = locals.user?.id || null;
+		const allowAnonymous = getSetting('allow_anonymous_comments', 'false') === 'true';
 
-	
+		if (!userId && !allowAnonymous) {
+			return fail(403, { message: 'コメントを投稿するにはログインが必要です。' });
+		}
 
-			const userId = locals.user?.id || null;
+		try {
+			const id = crypto.randomUUID();
+			db.prepare(
+				'INSERT INTO comment (id, post_id, parent_id, author_id, content, created_at) VALUES (?, ?, ?, ?, ?, ?)'
+			).run(id, slug, parent_id, userId, content, Date.now());
 
-	
-
-			const allowAnonymous = getSetting('allow_anonymous_comments', 'false') === 'true';
-
-	
-
-	
-
-	
-
-			if (!userId && !allowAnonymous) {
-
-	
-
-				return fail(403, { message: 'コメントを投稿するにはログインが必要です。' });
-
-	
-
-			}
-
-	
-
-	
-
-	
-
-			try {
-
-	
-
-				const id = crypto.randomUUID();
-
-	
-
-				db.prepare(
-
-	
-
-					'INSERT INTO comment (id, post_id, parent_id, author_id, content, created_at) VALUES (?, ?, ?, ?, ?, ?)'
-
-	
-
-				).run(id, slug, parent_id, userId, content, Date.now());
-
-	
-
-	
-
-	
-
-				return { success: true };
-
-	
-
-			} catch (err) {
-
-	
-
-				console.error('[COMMENT ERROR]', err);
-
-	
-
-				return fail(500, { message: 'エラーが発生しました。' });
-
-	
-
-			}
-
-	
-
-		},
+			return { success: true };
+		} catch (err) {
+			console.error('[COMMENT ERROR]', err);
+			return fail(500, { message: 'エラーが発生しました。' });
+		}
+	},
 
 	
 
