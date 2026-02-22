@@ -5,9 +5,10 @@ import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ locals }) => {
 	if (!locals.user || locals.user.role !== 'admin') throw redirect(302, '/dashboard');
-	
+
 	// 誰も保護されていない場合、最古のユーザーを保護する
-	const protectedCount = db.prepare('SELECT COUNT(*) as count FROM user WHERE is_protected = 1').get()?.count || 0;
+	const protectedCount =
+		db.prepare('SELECT COUNT(*) as count FROM user WHERE is_protected = 1').get()?.count || 0;
 	if (protectedCount === 0) {
 		const oldestUser = db.prepare('SELECT id FROM user ORDER BY created_at ASC LIMIT 1').get();
 		if (oldestUser) {
@@ -16,7 +17,9 @@ export const load: PageServerLoad = async ({ locals }) => {
 	}
 
 	const users = db
-		.prepare('SELECT id, username, role, is_protected, created_at FROM user ORDER BY created_at ASC')
+		.prepare(
+			'SELECT id, username, role, is_protected, created_at FROM user ORDER BY created_at ASC'
+		)
 		.all() as any[];
 	return { users };
 };

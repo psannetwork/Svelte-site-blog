@@ -14,7 +14,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 	const files = db
 		.prepare('SELECT * FROM file_storage WHERE storage_type != ? LIMIT ?')
 		.all(target, BATCH_SIZE) as any[];
-	
+
 	const totalRemaining = db
 		.prepare('SELECT COUNT(*) as count FROM file_storage WHERE storage_type != ?')
 		.get(target) as { count: number };
@@ -53,10 +53,10 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 		}
 	}
 
-	return json({ 
-		success: true, 
-		migrated: successCount, 
+	return json({
+		success: true,
+		migrated: successCount,
 		remaining: totalRemaining.count - successCount,
-		total_initial: totalRemaining.count 
+		total_initial: totalRemaining.count
 	});
 };

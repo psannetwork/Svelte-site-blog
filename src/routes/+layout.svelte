@@ -3,6 +3,8 @@
 	import { onMount } from 'svelte';
 	import { theme } from '$lib/theme.svelte';
 	import { page } from '$app/state';
+	import { sanitizeHtml } from '$lib/utils/htmlSanitizer';
+
 	let { children, data } = $props();
 
 	onMount(() => {
@@ -39,7 +41,9 @@
 
 			if (toolbarBtn) {
 				const isIcon = path.some(
-					(el) => (el as HTMLElement).id === 'color-left-btn' || (el as HTMLElement).id === 'color-btn-text'
+					(el) =>
+						(el as HTMLElement).id === 'color-left-btn' ||
+						(el as HTMLElement).id === 'color-btn-text'
 				);
 				const isRightPart = path.some((el) => (el as HTMLElement).tagName === 'XY-COLOR-PICKER');
 
@@ -60,7 +64,7 @@
 			const input = document.createElement('input');
 			input.type = 'color';
 			input.value = xyPicker.value || '#000000';
-			
+
 			// 選択範囲またはボタンの座標を取得して、そこに配置する
 			let top = 0;
 			let left = 0;
@@ -72,7 +76,7 @@
 					left = rect.left + window.scrollX;
 				}
 			}
-			
+
 			if (top === 0 && left === 0) {
 				const rect = xyPicker.getBoundingClientRect();
 				top = rect.top + window.scrollY;
@@ -90,7 +94,7 @@
 				appearance: 'none',
 				border: 'none'
 			});
-			
+
 			document.body.appendChild(input);
 
 			input.oninput = (ev) => {
@@ -166,7 +170,8 @@
 		<link rel="icon" href="/favicon.svg" />
 	{/if}
 	{#if data.settings?.custom_css}
-		{@html `<style>${data.settings.custom_css}</style>`}
+		<!-- eslint-disable-next-line svelte/no-at-html-tags -->
+		{@html `<style>${sanitizeHtml(data.settings.custom_css)}</style>`}
 	{/if}
 </svelte:head>
 

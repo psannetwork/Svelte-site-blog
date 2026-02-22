@@ -9,7 +9,12 @@ import type { RequestHandler } from './$types';
  * データベースからファイルを検索し、あれば配信すると同時にディスクにキャッシュする。
  */
 export const GET: RequestHandler = async ({ params }) => {
-	const relativePath = `uploads/${params.path}`;
+	// Path traversal 対策: .. などの記号を除去し、許可された文字のみに制限
+	const sanitizedPath = params.path
+		.replace(/\.\.+/g, '') // ".." を除去
+		.replace(/[^\w\s\-\/\.]/g, ''); // 英数字、スラッシュ、ハイフン、ドットのみ許可
+
+	const relativePath = `uploads/${sanitizedPath}`;
 
 	const file = db.prepare('SELECT * FROM file_storage WHERE path = ?').get(relativePath) as
 		| {

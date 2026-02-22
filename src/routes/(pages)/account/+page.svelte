@@ -62,7 +62,9 @@
 </svelte:head>
 
 <div class="max-w-2xl mx-auto px-4 py-20">
-	<h2 class="text-4xl font-black tracking-tighter mb-10 uppercase text-main">{t(lang, 'settings')}</h2>
+	<h2 class="text-4xl font-black tracking-tighter mb-10 uppercase text-main">
+		{t(lang, 'settings')}
+	</h2>
 
 	{#if form?.success}
 		<div
@@ -90,7 +92,9 @@
 	{#if data.user}
 		<div class="space-y-12 pb-20">
 			<section class="card-psan p-8 space-y-8 border-psan-green/30 border-2 shadow-psan-green/5">
-				<h3 class="font-black text-sm tracking-widest text-psan-green uppercase">{t(lang, 'identity')}</h3>
+				<h3 class="font-black text-sm tracking-widest text-psan-green uppercase">
+					{t(lang, 'identity')}
+				</h3>
 				<div class="flex flex-col items-center sm:flex-row gap-8">
 					<div class="relative group">
 						<div
@@ -137,7 +141,8 @@
 						<div class="space-y-2">
 							<label
 								for="nickname"
-								class="text-[10px] font-black text-muted uppercase tracking-widest">{t(lang, 'nickname')}</label
+								class="text-[10px] font-black text-muted uppercase tracking-widest"
+								>{t(lang, 'nickname')}</label
 							>
 							<input
 								id="nickname"
@@ -162,14 +167,18 @@
 							/>
 						</label>
 
-						<button class="btn-psan-primary w-full" disabled={isUploading}>{t(lang, 'save_profile')}</button>
+						<button class="btn-psan-primary w-full" disabled={isUploading}
+							>{t(lang, 'save_profile')}</button
+						>
 					</form>
 				</div>
 			</section>
 
 			<section class="card-psan p-8 space-y-6">
 				<div class="flex items-center justify-between">
-					<h3 class="font-black text-sm tracking-widest text-muted uppercase">{t(lang, 'notifications')}</h3>
+					<h3 class="font-black text-sm tracking-widest text-muted uppercase">
+						{t(lang, 'notifications')}
+					</h3>
 					{#if notifications.some((n) => !n.is_read)}
 						<button
 							onclick={markAllAsRead}
@@ -212,7 +221,9 @@
 			</section>
 
 			<section class="card-psan p-8 space-y-6">
-				<h3 class="font-black text-sm tracking-widest text-muted uppercase">{t(lang, 'identity')}</h3>
+				<h3 class="font-black text-sm tracking-widest text-muted uppercase">
+					{t(lang, 'identity')}
+				</h3>
 				<div>
 					<div class="text-[10px] font-black text-muted uppercase tracking-widest mb-1">
 						User ID

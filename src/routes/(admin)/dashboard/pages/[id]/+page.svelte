@@ -6,7 +6,7 @@
 	import type { ActionData, PageData } from './$types';
 
 	let { data, form } = $props<{ data: PageData; form: ActionData }>();
-	
+
 	// Svelte 5 state management
 	let editor: any;
 	let formElement: HTMLFormElement;
@@ -97,16 +97,34 @@
 						list: { class: List, inlineToolbar: true },
 						quote: { class: Quote, inlineToolbar: true },
 						code: Code,
-						marker: { 
-							class: ColorPlugin, 
-							inlineToolbar: true, 
-							config: { 
-								type: 'marker', 
+						marker: {
+							class: ColorPlugin,
+							inlineToolbar: true,
+							config: {
+								type: 'marker',
 								customPicker: true,
-								colorCollections: ['#FFCC00', '#FF9900', '#FF6666', '#CC99FF', '#99CCFF', '#99FFCC', '#00CC99', '#CCCCCC'],
-								colors: ['#FFCC00', '#FF9900', '#FF6666', '#CC99FF', '#99CCFF', '#99FFCC', '#00CC99', '#CCCCCC'],
-								defaultColor: '#FFCC00',
-							} 
+								colorCollections: [
+									'#FFCC00',
+									'#FF9900',
+									'#FF6666',
+									'#CC99FF',
+									'#99CCFF',
+									'#99FFCC',
+									'#00CC99',
+									'#CCCCCC'
+								],
+								colors: [
+									'#FFCC00',
+									'#FF9900',
+									'#FF6666',
+									'#CC99FF',
+									'#99CCFF',
+									'#99FFCC',
+									'#00CC99',
+									'#CCCCCC'
+								],
+								defaultColor: '#FFCC00'
+							}
 						},
 						table: { class: Table, inlineToolbar: true },
 						checklist: { class: Checklist, inlineToolbar: true },
@@ -114,16 +132,34 @@
 						delimiter: Delimiter,
 						inlineCode: InlineCode,
 						underline: Underline,
-						color: { 
-							class: ColorPlugin, 
-							inlineToolbar: true, 
-							config: { 
-								type: 'text', 
+						color: {
+							class: ColorPlugin,
+							inlineToolbar: true,
+							config: {
+								type: 'text',
 								customPicker: true,
-								colorCollections: ['#000000', '#FF0000', '#0000FF', '#00CC99', '#FF00FF', '#0099FF', '#666666', '#FFFFFF'],
-								colors: ['#000000', '#FF0000', '#0000FF', '#00CC99', '#FF00FF', '#0099FF', '#666666', '#FFFFFF'],
-								defaultColor: '#FF0000',
-							} 
+								colorCollections: [
+									'#000000',
+									'#FF0000',
+									'#0000FF',
+									'#00CC99',
+									'#FF00FF',
+									'#0099FF',
+									'#666666',
+									'#FFFFFF'
+								],
+								colors: [
+									'#000000',
+									'#FF0000',
+									'#0000FF',
+									'#00CC99',
+									'#FF00FF',
+									'#0099FF',
+									'#666666',
+									'#FFFFFF'
+								],
+								defaultColor: '#FF0000'
+							}
 						},
 						image: { class: Image, config: { endpoints: { byFile: '/api/upload' } } }
 					},
@@ -161,7 +197,7 @@
 
 	function debounce<T extends (...args: any[]) => any>(func: T, timeout = 300) {
 		let timer: ReturnType<typeof setTimeout>;
-		const debounced = function(this: any, ...args: Parameters<T>) {
+		const debounced = function (this: any, ...args: Parameters<T>) {
 			clearTimeout(timer);
 			timer = setTimeout(() => {
 				func.apply(this, args);
@@ -216,7 +252,9 @@
 		<header class="flex flex-col md:flex-row md:items-center justify-between gap-6">
 			<div>
 				<h2 class="text-4xl font-black tracking-tighter uppercase text-psan-green">Edit Page</h2>
-				<p class="text-xs text-muted font-bold mt-1 uppercase tracking-widest">ID: {data.page.id}</p>
+				<p class="text-xs text-muted font-bold mt-1 uppercase tracking-widest">
+					ID: {data.page.id}
+				</p>
 			</div>
 			<div class="flex gap-3">
 				<a
@@ -231,11 +269,7 @@
 				>
 					{isPreview ? 'Edit' : 'Preview'}
 				</button>
-				<button
-					type="submit"
-					class="btn-psan-primary py-3 px-10 text-sm"
-					disabled={isSaving}
-				>
+				<button type="submit" class="btn-psan-primary py-3 px-10 text-sm" disabled={isSaving}>
 					{isSaving ? 'Saving...' : 'Save Changes'}
 				</button>
 			</div>
@@ -254,7 +288,9 @@
 			<div class="editor-container-psan min-h-[500px]">
 				<div id="editorjs" class="text-main {isPreview ? 'hidden' : 'block'}"></div>
 				{#if isPreview}
-					<div class="prose dark:prose-invert max-w-none preview-content animate-in fade-in duration-300">
+					<div
+						class="prose dark:prose-invert max-w-none preview-content animate-in fade-in duration-300"
+					>
 						{@html previewHtml}
 					</div>
 				{/if}

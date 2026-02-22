@@ -28,7 +28,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 
 	// 1. pagesテーブルから検索 (優先)
 	const page = db.prepare('SELECT * FROM pages WHERE id = ?').get(slug) as any;
-	
+
 	if (page) {
 		return {
 			post: {
@@ -49,11 +49,15 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 	}
 
 	// 2. postテーブルから検索 (下位互換性)
-	const post = db.prepare("SELECT * FROM post WHERE id = ? AND visibility = 'public'").get(slug) as any;
-	
+	const post = db
+		.prepare("SELECT * FROM post WHERE id = ? AND visibility = 'public'")
+		.get(slug) as any;
+
 	if (post) {
 		const anonymousName = getSetting('anonymous_name', 'Anonymous');
-		const comments = db.prepare(`
+		const comments = db
+			.prepare(
+				`
 			SELECT 
 				comment.*, 
 				COALESCE(user.nickname, user.username, ?) as author_name, 
@@ -63,7 +67,9 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 			LEFT JOIN user ON comment.author_id = user.id
 			WHERE post_id = ?
 			ORDER BY created_at ASC
-		`).all(anonymousName, slug) as any[];
+		`
+			)
+			.all(anonymousName, slug) as any[];
 
 		return {
 			post,
@@ -79,13 +85,10 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		};
 	}
 
-		// どちらにも見つからない場合は404
+	// どちらにも見つからない場合は404
 
-		throw error(404, 'Page Not Found');
-
-	};
-
-	
+	throw error(404, 'Page Not Found');
+};
 
 export const actions: Actions = {
 	addComment: async ({ request, params, locals }) => {
@@ -96,10 +99,44 @@ export const actions: Actions = {
 		const formData = await request.formData();
 		let content = formData.get('content') as string;
 		const parent_id = (formData.get('parentId') || formData.get('parent_id')) as string | null;
+		const turnstileToken = formData.get('cf-turnstile-response') as string;
 		const { slug } = params;
 
 		if (!content || content.trim().length === 0) {
 			return fail(400, { message: 'コメント内容を入力してください。' });
+		}
+
+		// Turnstile validation
+		if (getSetting('enable_turnstile', 'false') === 'true') {
+			const secretKey = process.env.TURNSTILE_SECRET_KEY || getSetting('turnstile_secret_key', '');
+			if (!turnstileToken) {
+				return fail(400, { message: 'セキュリティチェックを完了してください。' });
+			}
+
+			try {
+				const verifyResponse = await fetch(
+					'https://challenges.cloudflare.com/turnstile/v0/siteverify',
+					{
+						method: 'POST',
+						headers: { 'Content-Type': 'application/json' },
+						body: JSON.stringify({
+							secret: secretKey,
+							response: turnstileToken
+						})
+					}
+				);
+				const verifyResult = await verifyResponse.json();
+				if (!verifyResult.success) {
+					return fail(400, {
+						message: 'セキュリティチェックに失敗しました。もう一度お試しください。'
+					});
+				}
+			} catch (e) {
+				console.error('[TURNSTILE ERROR]', e);
+				// APIエラーの場合はフォールバックとして通すか、エラーにするか検討が必要
+				// ここでは安全のためエラーにします
+				return fail(500, { message: '認証サーバーとの通信に失敗しました。' });
+			}
 		}
 
 		// 長さ制限（1000 文字）
@@ -139,80 +176,23 @@ export const actions: Actions = {
 		}
 	},
 
-	
-
-		deleteComment: async ({ request, locals }) => {
-
-	
-
-			if (!locals.user || !['admin', 'editor'].includes(locals.user.role)) {
-
-	
-
-				return fail(403, { message: '権限がありません。' });
-
-	
-
-			}
-
-	
-
-	
-
-	
-
-			const formData = await request.formData();
-
-	
-
-			const id = formData.get('id') as string;
-
-	
-
-	
-
-	
-
-			if (!id) return fail(400);
-
-	
-
-	
-
-	
-
-			try {
-
-	
-
-				db.prepare('DELETE FROM comment WHERE id = ?').run(id);
-
-	
-
-				return { success: true };
-
-	
-
-			} catch (err) {
-
-	
-
-				return fail(500);
-
-	
-
-			}
-
-	
-
+	deleteComment: async ({ request, locals }) => {
+		if (!locals.user || !['admin', 'editor'].includes(locals.user.role)) {
+			return fail(403, { message: '権限がありません。' });
 		}
 
-	
+		const formData = await request.formData();
 
-	};
+		const id = formData.get('id') as string;
 
-	
+		if (!id) return fail(400);
 
-	
+		try {
+			db.prepare('DELETE FROM comment WHERE id = ?').run(id);
 
-	
+			return { success: true };
+		} catch (err) {
+			return fail(500);
+		}
+	}
+};

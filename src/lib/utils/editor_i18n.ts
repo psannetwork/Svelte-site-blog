@@ -56,7 +56,7 @@ export const editorI18n = {
 				'With border': '枠線',
 				'With background': '背景',
 				'Stretch image': '幅広表示',
-				'Caption': 'キャプション'
+				Caption: 'キャプション'
 			},
 			code: {
 				'Enter a code': 'コードを入力'
@@ -70,7 +70,7 @@ export const editorI18n = {
 				'Delete column': '列を削除'
 			},
 			style: {
-				'Style': 'スタイル'
+				Style: 'スタイル'
 			}
 		},
 		blockTunes: {
@@ -85,10 +85,10 @@ export const editorI18n = {
 				'Move down': '下に移動'
 			},
 			anyTuneName: {
-				'Alignment': '文字配置',
-				'Left': '左寄せ',
-				'Center': '中央寄せ',
-				'Right': '右寄せ'
+				Alignment: '文字配置',
+				Left: '左寄せ',
+				Center: '中央寄せ',
+				Right: '右寄せ'
 			}
 		}
 	}

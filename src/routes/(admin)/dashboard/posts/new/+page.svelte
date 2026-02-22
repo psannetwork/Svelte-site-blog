@@ -39,11 +39,16 @@
 	const buttonLabel = $derived.by(() => {
 		if (isSaving) return t(lang, 'saving');
 		switch (visibility) {
-			case 'draft': return t(lang, 'draft');
-			case 'review': return t(lang, 'review');
-			case 'public': return t(lang, 'public');
-			case 'vip': return t(lang, 'vip');
-			default: return t(lang, 'save_changes');
+			case 'draft':
+				return t(lang, 'draft');
+			case 'review':
+				return t(lang, 'review');
+			case 'public':
+				return t(lang, 'public');
+			case 'vip':
+				return t(lang, 'vip');
+			default:
+				return t(lang, 'save_changes');
 		}
 	});
 
@@ -122,16 +127,34 @@
 						quote: { class: Quote, inlineToolbar: true },
 						code: { class: Code },
 						raw: { class: RawTool, inlineToolbar: true },
-						marker: { 
-							class: ColorPlugin, 
-							inlineToolbar: true, 
-							config: { 
-								type: 'marker', 
+						marker: {
+							class: ColorPlugin,
+							inlineToolbar: true,
+							config: {
+								type: 'marker',
 								customPicker: true,
-								colorCollections: ['#FFCC00', '#FF9900', '#FF6666', '#CC99FF', '#99CCFF', '#99FFCC', '#00CC99', '#CCCCCC'],
-								colors: ['#FFCC00', '#FF9900', '#FF6666', '#CC99FF', '#99CCFF', '#99FFCC', '#00CC99', '#CCCCCC'],
-								defaultColor: '#FFCC00',
-							} 
+								colorCollections: [
+									'#FFCC00',
+									'#FF9900',
+									'#FF6666',
+									'#CC99FF',
+									'#99CCFF',
+									'#99FFCC',
+									'#00CC99',
+									'#CCCCCC'
+								],
+								colors: [
+									'#FFCC00',
+									'#FF9900',
+									'#FF6666',
+									'#CC99FF',
+									'#99CCFF',
+									'#99FFCC',
+									'#00CC99',
+									'#CCCCCC'
+								],
+								defaultColor: '#FFCC00'
+							}
 						},
 						table: { class: Table, inlineToolbar: true },
 						checklist: { class: Checklist, inlineToolbar: true },
@@ -139,21 +162,61 @@
 						delimiter: { class: Delimiter },
 						inlineCode: { class: InlineCode },
 						underline: { class: Underline },
-						color: { 
-							class: ColorPlugin, 
-							inlineToolbar: true, 
-							config: { 
-								type: 'text', 
+						color: {
+							class: ColorPlugin,
+							inlineToolbar: true,
+							config: {
+								type: 'text',
 								customPicker: true,
-								colorCollections: ['#000000', '#FF0000', '#0000FF', '#00CC99', '#FF00FF', '#0099FF', '#666666', '#FFFFFF'],
-								colors: ['#000000', '#FF0000', '#0000FF', '#00CC99', '#FF00FF', '#0099FF', '#666666', '#FFFFFF'],
-								defaultColor: '#FF0000',
-							} 
+								colorCollections: [
+									'#000000',
+									'#FF0000',
+									'#0000FF',
+									'#00CC99',
+									'#FF00FF',
+									'#0099FF',
+									'#666666',
+									'#FFFFFF'
+								],
+								colors: [
+									'#000000',
+									'#FF0000',
+									'#0000FF',
+									'#00CC99',
+									'#FF00FF',
+									'#0099FF',
+									'#666666',
+									'#FFFFFF'
+								],
+								defaultColor: '#FF0000'
+							}
 						},
-						image: { class: Image, config: { endpoints: { byFile: '/api/upload', byUrl: '/api/upload/fetch' }, field: 'image', types: 'image/*' } },
+						image: {
+							class: Image,
+							config: {
+								endpoints: { byFile: '/api/upload', byUrl: '/api/upload/fetch' },
+								field: 'image',
+								types: 'image/*'
+							}
+						},
 						linkTool: { class: LinkTool, config: { endpoint: '/api/link' } },
-						embed: { class: Embed, config: { services: { youtube: true, vimeo: true, twitter: true } } },
-						anyTuneName: { class: AlignmentTune, config: { default: 'left', blocks: { header: 'left', paragraph: 'left', quote: 'left', list: 'left', checklist: 'left' } } }
+						embed: {
+							class: Embed,
+							config: { services: { youtube: true, vimeo: true, twitter: true } }
+						},
+						anyTuneName: {
+							class: AlignmentTune,
+							config: {
+								default: 'left',
+								blocks: {
+									header: 'left',
+									paragraph: 'left',
+									quote: 'left',
+									list: 'left',
+									checklist: 'left'
+								}
+							}
+						}
 					},
 					tunes: ['anyTuneName'],
 					onReady: () => {
@@ -241,7 +304,9 @@
 	>
 		<header class="flex flex-col md:flex-row md:items-center justify-between gap-6">
 			<div>
-				<h2 class="text-4xl font-black tracking-tighter text-main uppercase leading-none">{t(lang, 'create_story')}</h2>
+				<h2 class="text-4xl font-black tracking-tighter text-main uppercase leading-none">
+					{t(lang, 'create_story')}
+				</h2>
 				<div class="flex gap-4 mt-3">
 					<select
 						name="visibility"
@@ -261,7 +326,11 @@
 			</div>
 			<div class="flex gap-3">
 				<a href="/dashboard/posts" class="btn-psan-ghost text-xs py-2">{t(lang, 'discard')}</a>
-				<button type="button" onclick={togglePreview} class="btn-psan-ghost text-xs py-2 border-psan-green text-psan-green hover:bg-psan-green hover:text-white transition-all min-w-[100px]">
+				<button
+					type="button"
+					onclick={togglePreview}
+					class="btn-psan-ghost text-xs py-2 border-psan-green text-psan-green hover:bg-psan-green hover:text-white transition-all min-w-[100px]"
+				>
 					{isPreview ? t(lang, 'edit') : t(lang, 'preview')}
 				</button>
 				<button type="submit" class="btn-psan-primary py-3 px-10 text-sm" disabled={isSaving}>
@@ -273,16 +342,46 @@
 		<div class="card-dashboard p-6 md:p-12 space-y-10">
 			<div class="flex flex-col md:flex-row gap-10 items-start">
 				<div class="w-full md:w-64 shrink-0">
-					<span class="text-[10px] font-black text-muted uppercase block mb-3 tracking-widest">{t(lang, 'thumbnail')}</span>
-					<div class="aspect-video rounded-3xl bg-slate-50 dark:bg-slate-800 overflow-hidden relative group border-2 border-dashed border-slate-200 dark:border-slate-700">
+					<span class="text-[10px] font-black text-muted uppercase block mb-3 tracking-widest"
+						>{t(lang, 'thumbnail')}</span
+					>
+					<div
+						class="aspect-video rounded-3xl bg-slate-50 dark:bg-slate-800 overflow-hidden relative group border-2 border-dashed border-slate-200 dark:border-slate-700"
+					>
 						{#if thumbnailUrl}
 							<img src={thumbnailUrl} alt="" class="w-full h-full object-cover" />
-							<button type="button" onclick={() => (thumbnailUrl = '')} class="absolute top-3 right-3 w-8 h-8 bg-black/50 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity">✕</button>
+							<button
+								type="button"
+								onclick={() => (thumbnailUrl = '')}
+								class="absolute top-3 right-3 w-8 h-8 bg-black/50 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+								>✕</button
+							>
 						{:else}
-							<label class="absolute inset-0 flex flex-col items-center justify-center cursor-pointer hover:bg-psan-green/5 transition-colors">
-								<svg class="w-8 h-8 text-muted opacity-40 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-								<span class="text-[10px] font-black text-muted uppercase tracking-widest">{isUploadingThumb ? '...' : t(lang, 'upload')}</span>
-								<input type="file" accept="image/*" class="hidden" onchange={handleThumbnailUpload} disabled={isUploadingThumb} />
+							<label
+								class="absolute inset-0 flex flex-col items-center justify-center cursor-pointer hover:bg-psan-green/5 transition-colors"
+							>
+								<svg
+									class="w-8 h-8 text-muted opacity-40 mb-2"
+									fill="none"
+									stroke="currentColor"
+									viewBox="0 0 24 24"
+									><path
+										stroke-linecap="round"
+										stroke-linejoin="round"
+										stroke-width="2"
+										d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+									/></svg
+								>
+								<span class="text-[10px] font-black text-muted uppercase tracking-widest"
+									>{isUploadingThumb ? '...' : t(lang, 'upload')}</span
+								>
+								<input
+									type="file"
+									accept="image/*"
+									class="hidden"
+									onchange={handleThumbnailUpload}
+									disabled={isUploadingThumb}
+								/>
 							</label>
 						{/if}
 					</div>
@@ -290,15 +389,29 @@
 				</div>
 
 				<div class="flex-1 space-y-6 w-full">
-					<input type="text" name="title" bind:value={title} class="w-full text-4xl md:text-5xl font-black bg-transparent border-none focus:ring-0 p-0 text-main placeholder:text-slate-200 dark:placeholder:text-slate-800 tracking-tighter" placeholder={t(lang, 'title')} />
-					<textarea name="summary" bind:value={summary} rows="2" class="w-full text-xl font-bold bg-transparent border-none focus:ring-0 p-0 text-muted placeholder:text-slate-200 dark:placeholder:text-slate-800 resize-none" placeholder={t(lang, 'summary')}></textarea>
+					<input
+						type="text"
+						name="title"
+						bind:value={title}
+						class="w-full text-4xl md:text-5xl font-black bg-transparent border-none focus:ring-0 p-0 text-main placeholder:text-slate-200 dark:placeholder:text-slate-800 tracking-tighter"
+						placeholder={t(lang, 'title')}
+					/>
+					<textarea
+						name="summary"
+						bind:value={summary}
+						rows="2"
+						class="w-full text-xl font-bold bg-transparent border-none focus:ring-0 p-0 text-muted placeholder:text-slate-200 dark:placeholder:text-slate-800 resize-none"
+						placeholder={t(lang, 'summary')}
+					></textarea>
 				</div>
 			</div>
 
 			<div class="editor-container-psan min-h-[500px]">
 				<div id="editorjs" class="text-main {isPreview ? 'hidden' : 'block'}"></div>
 				{#if isPreview}
-					<div class="prose dark:prose-invert max-w-none preview-content animate-in fade-in duration-300">
+					<div
+						class="prose dark:prose-invert max-w-none preview-content animate-in fade-in duration-300"
+					>
 						{@html previewHtml}
 					</div>
 				{/if}

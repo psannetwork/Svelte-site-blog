@@ -29,32 +29,41 @@ export function verifyDatabase(path: string): { success: boolean; error?: string
 
 		// 一時的なコネクションで開いてみる
 		const tempDb = new Database(path);
-		
+
 		try {
 			// 必須テーブルの存在確認 (最小限必要なものに絞る)
 			const essentialTables = ['user', 'post'];
-			const tables = tempDb.prepare("SELECT name FROM sqlite_master WHERE type='table'").all() as any[];
-			const tableNames = tables.map(t => (t.name || t.NAME || (typeof t === 'string' ? t : '')).toLowerCase());
-			
-			const missingTables = essentialTables.filter(name => !tableNames.includes(name));
-			
+			const tables = tempDb
+				.prepare("SELECT name FROM sqlite_master WHERE type='table'")
+				.all() as any[];
+			const tableNames = tables.map((t) =>
+				(t.name || t.NAME || (typeof t === 'string' ? t : '')).toLowerCase()
+			);
+
+			const missingTables = essentialTables.filter((name) => !tableNames.includes(name));
+
 			tempDb.close();
 
 			if (missingTables.length > 0) {
-				return { 
-					success: false, 
-					error: `不完全なデータベースです。必要なテーブルが見つかりません: ${missingTables.join(', ')}` 
+				return {
+					success: false,
+					error: `不完全なデータベースです。必要なテーブルが見つかりません: ${missingTables.join(', ')}`
 				};
 			}
 
 			return { success: true };
 		} catch (dbError: any) {
-			try { tempDb.close(); } catch (e) {}
+			try {
+				tempDb.close();
+			} catch (e) {}
 			return { success: false, error: `DBアクセスエラー: ${dbError.message}` };
 		}
 	} catch (e) {
 		console.error('[VERIFY ERROR]', e);
-		return { success: false, error: 'データベースファイルの検証に失敗しました。ファイルが壊れている可能性があります。' };
+		return {
+			success: false,
+			error: 'データベースファイルの検証に失敗しました。ファイルが壊れている可能性があります。'
+		};
 	}
 }
 
@@ -99,7 +108,7 @@ export async function performBackup() {
 			try {
 				db.prepare('PRAGMA wal_checkpoint(FULL)').run();
 			} catch (e) {}
-			
+
 			copyFileSync(DB_PATH, backupPath);
 			setSetting('last_backup_at', Date.now().toString());
 			rotateBackups();

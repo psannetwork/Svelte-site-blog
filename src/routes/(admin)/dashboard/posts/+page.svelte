@@ -12,12 +12,18 @@
 <div class="max-w-7xl mx-auto">
 	<header class="flex flex-col md:flex-row md:items-center justify-between mb-12 gap-6">
 		<div class="space-y-1">
-			<h2 class="text-4xl md:text-5xl font-black tracking-tighter text-main uppercase leading-none">{t(lang, 'posts')}</h2>
+			<h2 class="text-4xl md:text-5xl font-black tracking-tighter text-main uppercase leading-none">
+				{t(lang, 'posts')}
+			</h2>
 			<p class="text-xs md:text-sm text-muted font-bold tracking-tight">
 				{t(lang, 'posts_desc')}
 			</p>
 		</div>
-		<a href="/dashboard/posts/new" class="btn-psan-primary w-full md:w-auto text-sm px-10 py-4 rounded-2xl shadow-xl shadow-psan-green/20">{t(lang, 'create_story')}</a>
+		<a
+			href="/dashboard/posts/new"
+			class="btn-psan-primary w-full md:w-auto text-sm px-10 py-4 rounded-2xl shadow-xl shadow-psan-green/20"
+			>{t(lang, 'create_story')}</a
+		>
 	</header>
 
 	<div class="grid gap-6">
@@ -71,8 +77,17 @@
 							{post.title}
 						</h3>
 						<div class="mt-2 flex items-center gap-1.5 text-muted/40">
-							<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
-							<span class="text-[9px] font-black uppercase tracking-widest italic">{t(lang, 'by_author').replace('{author}', post.author_name)}</span>
+							<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+								><path
+									stroke-linecap="round"
+									stroke-linejoin="round"
+									stroke-width="2"
+									d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+								/></svg
+							>
+							<span class="text-[9px] font-black uppercase tracking-widest italic"
+								>{t(lang, 'by_author').replace('{author}', post.author_name)}</span
+							>
 						</div>
 					</div>
 				</div>
@@ -90,10 +105,26 @@
 						>
 							<option value="draft" selected={post.visibility === 'draft'}>DRAFT</option>
 							<option value="review" selected={post.visibility === 'review'}>REVIEW</option>
-							<option value="public" disabled={data.user?.role === 'author'} selected={post.visibility === 'public'}>PUBLIC</option>
-							<option value="unlisted" disabled={data.user?.role === 'author'} selected={post.visibility === 'unlisted'}>UNLISTED</option>
-							<option value="vip" disabled={data.user?.role === 'author'} selected={post.visibility === 'vip'}>VIP</option>
-							<option value="private" disabled={data.user?.role === 'author'} selected={post.visibility === 'private'}>PRIVATE</option>
+							<option
+								value="public"
+								disabled={data.user?.role === 'author'}
+								selected={post.visibility === 'public'}>PUBLIC</option
+							>
+							<option
+								value="unlisted"
+								disabled={data.user?.role === 'author'}
+								selected={post.visibility === 'unlisted'}>UNLISTED</option
+							>
+							<option
+								value="vip"
+								disabled={data.user?.role === 'author'}
+								selected={post.visibility === 'vip'}>VIP</option
+							>
+							<option
+								value="private"
+								disabled={data.user?.role === 'author'}
+								selected={post.visibility === 'private'}>PRIVATE</option
+							>
 						</select>
 					</form>
 
@@ -105,7 +136,14 @@
 								? 'opacity-30 grayscale cursor-not-allowed pointer-events-none'
 								: ''}"
 						>
-							<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+							<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+								><path
+									stroke-linecap="round"
+									stroke-linejoin="round"
+									stroke-width="2.5"
+									d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
+								/></svg
+							>
 						</a>
 						<form
 							method="POST"
@@ -123,15 +161,23 @@
 								aria-label={t(lang, 'delete')}
 								class="w-12 h-12 flex items-center justify-center text-psan-pink hover:bg-psan-pink hover:text-white border border-psan-pink/20 rounded-2xl transition-all disabled:opacity-30"
 							>
-								<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+								<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+									><path
+										d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+									/></svg
+								>
 							</button>
 						</form>
 					</div>
 				</div>
 			</div>
 		{:else}
-			<div class="py-32 text-center card-dashboard border-dashed border-2 border-slate-200 dark:border-slate-800">
-				<p class="font-black text-muted uppercase tracking-[0.3em] text-[10px]">{t(lang, 'no_data')}</p>
+			<div
+				class="py-32 text-center card-dashboard border-dashed border-2 border-slate-200 dark:border-slate-800"
+			>
+				<p class="font-black text-muted uppercase tracking-[0.3em] text-[10px]">
+					{t(lang, 'no_data')}
+				</p>
 			</div>
 		{/each}
 	</div>

@@ -24,6 +24,18 @@ try {
 }
 
 export const handle: Handle = async ({ event, resolve }) => {
+	// 簡易的な CSRF 対策 (svelte.config.js で checkOrigin: false にしているための補填)
+	if (event.request.method !== 'GET') {
+		const origin = event.request.headers.get('origin');
+		const host = event.request.headers.get('host');
+		if (origin && host) {
+			const originUrl = new URL(origin);
+			if (originUrl.host !== host) {
+				return new Response('CSRF Forbidden', { status: 403 });
+			}
+		}
+	}
+
 	// バックアップ自動実行 (ランダムに1/10の確率でチェック)
 	if (Math.random() < 0.1 && getSetting('enable_backup') === 'true') {
 		const interval = parseInt(getSetting('backup_interval', '24')) * 60 * 60 * 1000;
@@ -110,5 +122,34 @@ export const handle: Handle = async ({ event, resolve }) => {
 		throw redirect(302, '/auth/login');
 	}
 
-	return resolve(event);
+	const response = await resolve(event);
+
+	// セキュリティヘッダーの設定
+	response.headers.set('X-Frame-Options', 'DENY');
+	response.headers.set('X-Content-Type-Options', 'nosniff');
+	response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
+	response.headers.set('Permissions-Policy', 'geolocation=(), camera=(), microphone=()');
+
+	// HSTS (HTTPS強制) - 本番環境でのみ推奨
+	if (process.env.NODE_ENV === 'production') {
+		response.headers.set(
+			'Strict-Transport-Security',
+			'max-age=31536000; includeSubDomains; preload'
+		);
+	}
+
+	// 簡易的なCSP (Content Security Policy)
+	const csp = [
+		"default-src 'self'",
+		"script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com",
+		"style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+		"font-src 'self' https://fonts.gstatic.com",
+		"img-src 'self' data: blob: *",
+		"frame-src 'self' https://challenges.cloudflare.com https://www.youtube.com https://player.vimeo.com",
+		"connect-src 'self' https://challenges.cloudflare.com"
+	].join('; ');
+
+	response.headers.set('Content-Security-Policy', csp);
+
+	return response;
 };

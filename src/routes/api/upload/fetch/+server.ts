@@ -11,13 +11,43 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 	const { url } = await request.json();
 	if (!url) throw error(400, 'No URL provided');
 
+	// SSRF 対策: プロトコル制限とローカルIPの拒否
+	try {
+		const parsedUrl = new URL(url);
+		if (parsedUrl.protocol !== 'http:' && parsedUrl.protocol !== 'https:') {
+			throw error(400, 'Invalid protocol');
+		}
+
+		const hostname = parsedUrl.hostname.toLowerCase();
+		const blacklistedHosts = [
+			'localhost',
+			'127.0.0.1',
+			'0.0.0.0',
+			'169.254.169.254', // AWS metadata
+			'::1',
+			'metadata.google.internal'
+		];
+
+		if (
+			blacklistedHosts.includes(hostname) ||
+			hostname.startsWith('192.168.') ||
+			hostname.startsWith('10.') ||
+			hostname.startsWith('172.')
+		) {
+			throw error(400, 'Forbidden URL');
+		}
+	} catch (e) {
+		if (e instanceof Error && (e as any).status) throw e;
+		throw error(400, 'Invalid URL format');
+	}
+
 	try {
 		const response = await fetch(url);
 		if (!response.ok) throw new Error('Failed to fetch image');
 
 		const blob = await response.blob();
 		const contentType = response.headers.get('content-type') || '';
-		
+
 		const allowedMimes = [
 			'image/jpeg',
 			'image/png',
@@ -26,7 +56,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 			'image/svg+xml',
 			'image/x-icon'
 		];
-		
+
 		if (!allowedMimes.includes(contentType)) {
 			throw error(400, `Invalid content type: ${contentType}`);
 		}

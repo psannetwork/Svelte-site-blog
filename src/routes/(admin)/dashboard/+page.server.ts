@@ -59,10 +59,15 @@ export const load: PageServerLoad = async ({ locals }) => {
 	const currentMonth = new Date().toISOString().substring(0, 7); // YYYY-MM
 	const monthlyStats = isAuthor
 		? { total: 0 }
-		: (db.prepare('SELECT SUM(hits) as total FROM analytics WHERE date LIKE ?').get(`${currentMonth}%`) as { total: number });
+		: (db
+				.prepare('SELECT SUM(hits) as total FROM analytics WHERE date LIKE ?')
+				.get(`${currentMonth}%`) as { total: number });
 
 	const monthlyGoal = parseInt(settings.monthly_goal_hits || '1000');
-	const monthlyProgress = Math.min(Math.round(((monthlyStats?.total || 0) / monthlyGoal) * 100), 100);
+	const monthlyProgress = Math.min(
+		Math.round(((monthlyStats?.total || 0) / monthlyGoal) * 100),
+		100
+	);
 
 	return {
 		posts,

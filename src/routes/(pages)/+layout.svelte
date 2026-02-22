@@ -32,15 +32,7 @@
 	});
 </script>
 
-<svelte:head>
-	{#if data.settings?.accent_color}
-		<style>
-			:root {
-				--accent-color: {data.settings.accent_color} !important;
-			}
-		</style>
-	{/if}
-</svelte:head>
+<svelte:head></svelte:head>
 
 <header
 	class="bg-[--bg-main]/90 backdrop-blur-md sticky top-0 z-50 border-b border-[--border-color] transition-colors"

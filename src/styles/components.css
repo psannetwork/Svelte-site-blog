@@ -57,6 +57,11 @@
 }
 
 @keyframes soft-float {
-	0%, 100% { transform: translateY(-0.5rem) scale(1.1); }
-	50% { transform: translateY(-0.7rem) scale(1.1); }
+	0%,
+	100% {
+		transform: translateY(-0.5rem) scale(1.1);
+	}
+	50% {
+		transform: translateY(-0.7rem) scale(1.1);
+	}
 }

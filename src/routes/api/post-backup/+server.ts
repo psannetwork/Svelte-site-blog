@@ -7,7 +7,8 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 		return json({ success: false, error: 'Unauthorized' }, { status: 401 });
 	}
 
-	const { postId, title, content, rawJson, summary, thumbnailUrl, visibility } = await request.json();
+	const { postId, title, content, rawJson, summary, thumbnailUrl, visibility } =
+		await request.json();
 
 	if (!postId) {
 		return json({ success: false, error: 'Post ID is required' }, { status: 400 });

@@ -118,10 +118,12 @@ export const translations = {
 		site_icon: 'サイトアイコン (Favicon)',
 		custom_css: 'カスタムCSS',
 		bot_protection: 'ボット防止 (Cloudflare Turnstile)',
-		turso_recommendation: '💡 Tursoを使用中の方は、保存先を "SQLite Database" に設定することを強くおすすめします。',
+		turso_recommendation:
+			'💡 Tursoを使用中の方は、保存先を "SQLite Database" に設定することを強くおすすめします。',
 		move_to_db: '全ての画像をDBへ移動',
 		move_to_local: '全ての画像をローカルへ移動',
-		storage_sync_note: '※ 保存先を切り替えただけでは画像は移動しません。ボタンを押してデータを同期してください。',
+		storage_sync_note:
+			'※ 保存先を切り替えただけでは画像は移動しません。ボタンを押してデータを同期してください。',
 		migration_confirm: '全ての画像を移動しますか？この操作には時間がかかる場合があります。',
 		force_login: 'ログイン強制',
 		allow_signup: '新規登録許可',
@@ -152,7 +154,7 @@ export const translations = {
 		home_page: 'Home Page',
 		save_changes: 'Save Changes',
 		cancel: 'Cancel',
-		saving: 'Saving...', 
+		saving: 'Saving...',
 		success: 'Success!',
 		error: 'An error occurred',
 		total_access: 'Total Reach',
@@ -188,7 +190,8 @@ export const translations = {
 		verification_success: 'Verification Success: Database is valid',
 		verification_failed: 'Verification Failed: Invalid or corrupt file',
 		ready_to_restore: 'Ready to Restore',
-		restore_confirm_msg: 'Are you sure you want to restore this backup? Current data will be overwritten.',
+		restore_confirm_msg:
+			'Are you sure you want to restore this backup? Current data will be overwritten.',
 		tables_found: 'Tables Detected',
 		sqlite_valid: 'SQLite Format: Valid',
 		last_sync: 'Last Sync',
@@ -261,7 +264,7 @@ export const translations = {
 		turso_recommendation: '💡 Turso users: Setting to "SQLite Database" is highly recommended.',
 		move_to_db: 'Move all images to DB',
 		move_to_local: 'Move all images to Local',
-		storage_sync_note: '* Switching storage won\'t move files. Press the button to sync.',
+		storage_sync_note: "* Switching storage won't move files. Press the button to sync.",
 		migration_confirm: 'Move all images? This may take some time.',
 		force_login: 'Force Login',
 		allow_signup: 'Allow Signup',
@@ -275,7 +278,7 @@ export const translations = {
 		keep_count: 'Keep Count',
 		target_backup: 'Target Backup',
 		verification_status: 'Verification Status',
-		verifying: 'Verifying...', 
+		verifying: 'Verifying...',
 		no_icon: 'No Icon',
 		personal_report: 'Your personal activity report.'
 	}
@@ -283,6 +286,6 @@ export const translations = {
 
 export type Language = 'ja' | 'en';
 
-export function t(lang: Language, key: keyof typeof translations['ja']) {
+export function t(lang: Language, key: keyof (typeof translations)['ja']) {
 	return translations[lang]?.[key] || translations['en'][key] || key;
 }
