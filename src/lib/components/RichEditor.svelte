@@ -199,8 +199,11 @@
 		resizing = true;
 		startX = e.clientX;
 		startY = e.clientY;
-		startWidth = selectedElement.clientWidth;
-		startHeight = selectedElement.clientHeight;
+		
+		// テキスト要素の場合は現在の表示サイズ、それ以外は clientSize
+		const isTextElement = ['H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'P', 'UL', 'OL', 'HR', 'BLOCKQUOTE', 'PRE'].includes(selectedElement.tagName);
+		startWidth = isTextElement ? selectedElement.offsetWidth : selectedElement.clientWidth;
+		startHeight = isTextElement ? selectedElement.offsetHeight : selectedElement.clientHeight;
 
 		e.preventDefault();
 		e.stopPropagation();
@@ -215,8 +218,12 @@
 		const deltaX = e.clientX - startX;
 		const deltaY = e.clientY - startY;
 
-		const newWidth = Math.max(50, startWidth + deltaX);
-		const newHeight = Math.max(20, startHeight + deltaY);
+		const isTextElement = ['H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'P', 'UL', 'OL', 'HR', 'BLOCKQUOTE', 'PRE'].includes(selectedElement.tagName);
+		const minWidth = isTextElement ? 100 : 50;
+		const minHeight = isTextElement ? 30 : 20;
+
+		const newWidth = Math.max(minWidth, startWidth + deltaX);
+		const newHeight = Math.max(minHeight, startHeight + deltaY);
 
 		selectedElement.style.width = `${newWidth}px`;
 		selectedElement.style.height = `${newHeight}px`;
@@ -898,17 +905,15 @@
 					<div class="move-handle">
 						<Move size={14} />
 					</div>
-					{#if ['IMG', 'PRE', 'BLOCKQUOTE', 'IFRAME', 'VIDEO', 'TABLE'].includes(selectedElement.tagName)}
-						<div
-							class="resize-handle se"
-							onmousedown={startResize}
-							onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') startResize(e as any); }}
-							onclick={(e) => e.stopPropagation()}
-							role="button"
-							tabindex="0"
-							aria-label="Resize element"
-						></div>
-					{/if}
+					<div
+						class="resize-handle se"
+						onmousedown={startResize}
+						onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') startResize(e as any); }}
+						onclick={(e) => e.stopPropagation()}
+						role="button"
+						tabindex="0"
+						aria-label="Resize element"
+					></div>
 				</div>
 			{/if}
 
