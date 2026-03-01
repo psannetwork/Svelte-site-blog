@@ -72,16 +72,24 @@
 			overlayPos = null;
 			return;
 		}
-		const rect = selectedElement.getBoundingClientRect();
 		const outer = editorRef.closest('.editor-outer');
 		if (!outer) return;
-		const outerRect = outer.getBoundingClientRect();
+
+		const editorWrapper = editorRef.parentElement;
+		if (!editorWrapper) return;
+
+		const wrapperRect = editorWrapper.getBoundingClientRect();
+		
+		// 画像の場合は実際のサイズを使用（margin を除く）
+		const elementRect = selectedElement.tagName === 'IMG' 
+			? selectedElement.getBoundingClientRect()
+			: selectedElement.getBoundingClientRect();
 
 		overlayPos = {
-			left: rect.left - outerRect.left,
-			top: rect.top - outerRect.top,
-			width: rect.width,
-			height: rect.height
+			left: elementRect.left - wrapperRect.left,
+			top: elementRect.top - wrapperRect.top,
+			width: elementRect.width,
+			height: elementRect.height
 		};
 	}
 
@@ -1259,8 +1267,8 @@
 		max-width: 100%;
 		height: auto;
 		border-radius: 8px;
-		margin: 1rem 0;
-		display: inline-block;
+		margin: 0;
+		display: block;
 	}
 
 	:global(.rich-editor table) {
