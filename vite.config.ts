@@ -8,5 +8,10 @@ export default defineConfig({
 		port: 5174,
 		strictPort: true,
 		allowedHosts: ['blogtest.psannetwork.net', 'blog.psannetwork.net']
+	},
+	preview: {
+		port: 5892,
+		strictPort: true,
+		allowedHosts: ['blogtest.psannetwork.net', 'blog.psannetwork.net']
 	}
 });

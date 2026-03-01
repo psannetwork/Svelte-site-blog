@@ -3,6 +3,7 @@ import { editorJsToHtml } from '$lib/server/editor';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async () => {
+	// About ページは公開ページ
 	const page = db.prepare("SELECT content, raw_json FROM pages WHERE id = 'about'").get() as any;
 
 	let aboutHtml = page?.content || '';

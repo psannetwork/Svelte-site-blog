@@ -102,16 +102,51 @@ function initSchema(db: any) {
 		} catch (e) {}
 		try {
 			db.exec(`CREATE TABLE IF NOT EXISTS notification (
-				id TEXT PRIMARY KEY, 
-				user_id TEXT NOT NULL, 
-				type TEXT NOT NULL, 
-				content TEXT NOT NULL, 
-				link TEXT, 
-				is_read INTEGER DEFAULT 0, 
-				created_at INTEGER NOT NULL, 
+				id TEXT PRIMARY KEY,
+				user_id TEXT NOT NULL,
+				type TEXT NOT NULL,
+				content TEXT NOT NULL,
+				link TEXT,
+				is_read INTEGER DEFAULT 0,
+				created_at INTEGER NOT NULL,
 				FOREIGN KEY (user_id) REFERENCES user(id) ON DELETE CASCADE
 			)`);
 			db.exec('CREATE INDEX IF NOT EXISTS idx_notification_user ON notification(user_id)');
+		} catch (e) {}
+
+		// バージョン管理テーブル
+		try {
+			db.exec(`CREATE TABLE IF NOT EXISTS post_versions (
+				id TEXT PRIMARY KEY,
+				post_id TEXT NOT NULL,
+				version INTEGER NOT NULL,
+				content TEXT NOT NULL,
+				author_id TEXT NOT NULL,
+				created_at INTEGER NOT NULL,
+				parent_version INTEGER,
+				commit_message TEXT,
+				FOREIGN KEY (post_id) REFERENCES post(id) ON DELETE CASCADE,
+				FOREIGN KEY (author_id) REFERENCES user(id)
+			)`);
+			db.exec('CREATE INDEX IF NOT EXISTS idx_post_versions_post ON post_versions(post_id)');
+			db.exec('CREATE INDEX IF NOT EXISTS idx_post_versions_version ON post_versions(post_id, version)');
+		} catch (e) {}
+
+		// 編集中ユーザー管理テーブル
+		try {
+			db.exec(`CREATE TABLE IF NOT EXISTS collaborations (
+				id TEXT PRIMARY KEY,
+				post_id TEXT NOT NULL,
+				user_id TEXT NOT NULL,
+				username TEXT NOT NULL,
+				last_activity INTEGER NOT NULL,
+				cursor_position INTEGER DEFAULT 0,
+				selection_start INTEGER DEFAULT 0,
+				selection_end INTEGER DEFAULT 0,
+				FOREIGN KEY (post_id) REFERENCES post(id) ON DELETE CASCADE,
+				FOREIGN KEY (user_id) REFERENCES user(id) ON DELETE CASCADE
+			)`);
+			db.exec('CREATE INDEX IF NOT EXISTS idx_collaborations_post ON collaborations(post_id)');
 		} catch (e) {}
 
 		const insertSetting = db.prepare(

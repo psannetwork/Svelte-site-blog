@@ -1,7 +1,7 @@
 import { fail, redirect } from '@sveltejs/kit';
 import db from '$lib/server/db';
 import { generateIdFromEntropySize } from 'lucia';
-import { editorJsToHtml } from '$lib/server/editor';
+import { sanitizeHtml } from '$lib/utils/htmlSanitizer';
 import { getSettings } from '$lib/server/settings';
 import type { PageServerLoad, Actions } from './$types';
 
@@ -22,31 +22,26 @@ export const actions: Actions = {
 		const title = formData.get('title') as string;
 		const summary = formData.get('summary') as string;
 		let visibility = formData.get('visibility') as string;
-		const editorDataRaw = formData.get('editorData') as string;
+		const editorHtml = formData.get('editorHtml') as string;
 		let thumbnailUrl = formData.get('thumbnail_url') as string;
 
 		if (locals.user.role === 'author' && !['draft', 'review'].includes(visibility)) {
 			visibility = 'draft';
 		}
 
-		if (!title || !editorDataRaw) {
+		if (!title || !editorHtml) {
 			return fail(400, { message: 'Title and content are required' });
 		}
 
-		let htmlContent = '';
-		try {
-			const editorData = JSON.parse(editorDataRaw);
-			htmlContent = editorJsToHtml(editorData.blocks);
+		// サニタイズを適用
+		const sanitizedHtml = sanitizeHtml(editorHtml);
 
-			// サムネイルが指定されていない場合、最初の画像を探す
-			if (!thumbnailUrl || thumbnailUrl.trim() === '') {
-				const imageBlock = editorData.blocks.find((b: any) => b.type === 'image');
-				if (imageBlock?.data?.file?.url) {
-					thumbnailUrl = imageBlock.data.file.url;
-				}
+		// サムネイルが指定されていない場合、最初の画像を探す
+		if (!thumbnailUrl || thumbnailUrl.trim() === '') {
+			const imgMatch = editorHtml.match(/<img[^>]+src="([^"]+)"/);
+			if (imgMatch && imgMatch[1]) {
+				thumbnailUrl = imgMatch[1];
 			}
-		} catch (e) {
-			return fail(400, { message: 'Invalid editor data' });
 		}
 
 		const postId = generateIdFromEntropySize(10);
@@ -54,15 +49,14 @@ export const actions: Actions = {
 
 		db.prepare(
 			`
-			INSERT INTO post (id, title, summary, content, raw_json, author_id, visibility, created_at, updated_at, thumbnail_url) 
-			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+			INSERT INTO post (id, title, summary, content, author_id, visibility, created_at, updated_at, thumbnail_url)
+			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
 		`
 		).run(
 			postId,
 			title,
 			summary,
-			htmlContent,
-			editorDataRaw,
+			sanitizedHtml,
 			locals.user.id,
 			visibility || 'draft',
 			now,

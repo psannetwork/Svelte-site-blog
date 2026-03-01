@@ -1,6 +1,6 @@
 import db from '$lib/server/db';
 import { error, redirect, fail } from '@sveltejs/kit';
-import { editorJsToHtml } from '$lib/server/editor';
+import { sanitizeHtml } from '$lib/utils/htmlSanitizer';
 import type { PageServerLoad, Actions } from './$types';
 
 export const load: PageServerLoad = async ({ params, locals }) => {
@@ -53,41 +53,34 @@ export const actions: Actions = {
 		const title = formData.get('title') as string;
 		const summary = formData.get('summary') as string;
 		const visibility = formData.get('visibility') as string;
-		const editorDataRaw = formData.get('editorData') as string;
+		const editorHtml = formData.get('editorHtml') as string;
 		let thumbnailUrl = formData.get('thumbnail_url') as string;
 
-		if (!title || !editorDataRaw) {
+		if (!title || !editorHtml) {
 			return fail(400, { message: 'Title and content are required' });
 		}
 
-		let htmlContent = '';
-		try {
-			const editorData = JSON.parse(editorDataRaw);
-			htmlContent = editorJsToHtml(editorData.blocks);
+		// サニタイズを適用
+		const sanitizedHtml = sanitizeHtml(editorHtml);
 
-			// サムネイルが指定されていない場合、最初の画像を探す
-			if (!thumbnailUrl || thumbnailUrl.trim() === '') {
-				const imageBlock = editorData.blocks.find((b: any) => b.type === 'image');
-				if (imageBlock?.data?.file?.url) {
-					thumbnailUrl = imageBlock.data.file.url;
-				}
+		// サムネイルが指定されていない場合、最初の画像を探す
+		if (!thumbnailUrl || thumbnailUrl.trim() === '') {
+			const imgMatch = editorHtml.match(/<img[^>]+src="([^"]+)"/);
+			if (imgMatch && imgMatch[1]) {
+				thumbnailUrl = imgMatch[1];
 			}
-		} catch (e) {
-			return fail(400, { message: 'Invalid editor data' });
 		}
 
 		db.prepare(
 			`
-			UPDATE post 
-			SET title = ?, summary = ?, content = ?, raw_json = ?, visibility = ?, updated_at = ?, thumbnail_url = ? 
+			UPDATE post
+			SET title = ?, summary = ?, content = ?, updated_at = ?, thumbnail_url = ?
 			WHERE id = ?
 		`
 		).run(
 			title,
 			summary,
-			htmlContent,
-			editorDataRaw,
-			visibility,
+			sanitizedHtml,
 			Date.now(),
 			thumbnailUrl || null,
 			params.id

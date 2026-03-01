@@ -36,7 +36,7 @@ export const handle: Handle = async ({ event, resolve }) => {
 		}
 	}
 
-	// バックアップ自動実行 (ランダムに1/10の確率でチェック)
+	// バックアップ自動実行 (ランダムに 1/10 の確率でチェック)
 	if (Math.random() < 0.1 && getSetting('enable_backup') === 'true') {
 		const interval = parseInt(getSetting('backup_interval', '24')) * 60 * 60 * 1000;
 		const lastBackup = parseInt(getSetting('last_backup_at', '0'));
@@ -94,9 +94,9 @@ export const handle: Handle = async ({ event, resolve }) => {
 		try {
 			db.prepare(
 				`
-				INSERT INTO analytics (date, hits, unique_visitors) 
-				VALUES (?, 1, ?) 
-				ON CONFLICT(date) DO UPDATE SET 
+				INSERT INTO analytics (date, hits, unique_visitors)
+				VALUES (?, 1, ?)
+				ON CONFLICT(date) DO UPDATE SET
 					hits = hits + 1,
 					unique_visitors = unique_visitors + ?
 			`
@@ -130,7 +130,7 @@ export const handle: Handle = async ({ event, resolve }) => {
 	response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
 	response.headers.set('Permissions-Policy', 'geolocation=(), camera=(), microphone=()');
 
-	// HSTS (HTTPS強制) - 本番環境でのみ推奨
+	// HSTS (HTTPS 強制) - 本番環境でのみ推奨
 	if (process.env.NODE_ENV === 'production') {
 		response.headers.set(
 			'Strict-Transport-Security',
@@ -138,15 +138,17 @@ export const handle: Handle = async ({ event, resolve }) => {
 		);
 	}
 
-	// 簡易的なCSP (Content Security Policy)
+	// 簡易的な CSP (Content Security Policy)
 	const csp = [
 		"default-src 'self'",
-		"script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com",
+		"script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: https://challenges.cloudflare.com https://static.cloudflareinsights.com",
+		"script-src-elem 'self' 'unsafe-inline' https://challenges.cloudflare.com https://static.cloudflareinsights.com",
+		"worker-src 'self' blob:",
 		"style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
 		"font-src 'self' https://fonts.gstatic.com",
 		"img-src 'self' data: blob: *",
 		"frame-src 'self' https://challenges.cloudflare.com https://www.youtube.com https://player.vimeo.com",
-		"connect-src 'self' https://challenges.cloudflare.com"
+		"connect-src 'self' blob: https://challenges.cloudflare.com"
 	].join('; ');
 
 	response.headers.set('Content-Security-Policy', csp);

@@ -1,6 +1,6 @@
 import db from '$lib/server/db';
 import { error, redirect } from '@sveltejs/kit';
-import { editorJsToHtml } from '$lib/server/editor';
+import { sanitizeHtml } from '$lib/utils/htmlSanitizer';
 import type { PageServerLoad, Actions } from './$types';
 
 export const load: PageServerLoad = async ({ locals, params }) => {
@@ -18,16 +18,16 @@ export const actions: Actions = {
 	savePage: async ({ request, params }) => {
 		const formData = await request.formData();
 		const title = formData.get('title') as string;
-		const contentJson = formData.get('content') as string;
+		const editorHtml = formData.get('content') as string;
 
-		if (!contentJson) return { success: false };
+		if (!editorHtml) return { success: false };
 
-		const editorData = JSON.parse(contentJson);
-		const htmlContent = editorJsToHtml(editorData.blocks);
+		// サニタイズを適用
+		const sanitizedHtml = sanitizeHtml(editorHtml);
 
 		db.prepare(
-			'UPDATE pages SET title = ?, content = ?, raw_json = ?, updated_at = ? WHERE id = ?'
-		).run(title, htmlContent, contentJson, Date.now(), params.id);
+			'UPDATE pages SET title = ?, content = ?, updated_at = ? WHERE id = ?'
+		).run(title, sanitizedHtml, Date.now(), params.id);
 
 		return { success: true };
 	}

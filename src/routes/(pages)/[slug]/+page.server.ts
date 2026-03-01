@@ -16,7 +16,7 @@ function escapeHtml(str: string): string {
 export const load: PageServerLoad = async ({ params, locals }) => {
 	const { slug } = params;
 
-	// homeへの直接アクセスはルートへリダイレクト
+	// home への直接アクセスはルートへリダイレクト
 	if (slug === 'home') {
 		throw redirect(301, '/');
 	}
@@ -26,10 +26,11 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		throw error(404, 'Not Found');
 	}
 
-	// 1. pagesテーブルから検索 (優先)
+	// 1. pages テーブルから検索 (優先)
 	const page = db.prepare('SELECT * FROM pages WHERE id = ?').get(slug) as any;
 
 	if (page) {
+		// 固定ページは公開
 		return {
 			post: {
 				title: page.title,
@@ -48,19 +49,35 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		};
 	}
 
-	// 2. postテーブルから検索 (下位互換性)
+	// 2. post テーブルから検索 (下位互換性)
+	// 権限チェック：管理者・編集者は全て表示、一般ユーザーは公開記事のみ
+	const isAuthorized = locals.user && ['admin', 'editor'].includes(locals.user.role);
+	
 	const post = db
-		.prepare("SELECT * FROM post WHERE id = ? AND visibility = 'public'")
+		.prepare("SELECT * FROM post WHERE id = ?")
 		.get(slug) as any;
 
-	if (post) {
-		const anonymousName = getSetting('anonymous_name', 'Anonymous');
-		const comments = db
-			.prepare(
-				`
-			SELECT 
-				comment.*, 
-				COALESCE(user.nickname, user.username, ?) as author_name, 
+	if (!post) {
+		throw error(404, 'Post Not Found');
+	}
+
+	// 権限がない場合は公開記事のみ表示
+	if (!isAuthorized && post.visibility !== 'public') {
+		throw error(403, 'この記事を表示する権限がありません。');
+	}
+
+	// VIP 限定記事のチェック
+	if (post.visibility === 'vip' && locals.user?.role !== 'vip' && locals.user?.role !== 'admin') {
+		throw error(403, 'この記事を表示する権限がありません。');
+	}
+
+	const anonymousName = getSetting('anonymous_name', 'Anonymous');
+	const comments = db
+		.prepare(
+			`
+			SELECT
+				comment.*,
+				COALESCE(user.nickname, user.username, ?) as author_name,
 				user.role as author_role,
 				user.avatar_url
 			FROM comment
@@ -68,26 +85,21 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 			WHERE post_id = ?
 			ORDER BY created_at ASC
 		`
-			)
-			.all(anonymousName, slug) as any[];
+		)
+		.all(anonymousName, slug) as any[];
 
-		return {
-			post,
-			pageTitle: post.title,
-			comments,
-			user: locals.user,
-			settings: {
-				allow_comments: getSetting('allow_comments', 'true') === 'true',
-				allow_anonymous_comments: getSetting('allow_anonymous_comments', 'false') === 'true',
-				enable_turnstile: getSetting('enable_turnstile', 'false'),
-				turnstile_site_key: getSetting('turnstile_site_key', '')
-			}
-		};
-	}
-
-	// どちらにも見つからない場合は404
-
-	throw error(404, 'Page Not Found');
+	return {
+		post,
+		pageTitle: post.title,
+		comments,
+		user: locals.user,
+		settings: {
+			allow_comments: getSetting('allow_comments', 'true') === 'true',
+			allow_anonymous_comments: getSetting('allow_anonymous_comments', 'false') === 'true',
+			enable_turnstile: getSetting('enable_turnstile', 'false'),
+			turnstile_site_key: getSetting('turnstile_site_key', '')
+		}
+	};
 };
 
 export const actions: Actions = {
@@ -106,7 +118,7 @@ export const actions: Actions = {
 			return fail(400, { message: 'コメント内容を入力してください。' });
 		}
 
-		// Turnstile validation
+		// Turnstile 検証
 		if (getSetting('enable_turnstile', 'false') === 'true') {
 			const secretKey = process.env.TURNSTILE_SECRET_KEY || getSetting('turnstile_secret_key', '');
 			if (!turnstileToken) {
@@ -133,8 +145,6 @@ export const actions: Actions = {
 				}
 			} catch (e) {
 				console.error('[TURNSTILE ERROR]', e);
-				// APIエラーの場合はフォールバックとして通すか、エラーにするか検討が必要
-				// ここでは安全のためエラーにします
 				return fail(500, { message: '認証サーバーとの通信に失敗しました。' });
 			}
 		}
@@ -182,7 +192,6 @@ export const actions: Actions = {
 		}
 
 		const formData = await request.formData();
-
 		const id = formData.get('id') as string;
 
 		if (!id) return fail(400);

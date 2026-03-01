@@ -1,457 +1,249 @@
 <script lang="ts">
-	import { onMount, tick } from 'svelte';
-	import { enhance } from '$app/forms';
-	import { editorJsToHtml } from '$lib/utils/editor';
-	import { editorI18n } from '$lib/utils/editor_i18n';
-	import { t, type Language } from '$lib/i18n';
-	import type { ActionData, PageData } from './$types';
+  import { onMount } from 'svelte';
+  import { enhance } from '$app/forms';
+  import RichEditor from '$lib/components/RichEditor.svelte';
+  import VersionControl from '$lib/components/VersionControl.svelte';
+  import { t, type Language } from '$lib/i18n';
+  import type { ActionData, PageData } from './$types';
 
-	let { data, form } = $props<{ data: PageData; form: ActionData }>();
-	let initialPost = $state<any>(null);
-	const lang = $derived((data.settings?.site_language || 'ja') as Language);
+  let { data, form } = $props<{ data: PageData; form: ActionData }>();
+  const lang = $derived((data.settings?.site_language || 'ja') as Language);
 
-	let editor: any;
-	let formElement: HTMLFormElement;
+  let formElement: HTMLFormElement;
 
-	let title = $state('');
-	let summary = $state('');
-	let visibility = $state('draft');
-	let editorData = $state('');
-	let thumbnailUrl = $state('');
-	let isSaving = $state(false);
-	let isPreview = $state(false);
-	let previewHtml = $state('');
-	let isUploadingThumb = $state(false);
+  let initialPost = $state<any>(null);
+  let title = $state('');
+  let summary = $state('');
+  let visibility = $state('draft');
+  let editorHtml = $state('');
+  let thumbnailUrl = $state('');
+  let isSaving = $state(false);
+  let isPreview = $state(false);
+  let isUploadingThumb = $state(false);
 
-	let isEditorInitialized = false;
+  $effect(() => {
+    if (data.post && !initialPost) {
+      initialPost = $state.snapshot(data.post);
+      title = initialPost.title;
+      summary = initialPost.summary || '';
+      visibility = initialPost.visibility;
+      // HTML コンテンツを抽出
+      editorHtml = initialPost.content || '';
+      thumbnailUrl = initialPost.thumbnail_url || '';
+    }
+  });
 
-	$effect(() => {
-		if (data.post && !initialPost) {
-			initialPost = $state.snapshot(data.post);
-			title = initialPost.title;
-			summary = initialPost.summary || '';
-			visibility = initialPost.visibility;
-			editorData = initialPost.raw_json || initialPost.content || '';
-			thumbnailUrl = initialPost.thumbnail_url || '';
-		}
-	});
+  const buttonLabel = $derived.by(() => {
+    if (isSaving) return t(lang, 'saving');
+    switch (visibility) {
+      case 'draft':
+        return t(lang, 'draft');
+      case 'review':
+        return t(lang, 'review');
+      case 'public':
+        return t(lang, 'public');
+      default:
+        return t(lang, 'save_changes');
+    }
+  });
 
-	$effect(() => {
-		if (editorData && !isEditorInitialized && !editor) {
-			initEditor();
-		}
-	});
+  async function handleThumbnailUpload(e: Event) {
+    const file = (e.target as HTMLInputElement).files?.[0];
+    if (!file) return;
+    isUploadingThumb = true;
+    const formData = new FormData();
+    formData.append('image', file);
+    try {
+      const res = await fetch('/api/upload?type=post', { method: 'POST', body: formData });
+      const result = await res.json();
+      if (result.success) thumbnailUrl = result.file.url;
+    } finally {
+      isUploadingThumb = false;
+    }
+  }
 
-	async function initEditor() {
-		if (isEditorInitialized) return;
-		isEditorInitialized = true;
+  async function handleImageUploadInEditor({ file }: { file: File }) {
+    const formData = new FormData();
+    formData.append('image', file);
+    try {
+      const res = await fetch('/api/upload?type=post', { method: 'POST', body: formData });
+      const result = await res.json();
+      if (result.success) {
+        return result.file.url;
+      } else {
+        console.error('Image upload failed:', result.message);
+        throw new Error(result.message || 'Image upload failed');
+      }
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      throw error;
+    }
+  }
 
-		const settings = data.settings;
+  function submitForm() {
+    if (isSaving) return;
+    formElement?.requestSubmit();
+  }
 
-		const EditorJS = (await import('@editorjs/editorjs')).default;
-		const Header = (await import('@editorjs/header')).default;
-		const List = (await import('@editorjs/list')).default;
-		const Quote = (await import('@editorjs/quote')).default;
-		const Code = (await import('@editorjs/code')).default;
-		const Image = (await import('@editorjs/image')).default;
-		const Embed = (await import('@editorjs/embed')).default;
-		const Marker = (await import('@editorjs/marker')).default;
-		const Table = (await import('@editorjs/table')).default;
-		const Checklist = (await import('@editorjs/checklist')).default;
-		const Warning = (await import('@editorjs/warning')).default;
-		const Delimiter = (await import('@editorjs/delimiter')).default;
-		const InlineCode = (await import('@editorjs/inline-code')).default;
-		const Underline = (await import('@editorjs/underline')).default;
-		const ColorPlugin = (await import('editorjs-text-color-plugin')).default;
-		const AlignmentTune = (await import('editorjs-text-alignment-blocktune')).default;
-		const Undo = (await import('editorjs-undo')).default;
-		const LinkTool = (await import('@editorjs/link')).default;
-		const RawTool = (await import('@editorjs/raw')).default;
-		const DragDrop = (await import('editorjs-drag-drop')).default;
-		const Paragraph = (await import('@editorjs/paragraph')).default;
+  async function handleKeydown(e: KeyboardEvent) {
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
+      e.preventDefault();
+      submitForm();
+    }
+  }
 
-		let parsedData: { blocks: any[] } = { blocks: [] };
-		try {
-			const autosaved = localStorage.getItem(`autosave_post_${initialPost.id}`);
-			if (autosaved) {
-				parsedData = JSON.parse(autosaved);
-			}
-			if (parsedData.blocks.length === 0 && editorData) {
-				const data = JSON.parse(editorData);
-				if (data && data.blocks) parsedData = data;
-			}
-		} catch (e) {}
-
-		if (parsedData.blocks.length === 0) {
-			parsedData.blocks.push({ type: 'paragraph', data: { text: '' } });
-		}
-
-		try {
-			editor = new EditorJS({
-				holder: 'editorjs',
-				inlineToolbar: true,
-				i18n: settings?.site_language === 'ja' ? editorI18n : undefined,
-				tools: {
-					paragraph: { class: Paragraph, inlineToolbar: true },
-					header: { class: Header, inlineToolbar: true },
-					list: { class: List, inlineToolbar: true },
-					quote: { class: Quote, inlineToolbar: true },
-					code: { class: Code },
-					marker: {
-						class: ColorPlugin,
-						inlineToolbar: true,
-						config: {
-							type: 'marker',
-							customPicker: true,
-							colorCollections: [
-								'#FFCC00',
-								'#FF9900',
-								'#FF6666',
-								'#CC99FF',
-								'#99CCFF',
-								'#99FFCC',
-								'#00CC99',
-								'#CCCCCC'
-							],
-							colors: [
-								'#FFCC00',
-								'#FF9900',
-								'#FF6666',
-								'#CC99FF',
-								'#99CCFF',
-								'#99FFCC',
-								'#00CC99',
-								'#CCCCCC'
-							],
-							defaultColor: '#FFCC00'
-						}
-					},
-					table: { class: Table, inlineToolbar: true },
-					checklist: { class: Checklist, inlineToolbar: true },
-					warning: { class: Warning },
-					delimiter: { class: Delimiter },
-					inlineCode: { class: InlineCode },
-					underline: { class: Underline },
-					color: {
-						class: ColorPlugin,
-						inlineToolbar: true,
-						config: {
-							type: 'text',
-							customPicker: true,
-							colorCollections: [
-								'#000000',
-								'#FF0000',
-								'#0000FF',
-								'#00CC99',
-								'#FF00FF',
-								'#0099FF',
-								'#666666',
-								'#FFFFFF'
-							],
-							colors: [
-								'#000000',
-								'#FF0000',
-								'#0000FF',
-								'#00CC99',
-								'#FF00FF',
-								'#0099FF',
-								'#666666',
-								'#FFFFFF'
-							],
-							defaultColor: '#FF0000'
-						}
-					},
-					image: {
-						class: Image,
-						config: {
-							endpoints: { byFile: '/api/upload', byUrl: '/api/upload/fetch' },
-							field: 'image',
-							types: 'image/*'
-						}
-					},
-					linkTool: { class: LinkTool, config: { endpoint: '/api/link' } },
-					raw: { class: RawTool, inlineToolbar: true },
-					embed: {
-						class: Embed,
-						config: { services: { youtube: true, vimeo: true, twitter: true } }
-					},
-					anyTuneName: {
-						class: AlignmentTune,
-						config: {
-							default: 'left',
-							blocks: {
-								header: 'left',
-								paragraph: 'left',
-								quote: 'left',
-								list: 'left',
-								checklist: 'left'
-							}
-						}
-					}
-				},
-				tunes: ['anyTuneName'],
-				onReady: () => {
-					// editorが初期化されていることを確認
-					if (editor) {
-						new Undo({ editor });
-						new DragDrop(editor);
-					}
-				},
-				onChange: () => {
-					// editorが初期化されていることを確認
-					if (editor) {
-						debouncedAutosave();
-					}
-				},
-				data: parsedData,
-				minHeight: 400,
-				placeholder: '...',
-				defaultBlock: 'paragraph'
-			});
-		} catch (err) {
-			console.error('EditorJS initialization failed:', err);
-		}
-	}
-
-	async function handleThumbnailUpload(e: Event) {
-		const file = (e.target as HTMLInputElement).files?.[0];
-		if (!file) return;
-		isUploadingThumb = true;
-		const formData = new FormData();
-		formData.append('image', file);
-		try {
-			const res = await fetch('/api/upload?type=post', { method: 'POST', body: formData });
-			const result = await res.json();
-			if (result.success) thumbnailUrl = result.file.url;
-		} finally {
-			isUploadingThumb = false;
-		}
-	}
-
-	const buttonLabel = $derived.by(() => {
-		if (isSaving) return t(lang, 'saving');
-		switch (visibility) {
-			case 'draft':
-				return t(lang, 'draft');
-			case 'review':
-				return t(lang, 'review');
-			case 'public':
-				return t(lang, 'public');
-			default:
-				return t(lang, 'save_changes');
-		}
-	});
-
-	async function togglePreview() {
-		if (!isPreview) {
-			if (editor) {
-				const saved = await editor.save();
-				previewHtml = editorJsToHtml(saved.blocks);
-			}
-			isPreview = true;
-		} else {
-			isPreview = false;
-		}
-	}
-
-	async function handleKeydown(e: KeyboardEvent) {
-		if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
-			e.preventDefault();
-			submitForm();
-		}
-	}
-
-	function submitForm() {
-		if (!editor || isSaving) return;
-		formElement?.requestSubmit();
-	}
-
-	onMount(() => {
-		window.addEventListener('keydown', handleKeydown, true);
-		return () => {
-			window.removeEventListener('keydown', handleKeydown, true);
-			if (editor) {
-				const currentEditor = editor;
-				editor = null;
-				if (typeof currentEditor.destroy === 'function') {
-					currentEditor.isReady.then(() => currentEditor.destroy()).catch(() => {});
-				}
-			}
-			debouncedAutosave.clear();
-		};
-	});
-
-	function debounce<T extends (...args: any[]) => any>(func: T, timeout = 300) {
-		let timer: ReturnType<typeof setTimeout>;
-		const debounced = function (this: any, ...args: Parameters<T>) {
-			clearTimeout(timer);
-			timer = setTimeout(() => {
-				func.apply(this, args);
-			}, timeout);
-		};
-		debounced.clear = () => {
-			clearTimeout(timer);
-		};
-		return debounced;
-	}
-
-	const debouncedAutosave = debounce(async () => {
-		if (editor) {
-			try {
-				const saved = await editor.save();
-				localStorage.setItem(`autosave_post_${initialPost.id}`, JSON.stringify(saved));
-			} catch (err) {
-				console.error('Autosave failed:', err);
-			}
-		}
-	}, 1000);
+  onMount(() => {
+    window.addEventListener('keydown', handleKeydown, true);
+    return () => {
+      window.removeEventListener('keydown', handleKeydown, true);
+    };
+  });
 </script>
 
 <svelte:head>
-	<title>{t(lang, 'edit_story')}: {title} | {data.settings?.site_title || 'Admin'}</title>
+  <title>{t(lang, 'edit_story')}: {title} | {data.settings?.site_title || 'Admin'}</title>
 </svelte:head>
 
 <div class="max-w-5xl mx-auto px-4 py-8">
-	<form
-		bind:this={formElement}
-		method="POST"
-		class="space-y-8"
-		use:enhance={async ({ formData, cancel }) => {
-			if (!editor) return cancel();
-			isSaving = true;
-			try {
-				const saved = await editor.save();
-				formData.set('editorData', JSON.stringify(saved));
-			} catch (err) {
-				isSaving = false;
-				return cancel();
-			}
-			return async ({ result, update }) => {
-				isSaving = false;
-				if (result.type === 'success' || result.type === 'redirect') {
-					localStorage.removeItem(`autosave_post_${initialPost.id}`);
-				}
-				await update({ reset: false });
-			};
-		}}
-	>
-		<header class="flex flex-col md:flex-row md:items-center justify-between gap-6">
-			<div>
-				<h2 class="text-4xl font-black tracking-tighter uppercase text-psan-green leading-none">
-					{t(lang, 'edit_story')}
-				</h2>
-				<div class="flex gap-4 mt-3">
-					<select
-						name="visibility"
-						bind:value={visibility}
-						class="text-[10px] font-black bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-500 rounded-xl px-4 py-2 uppercase tracking-widest cursor-pointer text-main focus:ring-2 focus:ring-psan-green shadow-sm outline-none"
-					>
-						<option value="draft">📁 {t(lang, 'draft')}</option>
-						<option value="review">⏳ {t(lang, 'review')}</option>
-						{#if data.user?.role === 'admin' || data.user?.role === 'editor'}
-							<option value="public">🌍 {t(lang, 'public')}</option>
-							<option value="unlisted">🔗 {t(lang, 'unlisted')}</option>
-							<option value="private">🔒 {t(lang, 'private')}</option>
-							<option value="vip">💎 {t(lang, 'vip')}</option>
-						{/if}
-					</select>
-				</div>
-			</div>
-			<div class="flex gap-3">
-				<a href="/dashboard/posts" class="btn-psan-ghost text-xs py-2">{t(lang, 'cancel')}</a>
-				<button
-					type="button"
-					onclick={togglePreview}
-					class="btn-psan-ghost text-xs py-2 border-psan-green text-psan-green hover:bg-psan-green hover:text-white transition-all min-w-[100px]"
-				>
-					{isPreview ? t(lang, 'edit') : t(lang, 'preview')}
-				</button>
-				<button type="submit" class="btn-psan-primary py-3 px-10 text-sm" disabled={isSaving}>
-					{buttonLabel}
-				</button>
-			</div>
-		</header>
+  <form
+    bind:this={formElement}
+    method="POST"
+    class="space-y-8"
+    use:enhance={async ({ formData, cancel }) => {
+      isSaving = true;
+      return async ({ result, update }) => {
+        isSaving = false;
+        if (result.type === 'success' || result.type === 'redirect') {
+          localStorage.removeItem(`autosave_post_${initialPost?.id}`);
+        }
+        await update({ reset: false });
+      };
+    }}
+  >
+    <header class="flex flex-col md:flex-row md:items-center justify-between gap-6">
+      <div>
+        <h2 class="text-4xl font-black tracking-tighter uppercase text-psan-green leading-none">
+          {t(lang, 'edit_story')}
+        </h2>
+        <div class="flex gap-4 mt-3">
+          <select
+            name="visibility"
+            bind:value={visibility}
+            class="text-[10px] font-black bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-500 rounded-xl px-4 py-2 uppercase tracking-widest cursor-pointer text-main focus:ring-2 focus:ring-psan-green shadow-sm outline-none"
+          >
+            <option value="draft">📁 {t(lang, 'draft')}</option>
+            <option value="review">⏳ {t(lang, 'review')}</option>
+            {#if data.user?.role === 'admin' || data.user?.role === 'editor'}
+              <option value="public">🌍 {t(lang, 'public')}</option>
+              <option value="unlisted">🔗 {t(lang, 'unlisted')}</option>
+              <option value="private">🔒 {t(lang, 'private')}</option>
+              <option value="vip">💎 {t(lang, 'vip')}</option>
+            {/if}
+          </select>
+        </div>
+      </div>
+      <div class="flex gap-3">
+        <a href="/dashboard/posts" class="btn-psan-ghost text-xs py-2">{t(lang, 'cancel')}</a>
+        <button
+          type="button"
+          onclick={() => (isPreview = !isPreview)}
+          class="btn-psan-ghost text-xs py-2 border-psan-green text-psan-green hover:bg-psan-green hover:text-white transition-all min-w-[100px]"
+        >
+          {isPreview ? t(lang, 'edit') : t(lang, 'preview')}
+        </button>
+        <button type="submit" class="btn-psan-primary py-3 px-10 text-sm" disabled={isSaving}>
+          {buttonLabel}
+        </button>
+      </div>
+    </header>
 
-		<div class="card-dashboard p-6 md:p-12 space-y-10">
-			<div class="flex flex-col md:flex-row gap-10 items-start">
-				<div class="w-full md:w-64 shrink-0">
-					<span class="text-[10px] font-black text-muted uppercase block mb-3 tracking-widest"
-						>{t(lang, 'thumbnail')}</span
-					>
-					<div
-						class="aspect-video rounded-3xl bg-slate-50 dark:bg-slate-800 overflow-hidden relative group border-2 border-dashed border-slate-200 dark:border-slate-700"
-					>
-						{#if thumbnailUrl}
-							<img src={thumbnailUrl} alt="" class="w-full h-full object-cover" />
-							<button
-								type="button"
-								onclick={() => (thumbnailUrl = '')}
-								class="absolute top-3 right-3 w-8 h-8 bg-black/50 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-								>✕</button
-							>
-						{:else}
-							<label
-								class="absolute inset-0 flex flex-col items-center justify-center cursor-pointer hover:bg-psan-green/5 transition-colors"
-							>
-								<svg
-									class="w-8 h-8 text-muted opacity-40 mb-2"
-									fill="none"
-									stroke="currentColor"
-									viewBox="0 0 24 24"
-									><path
-										stroke-linecap="round"
-										stroke-linejoin="round"
-										stroke-width="2"
-										d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-									/></svg
-								>
-								<span class="text-[10px] font-black text-muted uppercase tracking-widest"
-									>{isUploadingThumb ? '...' : t(lang, 'upload')}</span
-								>
-								<input
-									type="file"
-									accept="image/*"
-									class="hidden"
-									onchange={handleThumbnailUpload}
-									disabled={isUploadingThumb}
-								/>
-							</label>
-						{/if}
-					</div>
-					<input type="hidden" name="thumbnail_url" value={thumbnailUrl} />
-				</div>
+    <div class="card-dashboard p-6 md:p-12 space-y-10">
+      <div class="flex flex-col md:flex-row gap-10 items-start">
+        <div class="w-full md:w-64 shrink-0">
+          <span class="text-[10px] font-black text-muted uppercase block mb-3 tracking-widest"
+            >{t(lang, 'thumbnail')}</span
+          >
+          <div
+            class="aspect-video rounded-3xl bg-slate-50 dark:bg-slate-800 overflow-hidden relative group border-2 border-dashed border-slate-200 dark:border-slate-700"
+          >
+            {#if thumbnailUrl}
+              <img src={thumbnailUrl} alt="" class="w-full h-full object-cover" />
+              <button
+                type="button"
+                onclick={() => (thumbnailUrl = '')}
+                class="absolute top-3 right-3 w-8 h-8 bg-black/50 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                >✕</button
+              >
+            {:else}
+              <label
+                class="absolute inset-0 flex flex-col items-center justify-center cursor-pointer hover:bg-psan-green/5 transition-colors"
+              >
+                <svg
+                  class="w-8 h-8 text-muted opacity-40 mb-2"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  ><path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                  /></svg
+                >
+                <span class="text-[10px] font-black text-muted uppercase tracking-widest"
+                  >{isUploadingThumb ? '...' : t(lang, 'upload')}</span
+                >
+                <input
+                  type="file"
+                  accept="image/*"
+                  class="hidden"
+                  onchange={handleThumbnailUpload}
+                  disabled={isUploadingThumb}
+                />
+              </label>
+            {/if}
+          </div>
+          <input type="hidden" name="thumbnail_url" value={thumbnailUrl} />
+        </div>
 
-				<div class="flex-1 space-y-6 w-full">
-					<input
-						type="text"
-						name="title"
-						bind:value={title}
-						class="w-full text-4xl md:text-5xl font-black bg-transparent border-none focus:ring-0 p-0 text-main placeholder:text-slate-200 dark:placeholder:text-slate-800 tracking-tighter"
-						placeholder={t(lang, 'title')}
-					/>
-					<textarea
-						name="summary"
-						bind:value={summary}
-						rows="2"
-						class="w-full text-xl font-bold bg-transparent border-none focus:ring-0 p-0 text-muted placeholder:text-slate-200 dark:placeholder:text-slate-800 resize-none"
-						placeholder={t(lang, 'summary')}
-					></textarea>
-				</div>
-			</div>
+        <div class="flex-1 space-y-6 w-full">
+          <input
+            type="text"
+            name="title"
+            bind:value={title}
+            class="w-full text-4xl md:text-5xl font-black bg-transparent border-none focus:ring-0 p-0 text-main placeholder:text-slate-200 dark:placeholder:text-slate-800 tracking-tighter"
+            placeholder={t(lang, 'title')}
+          />
+          <textarea
+            name="summary"
+            bind:value={summary}
+            rows="2"
+            class="w-full text-xl font-bold bg-transparent border-none focus:ring-0 p-0 text-muted placeholder:text-slate-200 dark:placeholder:text-slate-800 resize-none"
+            placeholder={t(lang, 'summary')}
+          ></textarea>
+        </div>
+      </div>
 
-			<div class="editor-container-psan min-h-[500px]">
-				<div id="editorjs" class="text-main {isPreview ? 'hidden' : 'block'}"></div>
-				{#if isPreview}
-					<div
-						class="prose dark:prose-invert max-w-none preview-content animate-in fade-in duration-300"
-					>
-						{@html previewHtml}
-					</div>
-				{/if}
-			</div>
-		</div>
+      <div class="editor-container-psan min-h-[500px]">
+        {#if !isPreview}
+          <RichEditor
+            value={editorHtml}
+            placeholder="コンテンツを入力してください..."
+            onchange={(html) => (editorHtml = html)}
+          />
+        {:else}
+          <div
+            class="prose dark:prose-invert max-w-none preview-content animate-in fade-in duration-300 p-4 border rounded-lg bg-white dark:bg-slate-800"
+          >
+            {@html editorHtml}
+          </div>
+        {/if}
+      </div>
+    </div>
 
-		<input type="hidden" name="editorData" value={editorData} />
-		{#if form?.message}<p class="text-psan-pink font-bold text-center">{form.message}</p>{/if}
-	</form>
+    <input type="hidden" name="editorHtml" value={editorHtml} />
+    {#if form?.message}<p class="text-psan-pink font-bold text-center">{form.message}</p>{/if}
+  </form>
 </div>
+
+

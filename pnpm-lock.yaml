@@ -89,6 +89,9 @@ importers:
       lucia:
         specifier: ^3.2.2
         version: 3.2.2
+      lucide-svelte:
+        specifier: 0.469.0
+        version: 0.469.0(svelte@5.53.2)
     devDependencies:
       '@eslint/compat':
         specifier: ^1.4.0
@@ -1645,6 +1648,11 @@ packages:
   lucia@3.2.2:
     resolution: {integrity: sha512-P1FlFBGCMPMXu+EGdVD9W4Mjm0DqsusmKgO7Xc33mI5X1bklmsQb0hfzPhXomQr9waWIBDsiOjvr1e6BTaUqpA==}
     deprecated: This package has been deprecated. Please see https://lucia-auth.com/lucia-v3/migrate.
+
+  lucide-svelte@0.469.0:
+    resolution: {integrity: sha512-PMIJ8jrFqVUsXJz4d1yfAQplaGhNOahwwkzbunha8DhpiD73xqX24n8dE1dPpUk3vcrdWVsHc1y/liHHotOnGQ==}
+    peerDependencies:
+      svelte: ^3 || ^4 || ^5.0.0-next.42
 
   magic-string@0.30.21:
     resolution: {integrity: sha512-vd2F4YUyEXKGcLHoq+TEyCjxueSeHnFxyyjNp80yg0XV4vUhnDer/lvvlqM/arB5bXQN5K2/3oinyCRyx8T2CQ==}
@@ -3376,6 +3384,10 @@ snapshots:
     dependencies:
       '@oslojs/crypto': 1.0.1
       '@oslojs/encoding': 1.1.0
+
+  lucide-svelte@0.469.0(svelte@5.53.2):
+    dependencies:
+      svelte: 5.53.2
 
   magic-string@0.30.21:
     dependencies:

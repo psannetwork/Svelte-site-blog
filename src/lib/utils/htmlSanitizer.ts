@@ -43,30 +43,35 @@ export function sanitizeHtml(dirtyHtml: string): string {
 			'td',
 			'div',
 			'span',
-			'hr',
-			'iframe' // Allowed for YouTube/Embeds, but should be restricted by CSP
+			'hr'
 		],
 		ALLOWED_ATTR: [
 			'href',
 			'src',
 			'alt',
 			'title',
-			'target',
 			'width',
 			'height',
-			'style',
 			'class',
-			'id',
-			'colspan',
-			'rowspan',
-			'controls',
-			'poster',
-			'frameborder',
-			'allowfullscreen',
-			'loading',
-			'decoding'
+			'id'
 		],
+		// https, mailto, tel, ftp のみ許可
 		ALLOWED_URI_REGEXP: /^(?:(?:https?|mailto|tel|ftp):|[^a-z]|[a-z+.-]+(?:[^a-z+.-]|$))/i,
+		ADD_ATTR: ['target'],
+		FORCE_BODY: true
+	});
+}
+
+/**
+ * コメント用の厳格なサニタイズ
+ */
+export function sanitizeComment(dirtyHtml: string): string {
+	if (!dirtyHtml) return '';
+
+	return DOMPurify.sanitize(dirtyHtml, {
+		ALLOWED_TAGS: ['p', 'br', 'strong', 'em', 'u', 'a'],
+		ALLOWED_ATTR: ['href', 'title', 'target'],
+		ALLOWED_URI_REGEXP: /^(?:https?|mailto):/i,
 		ADD_ATTR: ['target'],
 		FORCE_BODY: true
 	});

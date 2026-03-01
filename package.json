@@ -68,7 +68,8 @@
 		"editorjs-undo": "^2.0.28",
 		"isomorphic-dompurify": "^3.0.0",
 		"libsql": "^0.5.22",
-		"lucia": "^3.2.2"
+		"lucia": "^3.2.2",
+		"lucide-svelte": "0.469.0"
 	},
 	"pnpm": {
 		"onlyBuiltDependencies": [
