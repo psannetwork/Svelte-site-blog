@@ -142,7 +142,8 @@
 
 	function handleGlobalClick(e: MouseEvent) {
 		const target = e.target as HTMLElement;
-		const resizableTags = ['IMG', 'PRE', 'BLOCKQUOTE', 'IFRAME', 'VIDEO', 'TABLE'];
+		// テキスト要素も選択可能に
+		const resizableTags = ['IMG', 'PRE', 'BLOCKQUOTE', 'IFRAME', 'VIDEO', 'TABLE', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'P', 'UL', 'OL', 'HR'];
 
 		if (resizableTags.includes(target.tagName) && editorRef?.contains(target)) {
 			if (selectedElement && selectedElement !== target) {
@@ -897,15 +898,17 @@
 					<div class="move-handle">
 						<Move size={14} />
 					</div>
-					<div
-						class="resize-handle se"
-						onmousedown={startResize}
-						onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') startResize(e as any); }}
-						onclick={(e) => e.stopPropagation()}
-						role="button"
-						tabindex="0"
-						aria-label="Resize element"
-					></div>
+					{#if ['IMG', 'PRE', 'BLOCKQUOTE', 'IFRAME', 'VIDEO', 'TABLE'].includes(selectedElement.tagName)}
+						<div
+							class="resize-handle se"
+							onmousedown={startResize}
+							onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') startResize(e as any); }}
+							onclick={(e) => e.stopPropagation()}
+							role="button"
+							tabindex="0"
+							aria-label="Resize element"
+						></div>
+					{/if}
 				</div>
 			{/if}
 
@@ -1151,17 +1154,17 @@
 	}
 
 	/* Drag and Drop Styles */
-	:global(.rich-editor img[draggable="true"]),
-	:global(.rich-editor pre[draggable="true"]),
-	:global(.rich-editor blockquote[draggable="true"]),
-	:global(.rich-editor table[draggable="true"]) {
+	:global(.rich-editor [draggable="true"]) {
 		cursor: grab;
+		outline: 2px solid transparent;
+		transition: outline-color 0.15s;
 	}
 
-	:global(.rich-editor img[draggable="true"]:active),
-	:global(.rich-editor pre[draggable="true"]:active),
-	:global(.rich-editor blockquote[draggable="true"]:active),
-	:global(.rich-editor table[draggable="true"]:active) {
+	:global(.rich-editor [draggable="true"]:hover) {
+		outline-color: rgba(59, 130, 246, 0.3);
+	}
+
+	:global(.rich-editor [draggable="true"]:active) {
 		cursor: grabbing;
 	}
 
