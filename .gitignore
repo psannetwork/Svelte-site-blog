@@ -41,3 +41,5 @@ puppeteer-profile/
 qa_tools
 
 *.zip
+
+.pnpm-store
