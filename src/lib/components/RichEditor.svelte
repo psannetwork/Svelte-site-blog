@@ -3,6 +3,7 @@
 	import SlashMenu from './SlashMenu.svelte';
 	import { replaceTextWithBlock, setCursorToEnd, getSelectionRange } from './utils/selection';
 	import { htmlToMarkdown, markdownToHtml } from './utils/converter';
+	import { sanitizeHtml } from '$lib/utils/htmlSanitizer';
 	import {
 		Bold, Italic, Underline, Strikethrough, Link as LinkIcon, Image as ImageIcon,
 		Undo, Redo, Move, List, ListOrdered, Quote, Code, Minus, Table as TableIcon,
@@ -30,8 +31,17 @@
 	// History State for Undo/Redo
 	let history = $state<string[]>([]);
 	let historyIndex = $state(-1);
-	const MAX_HISTORY = 50;
+	// メモリ使用量削減のため履歴数を 30 に制限
+	const MAX_HISTORY = 30;
 	let historyTimeout: ReturnType<typeof setTimeout>;
+
+	// Input Debounce for Performance
+	const INPUT_DEBOUNCE_DELAY = 300;
+	let inputDebounceTimeout: ReturnType<typeof setTimeout>;
+	let pendingInputHtml = '';
+
+	// 履歴エントリの最大サイズ (約 100KB)
+	const MAX_HISTORY_ENTRY_SIZE = 100000;
 
 	// Element Resizing & Moving State
 	let selectedElement = $state<HTMLElement | null>(null);
@@ -55,6 +65,28 @@
 
 	// Font Size State
 	let currentFontSize = $state('16');
+
+	// Upload Loading State
+	let isUploading = $state(false);
+
+	// Color Names for Accessibility
+	const colorNames: Record<string, string> = {
+		'#000000': '黒', '#434343': '濃灰', '#666666': '灰', '#999999': '銀', '#b7b7b7': '薄銀',
+		'#cccccc': '淡灰', '#d9d9d9': '白灰', '#efefef': '煙白', '#f3f3f3': '白煙', '#ffffff': '白',
+		'#980000': '赤茶', '#ff0000': '赤', '#ff9900': '橙', '#ffff00': '黄', '#00ff00': '緑',
+		'#00ffff': '水', '#4a86e8': '青', '#0000ff': '紺', '#9900ff': '紫', '#ff00ff': '桃',
+		'#e6b8af': '薄赤', '#f4cccc': '淡赤', '#fce5cd': '淡橙', '#fff2cc': '淡黄', '#d9ead3': '淡緑',
+		'#d0e0e3': '淡水', '#c9daf8': '淡青', '#cfe2f3': '薄青', '#d9d2e9': '薄紫', '#ead1dc': '薄桃',
+		'#dd7e6b': '赤橙', '#ea9999': '赤白', '#f9cb9c': '橙白', '#ffe599': '黄白', '#b6d7a8': '緑白',
+		'#a2c4c9': '水白', '#b4a7d6': '紫白', '#9fc5e8': '青白', '#d5a6bd': '桃白', '#cc4125': '暗赤',
+		'#e06666': '赤灰', '#f6b26b': '橙灰', '#ffd966': '黄灰', '#93c47d': '緑灰', '#76a5af': '水灰',
+		'#8e7cc3': '紫灰', '#6fa8dc': '青灰', '#c27ba0': '桃灰', '#a61b00': '暗赤茶', '#cc0000': '暗赤',
+		'#e69138': '暗橙', '#f1c232': '暗黄', '#6aa84f': '暗緑', '#45818e': '暗水', '#674ea7': '暗紫',
+		'#3d85c6': '暗青', '#a64d79': '暗桃', '#85200c': '褐赤', '#990000': '褐赤', '#b45f06': '褐橙',
+		'#bf9000': '褐黄', '#38761d': '褐緑', '#134f5c': '褐水', '#351c75': '褐紫', '#0b5394': '褐青',
+		'#741b47': '褐桃', '#5b0f00': '暗褐', '#660000': '暗褐赤', '#783f04': '暗褐橙', '#7f6000': '暗褐黄',
+		'#274e13': '暗褐緑', '#0c343d': '暗褐水', '#20124d': '暗褐紫', '#073763': '暗褐青', '#4c1130': '暗褐桃'
+	};
 
 	const colorPalette = [
 		'#000000', '#434343', '#666666', '#999999', '#b7b7b7', '#cccccc', '#d9d9d9', '#efefef', '#f3f3f3', '#ffffff',
@@ -96,17 +128,26 @@
 	onMount(async () => {
 		if (editorRef) {
 			document.execCommand('defaultParagraphSeparator', false, 'p');
-			// value は既に HTML のため直接セット
-			editorRef.innerHTML = value || '<p><br></p>';
+			editorRef.innerHTML = sanitizeHtml(value) || '<p><br></p>';
 			innerHTML = editorRef.innerHTML;
 			saveToHistory(innerHTML);
 		}
 	});
 
 	function saveToHistory(html: string) {
+		// 大きすぎるエントリはスキップ
+		if (html.length > MAX_HISTORY_ENTRY_SIZE) {
+			console.warn('History entry too large, skipping');
+			return;
+		}
+		
+		// 重複チェック
 		if (history[historyIndex] === html) return;
+		
 		const newHistory = history.slice(0, historyIndex + 1);
 		newHistory.push(html);
+		
+		// 履歴数制限
 		if (newHistory.length > MAX_HISTORY) {
 			newHistory.shift();
 		} else {
@@ -133,9 +174,9 @@
 
 	function applyHistory(html: string) {
 		if (editorRef) {
-			editorRef.innerHTML = html;
-			innerHTML = html;
-			if (onchange) onchange(html);
+			editorRef.innerHTML = sanitizeHtml(html);
+			innerHTML = editorRef.innerHTML;
+			if (onchange) onchange(innerHTML);
 			requestAnimationFrame(updateOverlayPos);
 		}
 	}
@@ -199,7 +240,7 @@
 		resizing = true;
 		startX = e.clientX;
 		startY = e.clientY;
-		
+
 		// テキスト要素の場合は現在の表示サイズ、それ以外は clientSize
 		const isTextElement = ['H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'P', 'UL', 'OL', 'HR', 'BLOCKQUOTE', 'PRE'].includes(selectedElement.tagName);
 		startWidth = isTextElement ? selectedElement.offsetWidth : selectedElement.clientWidth;
@@ -256,15 +297,16 @@
 	// value が外部から変更されたらエディターを更新
 	$effect(() => {
 		if (!editorRef || !value) return;
-		
+
 		// 編集中は更新しない
 		if (document.activeElement === editorRef) return;
-		
+
 		// 内容が異なる場合のみ更新
-		if (value !== editorRef.innerHTML) {
-			editorRef.innerHTML = value;
-			innerHTML = value;
-			saveToHistory(value);
+		const sanitizedValue = sanitizeHtml(value);
+		if (sanitizedValue !== editorRef.innerHTML) {
+			editorRef.innerHTML = sanitizedValue;
+			innerHTML = sanitizedValue;
+			saveToHistory(sanitizedValue);
 		}
 	});
 
@@ -360,6 +402,8 @@
 		const formData = new FormData();
 		formData.append('image', file);
 
+		isUploading = true;
+
 		try {
 			const response = await fetch('/api/upload?type=misc', {
 				method: 'POST',
@@ -375,6 +419,7 @@
 			console.error('Image upload failed:', err);
 			alert('画像のアップロードに失敗しました');
 		} finally {
+			isUploading = false;
 			if (fileInputRef) fileInputRef.value = '';
 		}
 	}
@@ -492,17 +537,27 @@
 
 	function handleInput(e: Event) {
 		const target = e.target as HTMLDivElement;
-		innerHTML = target.innerHTML;
+		const newHtml = target.innerHTML;
 
-		if (onchange) {
-			onchange(innerHTML);
-		}
+		// 入力デバウンス - パフォーマンス向上のため 300ms 遅延
+		clearTimeout(inputDebounceTimeout);
+		pendingInputHtml = newHtml;
+		
+		inputDebounceTimeout = setTimeout(() => {
+			innerHTML = pendingInputHtml;
+			
+			if (onchange) {
+				onchange(innerHTML);
+			}
 
-		clearTimeout(historyTimeout);
-		historyTimeout = setTimeout(() => {
-			saveToHistory(innerHTML);
-		}, 1000);
+			// 履歴保存はさらに遅延
+			clearTimeout(historyTimeout);
+			historyTimeout = setTimeout(() => {
+				saveToHistory(innerHTML);
+			}, 1000);
+		}, INPUT_DEBOUNCE_DELAY);
 
+		// SlashMenu の表示は即時処理
 		const selection = window.getSelection();
 		if (!selection || !selection.rangeCount) {
 			menuState.show = false;
@@ -749,34 +804,34 @@
 <div class="editor-outer">
 	<div class="editor-container">
 		<div class="toolbar">
-			<button type="button" class="toolbar-btn" onclick={undo} disabled={historyIndex <= 0} title="元に戻す (Ctrl+Z)">
-				<Undo size={18} />
+			<button type="button" class="toolbar-btn" onclick={undo} disabled={historyIndex <= 0} title="元に戻す (Ctrl+Z)" aria-label="元に戻す (Ctrl+Z)">
+				<Undo size={18} aria-hidden="true" />
 			</button>
-			<button type="button" class="toolbar-btn" onclick={redo} disabled={historyIndex >= history.length - 1} title="やり直し (Ctrl+Y)">
-				<Redo size={18} />
+			<button type="button" class="toolbar-btn" onclick={redo} disabled={historyIndex >= history.length - 1} title="やり直し (Ctrl+Y)" aria-label="やり直し (Ctrl+Y)">
+				<Redo size={18} aria-hidden="true" />
 			</button>
 			<div class="v-divider"></div>
 
-			<button type="button" class="toolbar-btn" onclick={() => format('bold')} title="太字 (Ctrl+B)">
-				<Bold size={18} />
+			<button type="button" class="toolbar-btn" onclick={() => format('bold')} title="太字 (Ctrl+B)" aria-label="太字 (Ctrl+B)">
+				<Bold size={18} aria-hidden="true" />
 			</button>
-			<button type="button" class="toolbar-btn" onclick={() => format('italic')} title="斜体 (Ctrl+I)">
-				<Italic size={18} />
+			<button type="button" class="toolbar-btn" onclick={() => format('italic')} title="斜体 (Ctrl+I)" aria-label="斜体 (Ctrl+I)">
+				<Italic size={18} aria-hidden="true" />
 			</button>
-			<button type="button" class="toolbar-btn" onclick={() => format('underline')} title="下線 (Ctrl+U)">
-				<Underline size={18} />
+			<button type="button" class="toolbar-btn" onclick={() => format('underline')} title="下線 (Ctrl+U)" aria-label="下線 (Ctrl+U)">
+				<Underline size={18} aria-hidden="true" />
 			</button>
-			<button type="button" class="toolbar-btn" onclick={() => format('strikeThrough')} title="取り消し線">
-				<Strikethrough size={18} />
+			<button type="button" class="toolbar-btn" onclick={() => format('strikeThrough')} title="取り消し線" aria-label="取り消し線">
+				<Strikethrough size={18} aria-hidden="true" />
 			</button>
 
 			<div class="v-divider"></div>
 
-			<button type="button" class="toolbar-btn" onclick={(e) => toggleColorPicker(false, e)} title="文字色">
-				<Palette size={18} />
+			<button type="button" class="toolbar-btn" onclick={(e) => toggleColorPicker(false, e)} title="文字色" aria-label="文字色を選択">
+				<Palette size={18} aria-hidden="true" />
 			</button>
-			<button type="button" class="toolbar-btn" onclick={(e) => toggleColorPicker(true, e)} title="背景色">
-				<div style="width: 18px; height: 18px; border-radius: 2px; background: #fbbf24; border: 2px solid #d1d5db;"></div>
+			<button type="button" class="toolbar-btn" onclick={(e) => toggleColorPicker(true, e)} title="背景色" aria-label="背景色を選択">
+				<div style="width: 18px; height: 18px; border-radius: 2px; background: #fbbf24; border: 2px solid #d1d5db;" aria-hidden="true"></div>
 			</button>
 
 			<div class="v-divider"></div>
@@ -784,7 +839,7 @@
 			<select onchange={(e) => {
 				const size = (e.target as HTMLSelectElement).value;
 				if (size) setFontSize(size);
-			}} class="toolbar-select" value={currentFontSize}>
+			}} class="toolbar-select" value={currentFontSize} aria-label="フォントサイズ">
 				<option value="12">12px</option>
 				<option value="14">14px</option>
 				<option value="16">16px</option>
@@ -800,46 +855,46 @@
 
 			<div class="v-divider"></div>
 
-			<button type="button" class="toolbar-btn" onclick={() => executeCommand('h1')} title="見出し 1">
-				<Heading1 size={18} />
+			<button type="button" class="toolbar-btn" onclick={() => executeCommand('h1')} title="見出し 1" aria-label="見出し 1">
+				<Heading1 size={18} aria-hidden="true" />
 			</button>
-			<button type="button" class="toolbar-btn" onclick={() => executeCommand('h2')} title="見出し 2">
-				<Heading2 size={18} />
+			<button type="button" class="toolbar-btn" onclick={() => executeCommand('h2')} title="見出し 2" aria-label="見出し 2">
+				<Heading2 size={18} aria-hidden="true" />
 			</button>
-			<button type="button" class="toolbar-btn" onclick={() => executeCommand('h3')} title="見出し 3">
-				<Heading3 size={18} />
-			</button>
-
-			<div class="v-divider"></div>
-
-			<button type="button" class="toolbar-btn" onclick={() => format('justifyLeft')} title="左揃え">
-				<AlignLeft size={18} />
-			</button>
-			<button type="button" class="toolbar-btn" onclick={() => format('justifyCenter')} title="中央揃え">
-				<AlignCenter size={18} />
-			</button>
-			<button type="button" class="toolbar-btn" onclick={() => format('justifyRight')} title="右揃え">
-				<AlignRight size={18} />
-			</button>
-			<button type="button" class="toolbar-btn" onclick={() => format('justifyFull')} title="両端揃え">
-				<AlignJustify size={18} />
+			<button type="button" class="toolbar-btn" onclick={() => executeCommand('h3')} title="見出し 3" aria-label="見出し 3">
+				<Heading3 size={18} aria-hidden="true" />
 			</button>
 
 			<div class="v-divider"></div>
 
-			<button type="button" class="toolbar-btn" onclick={() => executeCommand('bullet')} title="箇条書き">
-				<List size={18} />
+			<button type="button" class="toolbar-btn" onclick={() => format('justifyLeft')} title="左揃え" aria-label="左揃え">
+				<AlignLeft size={18} aria-hidden="true" />
 			</button>
-			<button type="button" class="toolbar-btn" onclick={() => executeCommand('number')} title="番号付きリスト">
-				<ListOrdered size={18} />
+			<button type="button" class="toolbar-btn" onclick={() => format('justifyCenter')} title="中央揃え" aria-label="中央揃え">
+				<AlignCenter size={18} aria-hidden="true" />
+			</button>
+			<button type="button" class="toolbar-btn" onclick={() => format('justifyRight')} title="右揃え" aria-label="右揃え">
+				<AlignRight size={18} aria-hidden="true" />
+			</button>
+			<button type="button" class="toolbar-btn" onclick={() => format('justifyFull')} title="両端揃え" aria-label="両端揃え">
+				<AlignJustify size={18} aria-hidden="true" />
 			</button>
 
 			<div class="v-divider"></div>
 
-			<button type="button" class="toolbar-btn" onclick={() => executeCommand('quote')} title="引用">
-				<Quote size={18} />
+			<button type="button" class="toolbar-btn" onclick={() => executeCommand('bullet')} title="箇条書き" aria-label="箇条書きリスト">
+				<List size={18} aria-hidden="true" />
 			</button>
-			<button type="button" class="toolbar-btn" onclick={() => executeCommand('code')} title="コードブロック">
+			<button type="button" class="toolbar-btn" onclick={() => executeCommand('number')} title="番号付きリスト" aria-label="番号付きリスト">
+				<ListOrdered size={18} aria-hidden="true" />
+			</button>
+
+			<div class="v-divider"></div>
+
+			<button type="button" class="toolbar-btn" onclick={() => executeCommand('quote')} title="引用" aria-label="引用">
+				<Quote size={18} aria-hidden="true" />
+			</button>
+			<button type="button" class="toolbar-btn" onclick={() => executeCommand('code')} title="コードブロック" aria-label="コードブロック">
 				<Code size={18} />
 			</button>
 
@@ -847,18 +902,33 @@
 
 			<button type="button" class="toolbar-btn" onclick={() => {
 				const url = prompt('リンク先 URL を入力してください:');
-				if (url) format('createLink', url);
-			}} title="リンク">
-				<LinkIcon size={18} />
+				if (url) {
+					try {
+						const parsedUrl = new URL(url.startsWith('http') || url.startsWith('mailto:') ? url : `https://${url}`);
+						if (!['http:', 'https:', 'mailto:'].includes(parsedUrl.protocol)) {
+							alert('無効な URL プロトコルです。http, https, mailto のみ許可されています。');
+							return;
+						}
+						format('createLink', parsedUrl.href);
+					} catch {
+						alert('無効な URL 形式です');
+					}
+				}
+			}} title="リンク" aria-label="リンクを挿入">
+				<LinkIcon size={18} aria-hidden="true" />
 			</button>
-			<button type="button" class="toolbar-btn" onclick={() => fileInputRef?.click()} title="画像">
-				<ImageIcon size={18} />
+			<button type="button" class="toolbar-btn" onclick={() => fileInputRef?.click()} title="画像" aria-label="画像をアップロード" disabled={isUploading}>
+				{#if isUploading}
+					<div class="loading-spinner" aria-label="アップロード中"></div>
+				{:else}
+					<ImageIcon size={18} aria-hidden="true" />
+				{/if}
 			</button>
-			<button type="button" class="toolbar-btn" onclick={() => executeCommand('table')} title="テーブル">
-				<TableIcon size={18} />
+			<button type="button" class="toolbar-btn" onclick={() => executeCommand('table')} title="テーブル" aria-label="テーブルを挿入">
+				<TableIcon size={18} aria-hidden="true" />
 			</button>
-			<button type="button" class="toolbar-btn" onclick={() => executeCommand('hr')} title="区切り線">
-				<Minus size={18} />
+			<button type="button" class="toolbar-btn" onclick={() => executeCommand('hr')} title="区切り線" aria-label="区切り線を挿入">
+				<Minus size={18} aria-hidden="true" />
 			</button>
 
 			<input
@@ -867,12 +937,13 @@
 				onchange={handleImageUpload}
 				accept="image/*"
 				style="display: none;"
+				aria-label="画像ファイル選択"
 			/>
 
 			{#if selectedElement}
 				<div class="v-divider"></div>
-				<button type="button" class="toolbar-btn" onclick={deleteSelectedElement} title="削除" style="color: #ef4444;">
-					<Trash2 size={18} />
+				<button type="button" class="toolbar-btn" onclick={deleteSelectedElement} title="削除" style="color: #ef4444;" aria-label="選択した要素を削除">
+					<Trash2 size={18} aria-hidden="true" />
 				</button>
 			{/if}
 		</div>
@@ -927,7 +998,8 @@
 								class="color-swatch"
 								style="background: {color};"
 								onclick={() => setTextColor(color)}
-								title={color}
+								title="{colorNames[color] || color} ({color})"
+								aria-label="{colorNames[color] || color}"
 							></button>
 						{/each}
 					</div>
@@ -944,7 +1016,8 @@
 								class="color-swatch"
 								style="background: {color};"
 								onclick={() => setBackgroundColor(color)}
-								title={color}
+								title="{colorNames[color] || color} ({color})"
+								aria-label="{colorNames[color] || color}"
 							></button>
 						{/each}
 					</div>
@@ -1037,6 +1110,19 @@
 	.toolbar-select:focus {
 		border-color: #3b82f6;
 		box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+	}
+
+	.loading-spinner {
+		width: 18px;
+		height: 18px;
+		border: 2px solid #e5e7eb;
+		border-top-color: #3b82f6;
+		border-radius: 50%;
+		animation: spin 0.8s linear infinite;
+	}
+
+	@keyframes spin {
+		to { transform: rotate(360deg); }
 	}
 
 	.v-divider {
@@ -1297,5 +1383,55 @@
 
 	:global(.rich-editor [draggable="true"]:active) {
 		cursor: grabbing;
+	}
+
+	/* モバイル対応 - レスポンシブツールバー */
+	@media (max-width: 768px) {
+		.toolbar {
+			overflow-x: auto;
+			flex-wrap: nowrap;
+			-webkit-overflow-scrolling: touch;
+		}
+
+		.toolbar::-webkit-scrollbar {
+			height: 4px;
+		}
+
+		.toolbar::-webkit-scrollbar-thumb {
+			background: #d1d5db;
+			border-radius: 2px;
+		}
+
+		.toolbar-btn {
+			width: 40px;
+			height: 40px;
+			flex-shrink: 0;
+		}
+
+		.v-divider {
+			margin: 0 2px;
+			flex-shrink: 0;
+		}
+
+		.toolbar-select {
+			flex-shrink: 0;
+			font-size: 12px;
+		}
+
+		.color-grid {
+			grid-template-columns: repeat(5, 1fr);
+		}
+
+		.color-picker {
+			min-width: 200px;
+			left: 0 !important;
+		}
+	}
+
+	@media (max-width: 480px) {
+		.toolbar-btn {
+			width: 36px;
+			height: 36px;
+		}
 	}
 </style>

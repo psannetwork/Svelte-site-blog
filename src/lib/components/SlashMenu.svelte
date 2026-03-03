@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { 
-		Heading1, Heading2, Heading3, 
-		List, ListOrdered, Quote, 
+	import {
+		Heading1, Heading2, Heading3,
+		List, ListOrdered, Quote,
 		Image as ImageIcon, Code, Minus, Table as TableIcon
 	} from 'lucide-svelte';
 
@@ -15,6 +15,7 @@
 	let { x, y, onSelect, onClose }: Props = $props();
 
 	let selectedIndex = $state(0);
+	let menuRef: HTMLDivElement | undefined = $state();
 
 	const commands = [
 		{ id: 'h1', label: '見出し 1', icon: Heading1, shortcut: '#' },
@@ -46,21 +47,30 @@
 		}
 	}
 
+	// フォーカス管理 - メニュー表示時に最初のアイテムにフォーカス
 	$effect(() => {
 		window.addEventListener('keydown', handleKeyDown);
+		
+		// メニュー表示時に最初のアイテムにフォーカス
+		const firstMenuItem = menuRef?.querySelector('.menu-item') as HTMLElement;
+		firstMenuItem?.focus();
+		
 		return () => window.removeEventListener('keydown', handleKeyDown);
 	});
 </script>
 
-<div class="slash-menu" style="left: {x}px; top: {y}px;">
+<div class="slash-menu" style="left: {x}px; top: {y}px;" bind:this={menuRef} role="menu" aria-label="コマンドメニュー">
 	{#each commands as command, i}
-		<button 
-			class="menu-item" 
+		<button
+			class="menu-item"
 			class:active={i === selectedIndex}
 			onclick={() => onSelect(command.id)}
 			onmouseenter={() => selectedIndex = i}
+			role="menuitem"
+			tabindex={i === 0 ? 0 : -1}
+			aria-label={command.label}
 		>
-			<command.icon size={18} />
+			<command.icon size={18} aria-hidden="true" />
 			<span class="label">{command.label}</span>
 			<span class="shortcut">{command.shortcut}</span>
 		</button>

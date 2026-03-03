@@ -12,9 +12,8 @@ const config = {
 			precompress: true
 		}),
 		csrf: {
-			// Cloudflare Tunnelやプロキシ環境でのPOSTエラーを確実に回避するため、
-			// 非推奨ですがオリジンチェックを無効化します。
-			checkOrigin: false
+			// CSRF 保護を有効化
+			trustedOrigins: ['localhost', '127.0.0.1']
 		}
 	}
 };

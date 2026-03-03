@@ -14,6 +14,12 @@ export const POST: RequestHandler = async ({ request, locals, url }) => {
 
 	if (!file) throw error(400, 'No file uploaded');
 
+	// セキュリティ：ファイルサイズ制限 (最大 10MB)
+	const MAX_FILE_SIZE = 10 * 1024 * 1024;
+	if (file.size > MAX_FILE_SIZE) {
+		throw error(400, `File size exceeds limit (${MAX_FILE_SIZE / 1024 / 1024}MB)`);
+	}
+
 	const allowedExtensionsStr = getSetting(
 		'allowed_extensions',
 		'["jpg","jpeg","png","gif","webp","svg","ico"]'

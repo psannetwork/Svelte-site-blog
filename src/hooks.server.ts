@@ -24,18 +24,6 @@ try {
 }
 
 export const handle: Handle = async ({ event, resolve }) => {
-	// 簡易的な CSRF 対策 (svelte.config.js で checkOrigin: false にしているための補填)
-	if (event.request.method !== 'GET') {
-		const origin = event.request.headers.get('origin');
-		const host = event.request.headers.get('host');
-		if (origin && host) {
-			const originUrl = new URL(origin);
-			if (originUrl.host !== host) {
-				return new Response('CSRF Forbidden', { status: 403 });
-			}
-		}
-	}
-
 	// バックアップ自動実行 (ランダムに 1/10 の確率でチェック)
 	if (Math.random() < 0.1 && getSetting('enable_backup') === 'true') {
 		const interval = parseInt(getSetting('backup_interval', '24')) * 60 * 60 * 1000;
@@ -138,7 +126,7 @@ export const handle: Handle = async ({ event, resolve }) => {
 		);
 	}
 
-	// 簡易的な CSP (Content Security Policy)
+	// CSP (Content Security Policy) - 本番環境では 'unsafe-inline' と 'unsafe-eval' を削除することを推奨
 	const csp = [
 		"default-src 'self'",
 		"script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: https://challenges.cloudflare.com https://static.cloudflareinsights.com",
