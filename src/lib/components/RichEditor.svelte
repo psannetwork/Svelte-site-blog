@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import SlashMenu from './SlashMenu.svelte';
+	import ColorPicker from './ColorPicker.svelte';
 	import { replaceTextWithBlock, setCursorToEnd, getSelectionRange, formatBlock, toggleList, toggleBlockquote, insertHorizontalRule, insertTableElement, alignText, createLink, removeLink, applyInlineStyleToSelection, getSelectionBounds, isSelectionCollapsed, insertHtmlAtCursor, addTableRow, addTableColumn, deleteTableRow, deleteTableColumn, mergeTableCellsHorizontally, mergeTableCellsVertically, splitTableCell, hasInlineStyleInSelection, hasAllInlineStyleInSelection } from './utils/selection';
 	import { htmlToMarkdown, markdownToHtml } from './utils/converter';
 	import { sanitizeHtml } from '$lib/utils/htmlSanitizer';
@@ -74,7 +75,7 @@
 	// Color Picker State
 	let showColorPicker = $state(false);
 	let colorPickerPosition = $state({ x: 0, y: 0 });
-	let currentColor = $state('#000000');
+	let currentColor = $state<string | null>(null);
 
 	// Font Size State
 	let currentFontSize = $state('16');
@@ -425,7 +426,11 @@
 		else if (command === 'italic') res = applyInlineStyleToSelection('i', {}, true);
 		else if (command === 'underline') res = applyInlineStyleToSelection('u', {}, true);
 		else if (command === 'strikeThrough') res = applyInlineStyleToSelection('s', {}, true);
-		else if (command.startsWith('justify')) { alignText(command.replace('justify', '').toLowerCase()); res.applied = true; }
+		else if (command.startsWith('justify')) {
+			const alignType = command.replace('justify', '').toLowerCase() as 'left' | 'center' | 'right' | 'justify';
+			alignText(alignType);
+			res.applied = true;
+		}
 		if (res.applied || res.removed) saveAndNotify();
 	}
 
@@ -434,8 +439,61 @@
 		closeDropdowns();
 	}
 
-	function setTextColor(color: string) {
-		if (applyInlineStyleToSelection('span', { color }).applied) { currentColor = color; saveAndNotify(); }
+	function setTextColor(color: string, mode: 'auto' | 'fixed' = 'auto') {
+		const sel = window.getSelection();
+		if (!sel?.rangeCount) {
+			showColorPicker = false;
+			return;
+		}
+
+		const range = sel.getRangeAt(0);
+
+		// 選択範囲がない場合は execCommand でフォアグラウンドカラーを設定（入力用）
+		if (sel.isCollapsed) {
+			document.execCommand('styleWithCSS', false, 'true' as any);
+			document.execCommand('foreColor', false, color);
+			currentColor = color;
+			
+			// 直後に span を見つけて data-color 属性を追加
+			setTimeout(() => {
+				const span = range.startContainer.parentElement?.closest('span[style*="color"]');
+				if (span && !span.hasAttribute('data-color')) {
+					span.setAttribute('data-color', color);
+					span.setAttribute('data-color-mode', mode);
+				}
+			}, 10);
+			
+			saveAndNotify();
+			showColorPicker = false;
+			return;
+		}
+
+		// 選択範囲がある場合は span でラップ
+		// 既存の color span をすべて削除（トグル動作を防止）
+		const commonAncestor = range.commonAncestorContainer as HTMLElement;
+		const existingSpans = commonAncestor.parentElement?.querySelectorAll('span[data-color], span[style*="color"]') || [];
+		existingSpans.forEach(span => {
+			const textNode = document.createTextNode(span.textContent || '');
+			span.replaceWith(textNode);
+		});
+
+		// DocumentFragment を使用して選択範囲を span でラップ
+		const fragment = range.extractContents();
+		const span = document.createElement('span');
+		span.setAttribute('data-color', color);
+		span.setAttribute('data-color-mode', mode);
+		span.style.color = color;
+		span.appendChild(fragment);
+		range.insertNode(span);
+
+		// カーソルを span の後に移動
+		range.setStartAfter(span);
+		range.setEndAfter(span);
+		sel.removeAllRanges();
+		sel.addRange(range);
+
+		currentColor = color;
+		saveAndNotify();
 		showColorPicker = false;
 	}
 
@@ -461,6 +519,16 @@
 				menuState = { show: true, x, y };
 			}
 		} else menuState.show = false;
+
+		// 入力された span に data-color 属性を付与（execCommand 用）
+		if (currentColor) {
+			const node = range.startContainer.parentElement;
+			const span = node?.closest('span[style*="color"]');
+			if (span && !span.hasAttribute('data-color')) {
+				span.setAttribute('data-color', currentColor);
+				span.setAttribute('data-color-mode', 'auto');
+			}
+		}
 	}
 
 	function handleEnterKey(e: KeyboardEvent) {
@@ -801,13 +869,11 @@
 			{/if}
 
 			{#if showColorPicker}
-				<div class="color-picker" style="left: {colorPickerPosition.x}px; top: {colorPickerPosition.y}px;">
-					<div class="color-grid">
-						{#each colorPalette as color}
-							<button class="color-swatch" style="background: {color}" onclick={() => setTextColor(color)}></button>
-						{/each}
-					</div>
-				</div>
+				<ColorPicker
+					position={colorPickerPosition}
+					onSelect={setTextColor}
+					onClose={() => showColorPicker = false}
+				/>
 			{/if}
 		</div>
 	</div>
@@ -871,11 +937,33 @@
 
 	{#if tableContextMenu.show && tableContextMenu.cell}
 		<div class="table-menu" style="left: {tableContextMenu.x}px; top: {tableContextMenu.y}px;" onclick={closeTableContextMenu}>
-			<button onclick={() => { addTableRow(tableContextMenu.table, tableContextMenu.cell.parentElement.rowIndex); saveAndNotify(); }}>下に行を追加</button>
-			<button onclick={() => { addTableColumn(tableContextMenu.table, tableContextMenu.cell.cellIndex); saveAndNotify(); }}>右に列を追加</button>
+			<button onclick={() => {
+				if (tableContextMenu.table && tableContextMenu.cell) {
+					const row = tableContextMenu.cell.parentElement as HTMLTableRowElement;
+					if (row) addTableRow(tableContextMenu.table, row.rowIndex);
+					saveAndNotify();
+				}
+			}}>下に行を追加</button>
+			<button onclick={() => {
+				if (tableContextMenu.table && tableContextMenu.cell) {
+					addTableColumn(tableContextMenu.table, tableContextMenu.cell.cellIndex);
+					saveAndNotify();
+				}
+			}}>右に列を追加</button>
 			<div class="v-divider" style="width: 100%; height: 1px; margin: 4px 0;"></div>
-			<button class="text-danger" onclick={() => { deleteTableRow(tableContextMenu.table, tableContextMenu.cell.parentElement.rowIndex); saveAndNotify(); }}>行を削除</button>
-			<button class="text-danger" onclick={() => { deleteTableColumn(tableContextMenu.table, tableContextMenu.cell.cellIndex); saveAndNotify(); }}>列を削除</button>
+			<button class="text-danger" onclick={() => {
+				if (tableContextMenu.table && tableContextMenu.cell) {
+					const row = tableContextMenu.cell.parentElement as HTMLTableRowElement;
+					if (row) deleteTableRow(tableContextMenu.table, row.rowIndex);
+					saveAndNotify();
+				}
+			}}>行を削除</button>
+			<button class="text-danger" onclick={() => {
+				if (tableContextMenu.table && tableContextMenu.cell) {
+					deleteTableColumn(tableContextMenu.table, tableContextMenu.cell.cellIndex);
+					saveAndNotify();
+				}
+			}}>列を削除</button>
 		</div>
 	{/if}
 </div>
@@ -883,45 +971,60 @@
 <style>
 	.editor-outer { position: relative; width: 100%; font-family: sans-serif; }
 	.editor-container { border: 1px solid #e2e8f0; border-radius: 12px; background: white; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
-	
+	:global(.dark) .editor-container { background: #1e293b; border-color: #334155; }
+
 	.toolbar {
 		display: flex; align-items: center; gap: 4px; padding: 6px 12px;
 		background: #f8fafc; border-bottom: 1px solid #e2e8f0;
 		position: sticky; top: 0; z-index: 100; flex-wrap: wrap;
 	}
-	
+	:global(.dark) .toolbar { background: #0f172a; border-color: #334155; }
+
 	.toolbar-group { display: flex; align-items: center; gap: 2px; }
-	
+
 	.toolbar-btn, .toolbar-dropdown-btn {
 		display: flex; align-items: center; justify-content: center;
 		height: 32px; padding: 0 6px; border: none; border-radius: 6px;
 		background: transparent; color: #475569; cursor: pointer; transition: all 0.2s;
 	}
-	
+	:global(.dark) .toolbar-btn,
+	:global(.dark) .toolbar-dropdown-btn { color: #e2e8f0; }
+
 	.toolbar-btn:hover, .toolbar-dropdown-btn:hover { background: #e2e8f0; color: #1e293b; }
+	:global(.dark) .toolbar-btn:hover,
+	:global(.dark) .toolbar-dropdown-btn:hover { background: #334155; color: #f1f5f9; }
+	
 	.toolbar-btn.active { background: #3b82f6; color: white; }
-	
+
 	.toolbar-dropdown-btn { gap: 4px; font-size: 13px; font-weight: 500; }
-	
+
 	.v-divider { width: 1px; height: 20px; background: #e2e8f0; margin: 0 6px; }
-	
+	:global(.dark) .v-divider { background: #334155; }
+
 	.dropdown-wrapper { position: relative; }
 	.dropdown-menu {
 		position: absolute; top: 100%; left: 0; margin-top: 4px;
 		background: white; border: 1px solid #e2e8f0; border-radius: 8px;
 		box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); padding: 4px; min-width: 160px; z-index: 110;
 	}
+	:global(.dark) .dropdown-menu { background: #1e293b; border-color: #334155; }
+	
 	.dropdown-menu button {
 		display: flex; align-items: center; width: 100%; padding: 8px 12px;
 		border: none; background: transparent; text-align: left; border-radius: 4px; cursor: pointer;
 	}
+	:global(.dark) .dropdown-menu button { color: #e2e8f0; }
+	
 	.dropdown-menu button:hover { background: #f1f5f9; }
+	:global(.dark) .dropdown-menu button:hover { background: #334155; }
+	
 	.dropdown-menu.scrollable { max-height: 240px; overflow-y: auto; }
 	.dropdown-menu.compact { display: flex; gap: 4px; min-width: auto; padding: 4px; }
 	.dropdown-menu.compact button { width: 36px; height: 36px; padding: 0; justify-content: center; }
 	
 	.editor-wrapper { position: relative; padding: 24px; min-height: 400px; }
 	.rich-editor { outline: none; min-height: 400px; line-height: 1.6; font-size: 16px; color: #334155; }
+	:global(.dark) .rich-editor { color: #e2e8f0; }
 	
 	.placeholder { position: absolute; top: 24px; left: 24px; color: #94a3b8; pointer-events: none; }
 	
@@ -956,13 +1059,6 @@
 	}
 	.inline-toolbar button:hover { background: #334155; }
 
-	.color-picker {
-		position: absolute; background: white; border: 1px solid #e2e8f0; padding: 8px;
-		border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); z-index: 1000;
-	}
-	.color-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; }
-	.color-swatch { width: 24px; height: 24px; border-radius: 4px; border: 1px solid #e2e8f0; cursor: pointer; }
-
 	/* モーダル・ダイアログ */
 	.modal-overlay {
 		position: fixed; inset: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px);
@@ -972,10 +1068,21 @@
 		background: white; padding: 24px; border-radius: 12px; width: 400px; max-width: 90vw;
 		box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);
 	}
+	:global(.dark) .modal-card {
+		background: #1e293b;
+	}
 	.modal-card h3 { margin: 0 0 16px; font-size: 18px; color: #1e293b; }
+	:global(.dark) .modal-card h3 { color: #e2e8f0; }
+	
 	.modal-input {
 		width: 100%; padding: 10px; border: 1px solid #e2e8f0; border-radius: 6px; margin-bottom: 20px; outline: none;
 	}
+	:global(.dark) .modal-input {
+		background: #0f172a;
+		border-color: #334155;
+		color: #e2e8f0;
+	}
+	
 	.modal-input:focus { border-color: #3b82f6; box-shadow: 0 0 0 2px rgba(59,130,246,0.1); }
 	.modal-actions { display: flex; justify-content: flex-end; gap: 8px; }
 	.modal-actions button {
@@ -985,11 +1092,16 @@
 	.btn-primary:hover { background: #2563eb; }
 	.btn-danger { background: #fee2e2; color: #dc2626; }
 	.btn-danger:hover { background: #fecaca; }
-	
+
 	.modal-card.large { width: 800px; }
 	.modal-textarea {
 		width: 100%; height: 300px; padding: 12px; border: 1px solid #e2e8f0; border-radius: 6px;
 		font-family: monospace; font-size: 14px; margin-bottom: 16px; resize: none;
+	}
+	:global(.dark) .modal-textarea {
+		background: #0f172a;
+		border-color: #334155;
+		color: #e2e8f0;
 	}
 
 	/* テーブルメニュー */
@@ -997,11 +1109,19 @@
 		position: absolute; background: white; border: 1px solid #e2e8f0; border-radius: 8px;
 		box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); padding: 4px; z-index: 1000; min-width: 160px;
 	}
+	:global(.dark) .table-menu {
+		background: #1e293b;
+		border-color: #334155;
+	}
 	.table-menu button {
 		display: block; width: 100%; padding: 8px 12px; border: none; background: transparent;
 		text-align: left; font-size: 14px; border-radius: 4px; cursor: pointer;
 	}
+	:global(.dark) .table-menu button { color: #e2e8f0; }
+	
 	.table-menu button:hover { background: #f1f5f9; }
+	:global(.dark) .table-menu button:hover { background: #334155; }
+	
 	.table-menu .text-danger { color: #ef4444; }
 
 	:global(.rich-editor img) { max-width: 100%; border-radius: 8px; }

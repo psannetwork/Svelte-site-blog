@@ -3,11 +3,29 @@
 	import { enhance } from '$app/forms';
 	import { theme } from '$lib/theme.svelte';
 	import { t, type Language } from '$lib/i18n';
+	import { applyColors } from '$lib/utils/color';
+	import { onMount } from 'svelte';
 
 	let { data, form } = $props<{ data: PageData; form: ActionData }>();
 	const lang = $derived((data.settings?.site_language || 'ja') as Language);
 	let replyingTo = $state<string | null>(null);
 	let isPosting = $state(false);
+
+	// ハイブリッド配色の適用
+	onMount(() => {
+		const content = document.querySelector('article .prose');
+		if (content) {
+			applyColors(content as HTMLElement, theme.current === 'dark');
+		}
+	});
+
+	// テーマ変更時に再適用
+	$effect(() => {
+		const content = document.querySelector('article .prose');
+		if (content) {
+			applyColors(content as HTMLElement, theme.current === 'dark');
+		}
+	});
 
 	// コメントの表示を 1000 文字に制限
 	function truncateComment(str: string, maxLength = 1000): string {

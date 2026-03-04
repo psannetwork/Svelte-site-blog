@@ -173,25 +173,113 @@ export function applyInlineStyleToSelection(
 	const selectedText = range.toString();
 	if (!selectedText.trim()) return { applied: false, removed: false, allMatch: false };
 
-	// 選択範囲内のすべてのテキストノードを取得
-	const textNodes = getTextNodesInRange(range);
-	
-	// 指定されたスタイルがすべてのテキストに適用されているかチェック
-	const allMatch = textNodes.every(node => hasInlineStyle(node, tagName, style));
-	
-	if (toggle && allMatch) {
-		// すべてに適用されている場合は解除
+	// 指定されたスタイルがすでに適用されているかチェック
+	const hasStyle = hasInlineStyleInRange(range, tagName, style);
+
+	if (toggle && hasStyle) {
+		// すでに適用されている場合は解除
 		removeInlineStyleFromSelection(range, tagName, style);
 		return { applied: false, removed: true, allMatch: false };
 	}
 
-	// 一部だけ適用されている場合、まずすべて解除してから適用
-	if (!allMatch) {
-		removeInlineStyleFromSelection(range, tagName, style);
+	// execCommand を使用して複数選択を正しく処理
+	if (style.color) {
+		document.execCommand('styleWithCSS', false, 'true' as any);
+		document.execCommand('foreColor', false, style.color);
+	} else if (style.fontSize) {
+		document.execCommand('styleWithCSS', false, 'true' as any);
+		const fontSize = style.fontSize;
+		// fontSize は span でラップ
+		document.execCommand('fontName', false, '__custom_font__');
+		// 直後に fontName を元に戻す
+		const commonAncestor = range.commonAncestorContainer as Element | Node;
+		if ('querySelectorAll' in commonAncestor) {
+			const fontElements = commonAncestor.querySelectorAll('span[style*="font-family"]');
+			fontElements.forEach((el: Element) => {
+				(el as HTMLElement).style.fontFamily = '';
+				(el as HTMLElement).style.fontSize = fontSize;
+				if (!(el as HTMLElement).style.cssText) {
+					el.removeAttribute('style');
+				}
+			});
+		}
+	} else {
+		wrapSelectionWithTag(tagName, style);
 	}
-	
-	wrapSelectionWithTag(tagName, style);
+
 	return { applied: true, removed: false, allMatch: false };
+}
+
+/**
+ * Checks if the range has the specified style.
+ */
+function hasInlineStyleInRange(range: Range, tagName: string, style: Record<string, string>): boolean {
+	const textNodes = getTextNodesInRange(range);
+	if (textNodes.length === 0) return false;
+
+	return textNodes.some(node => {
+		const parent = node.parentElement;
+		if (!parent) return false;
+
+		let current: HTMLElement | null = parent;
+		while (current && current.tagName !== 'DIV' && !current.hasAttribute('contenteditable')) {
+			if (current.tagName.toLowerCase() === tagName.toLowerCase()) {
+				return Object.entries(style).every(([key, value]) => {
+					// color の場合、RGB 形式も考慮して比較
+					if (key === 'color') {
+						const computedColor = current?.style.color;
+						if (computedColor === value) return true;
+						// HEX と RGB の相互変換を考慮
+						if (computedColor && rgbToHex(computedColor) === value) return true;
+						if (value && hexToRgb(value) === computedColor) return true;
+						return false;
+					}
+					return current!.style[key as any] === value || current!.getAttribute(key) === value;
+				});
+			}
+			current = current.parentElement;
+		}
+
+		// インラインスタイルもチェック
+		return Object.entries(style).every(([key, value]) => {
+			if (key === 'color') {
+				const computedColor = parent.style.color;
+				if (computedColor === value) return true;
+				if (computedColor && rgbToHex(computedColor) === value) return true;
+				if (value && hexToRgb(value) === computedColor) return true;
+				return false;
+			}
+			return parent.style[key as any] === value;
+		});
+	});
+}
+
+/**
+ * RGB → HEX 変換
+ */
+function rgbToHex(rgb: string): string {
+	if (rgb.startsWith('#')) return rgb;
+	const match = rgb.match(/^rgb\((\d+),\s*(\d+),\s*(\d+)\)$/);
+	if (!match) return rgb;
+	const r = parseInt(match[1]);
+	const g = parseInt(match[2]);
+	const b = parseInt(match[3]);
+	return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+}
+
+/**
+ * HEX → RGB 変換
+ */
+function hexToRgb(hex: string): string {
+	if (!hex.startsWith('#')) return hex;
+	const r = parseInt(hex.slice(1, 3), 16);
+	const g = parseInt(hex.slice(3, 5), 16);
+	const b = parseInt(hex.slice(5, 7), 16);
+	return `rgb(${r}, ${g}, ${b})`;
+}
+
+function toHex(v: number): string {
+	return v.toString(16).padStart(2, '0');
 }
 
 /**
@@ -231,7 +319,7 @@ function getTextNodesInRange(range: Range): Text[] {
 function hasInlineStyle(node: Text, tagName: string, style: Record<string, string>): boolean {
 	const parent = node.parentElement;
 	if (!parent) return false;
-	
+
 	// 直接の親が指定されたタグかチェック
 	if (parent.tagName.toLowerCase() === tagName.toLowerCase()) {
 		// スタイルもチェック
@@ -239,18 +327,18 @@ function hasInlineStyle(node: Text, tagName: string, style: Record<string, strin
 			return parent.style[key as any] === value || parent.getAttribute(key) === value;
 		});
 	}
-	
+
 	// 祖先をたどってチェック
 	let current: HTMLElement | null = parent;
 	while (current && current.tagName !== 'DIV' && !current.hasAttribute('contenteditable')) {
 		if (current.tagName.toLowerCase() === tagName.toLowerCase()) {
 			return Object.entries(style).every(([key, value]) => {
-				return current.style[key as any] === value || current.getAttribute(key) === value;
+				return current!.style[key as any] === value || current!.getAttribute(key) === value;
 			});
 		}
 		current = current.parentElement;
 	}
-	
+
 	return false;
 }
 
@@ -259,26 +347,26 @@ function hasInlineStyle(node: Text, tagName: string, style: Record<string, strin
  */
 function removeInlineStyleFromSelection(range: Range, tagName: string, style: Record<string, string>) {
 	const textNodes = getTextNodesInRange(range);
-	
+
 	textNodes.forEach(node => {
 		const parent = node.parentElement;
 		if (!parent) return;
-		
+
 		// スタイルが一致する要素を探す
 		let current: HTMLElement | null = parent;
 		while (current && current.tagName !== 'DIV' && !current.hasAttribute('contenteditable')) {
 			if (current.tagName.toLowerCase() === tagName.toLowerCase()) {
 				const styleMatches = Object.entries(style).every(([key, value]) => {
-					return current.style[key as any] === value || current.getAttribute(key) === value;
+					return current!.style[key as any] === value || current!.getAttribute(key) === value;
 				});
-				
+
 				if (styleMatches || Object.keys(style).length === 0) {
 					// 要素をアンラップ
 					const fragment = document.createDocumentFragment();
-					while (current!.firstChild) {
-						fragment.appendChild(current!.firstChild);
+					while (current.firstChild) {
+						fragment.appendChild(current.firstChild);
 					}
-					current!.parentNode?.replaceChild(fragment, current!);
+					current.parentNode?.replaceChild(fragment, current);
 					break;
 				}
 			}
