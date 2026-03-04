@@ -21,7 +21,125 @@
 .dark .ce-list__item,
 .dark .cdx-input,
 .dark .ce-inline-tool {
-	color: #ffffff;
+	color: #ffffff !important;
+}
+
+/* 文字のはみ出し防止 */
+.rich-editor,
+.rich-editor * {
+	overflow-wrap: break-word;
+	word-break: break-word;
+	white-space: normal;
+}
+
+.rich-editor {
+	max-width: 100%;
+	overflow-x: hidden;
+}
+
+/* RichEditor.svelte styles - Dark Mode */
+.dark .editor-container {
+	background: #1e293b !important;
+	border-color: #334155 !important;
+}
+
+.dark .toolbar {
+	background: #0f172a !important;
+	border-color: #334155 !important;
+}
+
+.dark .toolbar-btn,
+.dark .toolbar-dropdown-btn {
+	color: #e2e8f0 !important;
+}
+
+.dark .toolbar-btn:hover,
+.dark .toolbar-dropdown-btn:hover {
+	background: #334155 !important;
+	color: #f8fafc !important;
+}
+
+.dark .toolbar-btn.active {
+	background: #3b82f6 !important;
+	color: white !important;
+}
+
+.dark .v-divider {
+	background: #334155 !important;
+}
+
+.dark .dropdown-menu {
+	background: #1e293b !important;
+	border-color: #334155 !important;
+}
+
+.dark .dropdown-menu button {
+	color: #e2e8f0 !important;
+}
+
+.dark .dropdown-menu button:hover {
+	background: #334155 !important;
+}
+
+.dark .rich-editor {
+	color: #f8fafc;
+	background: #ffffff !important;
+}
+
+.dark .rich-editor p,
+.dark .rich-editor li {
+	color: #f8fafc !important;
+}
+
+/* 見出しは白にしない */
+.dark .rich-editor h1,
+.dark .rich-editor h2,
+.dark .rich-editor h3,
+.dark .rich-editor h4,
+.dark .rich-editor h5,
+.dark .rich-editor h6 {
+	color: #000000 !important;
+}
+
+.dark .placeholder {
+	color: #64748b !important;
+}
+
+.dark .color-picker {
+	background: #1e293b !important;
+	border-color: #334155 !important;
+}
+
+.dark .color-swatch {
+	border-color: #334155 !important;
+}
+
+.dark .modal-card {
+	background: #1e293b !important;
+}
+
+.dark .modal-card h3 {
+	color: #f8fafc !important;
+}
+
+.dark .modal-input,
+.dark .modal-textarea {
+	background: #0f172a !important;
+	border-color: #334155 !important;
+	color: #f8fafc !important;
+}
+
+.dark .table-menu {
+	background: #1e293b !important;
+	border-color: #334155 !important;
+}
+
+.dark .table-menu button {
+	color: #e2e8f0 !important;
+}
+
+.dark .table-menu button:hover {
+	background: #334155 !important;
 }
 
 /* Header Styles in Editor */
@@ -353,4 +471,72 @@ xy-color-picker {
 .ce-popover__container {
 	position: relative;
 	z-index: 1;
+}
+
+/* RichEditor ドロップダウンメニューの z-index 修正 */
+.dropdown-menu {
+	z-index: 1000 !important;
+}
+
+.inline-toolbar {
+	z-index: 1000 !important;
+}
+
+.color-picker {
+	z-index: 1000 !important;
+}
+
+.table-menu {
+	z-index: 1000 !important;
+}
+
+/* RichEditor 内の見出しスタイル */
+.rich-editor h1 {
+	font-size: 2.25rem;
+	font-weight: 900;
+	line-height: 1.2;
+	letter-spacing: -0.04em;
+	margin: 1.5rem 0 0.75rem;
+	color: inherit;
+}
+
+.rich-editor h2 {
+	font-size: 1.875rem;
+	font-weight: 900;
+	line-height: 1.3;
+	letter-spacing: -0.03em;
+	margin: 1.25rem 0 0.5rem;
+	color: inherit;
+}
+
+.rich-editor h3 {
+	font-size: 1.5rem;
+	font-weight: 900;
+	line-height: 1.4;
+	margin: 1rem 0 0.5rem;
+	color: inherit;
+}
+
+.rich-editor h4 {
+	font-size: 1.25rem;
+	font-weight: 900;
+	line-height: 1.5;
+	margin: 0.75rem 0;
+	color: inherit;
+}
+
+.rich-editor h5 {
+	font-size: 1.125rem;
+	font-weight: 900;
+	line-height: 1.5;
+	margin: 0.5rem 0;
+	color: inherit;
+}
+
+.rich-editor h6 {
+	font-size: 1rem;
+	font-weight: 900;
+	line-height: 1.5;
+	margin: 0.5rem 0;
+	color: inherit;
 }

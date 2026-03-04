@@ -455,6 +455,7 @@ export function formatBlock(newTagName: string) {
 	}
 
 	if (block.tagName === newTagName.toUpperCase()) {
+		// 既存のタグを P に戻す
 		const p = document.createElement('p');
 		p.innerHTML = block.innerHTML;
 		block.replaceWith(p);
@@ -462,6 +463,7 @@ export function formatBlock(newTagName: string) {
 		return p;
 	}
 
+	// 新しいタグに置き換え
 	const newBlock = document.createElement(newTagName);
 	newBlock.innerHTML = block.innerHTML;
 	block.replaceWith(newBlock);

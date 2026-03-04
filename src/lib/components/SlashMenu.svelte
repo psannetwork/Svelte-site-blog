@@ -64,7 +64,7 @@
 		<button
 			class="menu-item"
 			class:active={i === selectedIndex}
-			onclick={() => onSelect(command.id)}
+			onclick={(e) => { e.stopPropagation(); onSelect(command.id); }}
 			onmouseenter={() => selectedIndex = i}
 			role="menuitem"
 			tabindex={i === 0 ? 0 : -1}
