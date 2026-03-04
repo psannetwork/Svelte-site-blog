@@ -258,13 +258,21 @@
 
 	function handleGlobalClick(e: MouseEvent) {
 		const target = e.target as HTMLElement;
-		const resizableTags = ['IMG', 'PRE', 'BLOCKQUOTE', 'IFRAME', 'VIDEO', 'TABLE', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'P', 'UL', 'OL', 'HR'];
+		const resizableTags = ['IMG', 'PRE', 'BLOCKQUOTE', 'IFRAME', 'VIDEO', 'TABLE', 'HR'];
+		const draggableTags = ['IMG', 'PRE', 'BLOCKQUOTE', 'IFRAME', 'VIDEO', 'TABLE', 'HR', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'P', 'UL', 'OL', 'LI'];
+
 		if (resizableTags.includes(target.tagName) && editorRef?.contains(target)) {
 			selectedElement = target;
 			selectedElement.setAttribute('draggable', 'true');
 			updateOverlayPos();
+		} else if (draggableTags.includes(target.tagName) && editorRef?.contains(target)) {
+			// リサイズはできないがドラッグ可能な要素（テキスト系）
+			selectedElement = target;
+			selectedElement.setAttribute('draggable', 'true');
+			updateOverlayPos(); // 青枠は表示
 		} else if (
 			!target.closest('.resize-handle') &&
+			!target.closest('.overlay-controls') &&
 			!target.closest('.toolbar') &&
 			!target.closest('.overlay-control') &&
 			!target.closest('.slash-menu') &&
@@ -314,6 +322,10 @@
 
 	function startResize(e: MouseEvent, handle?: any) {
 		if (!selectedElement) return;
+		// テキスト要素はリサイズできない
+		const nonResizableTags = ['H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'P', 'LI', 'UL', 'OL'];
+		if (nonResizableTags.includes(selectedElement.tagName)) return;
+		
 		resizing = true;
 		resizeHandle = handle || 'se';
 		startX = e.clientX; startY = e.clientY;
@@ -366,13 +378,45 @@
 		window.addEventListener('scroll', updateOverlayPos, { capture: true, passive: true, signal: controller.signal });
 		window.addEventListener('resize', updateOverlayPos, { signal: controller.signal });
 		document.addEventListener('selectionchange', handleSelectionChange, { signal: controller.signal });
+		// ドラッグ終了時にプレースホルダーを削除
+		window.addEventListener('dragend', cleanupDragPlaceholder, { signal: controller.signal });
 		if (autoSaveId) autoSaveInterval = setInterval(() => editorRef && saveToLocalStorage(editorRef.innerHTML), AUTO_SAVE_INTERVAL);
 		return () => { controller.abort(); if (autoSaveInterval) clearInterval(autoSaveInterval); };
 	});
 
+	function cleanupDragPlaceholder() {
+		if (dragPlaceholder) {
+			dragPlaceholder.remove();
+			dragPlaceholder = null;
+		}
+		draggedElement = null;
+	}
+
 	function handleDragStart(e: DragEvent) {
 		const target = e.target as HTMLElement;
 		if (!editorRef?.contains(target)) return;
+		// 移動アイコンからドラッグされた場合
+		if (target.closest('.overlay-control.move')) {
+			e.stopPropagation();
+			if (!selectedElement) return;
+			draggedElement = selectedElement;
+			selectedElement.style.opacity = '0.4';
+			dragPlaceholder = document.createElement('div');
+			dragPlaceholder.className = 'drag-placeholder';
+			dragPlaceholder.innerHTML = '<span>📍 ここに移動</span>';
+			// プレースホルダーを挿入位置に追加
+			selectedElement.after(dragPlaceholder);
+			if (e.dataTransfer) {
+				e.dataTransfer.effectAllowed = 'move';
+				e.dataTransfer.setData('text/plain', '');
+				const canvas = document.createElement('canvas');
+				canvas.width = 1;
+				canvas.height = 1;
+				e.dataTransfer.setDragImage(canvas, 0, 0);
+			}
+			return;
+		}
+		// 要素自体からドラッグされた場合
 		if (!selectedElement || target !== selectedElement) return;
 		e.stopPropagation();
 		draggedElement = target;
@@ -380,9 +424,15 @@
 		dragPlaceholder = document.createElement('div');
 		dragPlaceholder.className = 'drag-placeholder';
 		dragPlaceholder.innerHTML = '<span>📍 ここに移動</span>';
+		// プレースホルダーを挿入位置に追加
+		target.after(dragPlaceholder);
 		if (e.dataTransfer) {
 			e.dataTransfer.effectAllowed = 'move';
 			e.dataTransfer.setData('text/plain', '');
+			const canvas = document.createElement('canvas');
+			canvas.width = 1;
+			canvas.height = 1;
+			e.dataTransfer.setDragImage(canvas, 0, 0);
 		}
 	}
 
@@ -391,11 +441,26 @@
 		if (!draggedElement || !editorRef || !dragPlaceholder) return;
 		if (e.dataTransfer) e.dataTransfer.dropEffect = 'move';
 		const elements = document.elementsFromPoint(e.clientX, e.clientY);
-		const target = elements.find(el => editorRef?.contains(el) && el !== draggedElement && el !== dragPlaceholder) as HTMLElement;
+		// エディター内のブロック要素を探す
+		const draggableTags = ['P', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'IMG', 'VIDEO', 'TABLE', 'BLOCKQUOTE', 'PRE', 'UL', 'OL', 'HR'];
+		const target = elements.find(el => {
+			return editorRef?.contains(el) &&
+			       el !== draggedElement &&
+			       el !== dragPlaceholder &&
+			       (draggableTags.includes(el.tagName) || el.closest(draggableTags.join(', ')));
+		}) as HTMLElement;
 		if (target) {
-			const rect = target.getBoundingClientRect();
-			if (e.clientY < rect.top + rect.height / 2) target.before(dragPlaceholder);
-			else target.after(dragPlaceholder);
+			const dropTarget = target.tagName === 'P' || draggableTags.includes(target.tagName)
+				? target
+				: target.closest(draggableTags.join(', ')) as HTMLElement;
+			if (dropTarget && dropTarget !== draggedElement && dropTarget !== dragPlaceholder) {
+				const rect = dropTarget.getBoundingClientRect();
+				if (e.clientY < rect.top + rect.height / 2) dropTarget.before(dragPlaceholder);
+				else dropTarget.after(dragPlaceholder);
+			}
+		} else if (editorRef?.contains(e.target as Node)) {
+			// ドロップ先要素がない場合はエディターの末尾に配置
+			editorRef.appendChild(dragPlaceholder);
 		}
 	}
 
@@ -403,9 +468,20 @@
 		if (draggedElement && dragPlaceholder?.parentElement) {
 			dragPlaceholder.replaceWith(draggedElement);
 			draggedElement.style.opacity = '1';
+			draggedElement.removeAttribute('draggable');
 			saveAndNotify();
 		}
-		draggedElement = null; dragPlaceholder = null;
+		// プレースホルダーを確実に削除
+		if (dragPlaceholder) {
+			dragPlaceholder.remove();
+		}
+		draggedElement = null;
+		dragPlaceholder = null;
+	}
+
+	function handleDrop(e: DragEvent) {
+		e.preventDefault();
+		handleDragEnd();
 	}
 
 	async function handleImageUpload(e: Event) {
@@ -865,6 +941,7 @@
 				ondragstart={handleDragStart}
 				ondragover={handleDragOver}
 				ondragend={handleDragEnd}
+				ondrop={handleDrop}
 				oncontextmenu={handleGlobalContextMenu}
 			></div>
 
@@ -873,15 +950,17 @@
 			{/if}
 
 			{#if selectedElement && overlayPos}
-				<div class="image-resizer-overlay" style="left: {overlayPos.left}px; top: {overlayPos.top}px; width: {overlayPos.width}px; height: {overlayPos.height}px;">
+				<div class="image-resizer-overlay {['H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'P', 'LI', 'UL', 'OL'].includes(selectedElement.tagName) ? 'text-only' : ''}" style="left: {overlayPos.left}px; top: {overlayPos.top}px; width: {overlayPos.width}px; height: {overlayPos.height}px;">
 					<div class="overlay-controls">
-						<div class="overlay-control move" title="ドラッグで移動"><Move size={14} /></div>
+						<div class="overlay-control move" draggable="true" ondragstart={handleDragStart} title="ドラッグで移動"><Move size={14} /></div>
 						<button class="overlay-control delete" onclick={deleteSelectedElement} title="削除"><Trash2 size={14} /></button>
 					</div>
-					<div class="resize-handle nw" onmousedown={(e) => startResize(e, 'nw')}></div>
-					<div class="resize-handle ne" onmousedown={(e) => startResize(e, 'ne')}></div>
-					<div class="resize-handle se" onmousedown={(e) => startResize(e, 'se')}></div>
-					<div class="resize-handle sw" onmousedown={(e) => startResize(e, 'sw')}></div>
+					{#if !['H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'P', 'LI', 'UL', 'OL'].includes(selectedElement.tagName)}
+						<div class="resize-handle nw" onmousedown={(e) => startResize(e, 'nw')}></div>
+						<div class="resize-handle ne" onmousedown={(e) => startResize(e, 'ne')}></div>
+						<div class="resize-handle se" onmousedown={(e) => startResize(e, 'se')}></div>
+						<div class="resize-handle sw" onmousedown={(e) => startResize(e, 'sw')}></div>
+					{/if}
 				</div>
 			{/if}
 
@@ -1048,6 +1127,10 @@
 	.image-resizer-overlay {
 		position: absolute; border: 1px solid #3b82f6; pointer-events: none; z-index: 50;
 	}
+	/* テキスト要素は青枠のみでリサイズハンドル非表示 */
+	.image-resizer-overlay.text-only .resize-handle {
+		display: none;
+	}
 	.overlay-controls {
 		position: absolute; top: -32px; left: 50%; transform: translateX(-50%);
 		display: flex; gap: 4px; pointer-events: auto;
@@ -1057,7 +1140,9 @@
 		width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; cursor: pointer;
 	}
 	.overlay-control.delete { background: #ef4444; }
-	
+	.overlay-control.move { cursor: grab; }
+	.overlay-control.move:active { cursor: grabbing; }
+
 	.resize-handle {
 		position: absolute; width: 10px; height: 10px; background: white; border: 2px solid #3b82f6;
 		pointer-events: auto; border-radius: 50%;
@@ -1142,5 +1227,19 @@
 	.table-menu .text-danger { color: #ef4444; }
 
 	:global(.rich-editor img) { max-width: 100%; border-radius: 8px; }
-	:global(.drag-placeholder) { height: 2px; background: #3b82f6; margin: 4px 0; }
+	.drag-placeholder {
+		height: 3px;
+		background: #3b82f6;
+		margin: 4px 0;
+		border-radius: 2px;
+		position: relative;
+	}
+	.drag-placeholder span {
+		position: absolute;
+		left: 0;
+		top: -20px;
+		font-size: 12px;
+		color: #3b82f6;
+		white-space: nowrap;
+	}
 </style>
