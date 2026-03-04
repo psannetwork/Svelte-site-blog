@@ -1,32 +1,39 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import SlashMenu from './SlashMenu.svelte';
-	import { replaceTextWithBlock, setCursorToEnd, getSelectionRange } from './utils/selection';
+	import { replaceTextWithBlock, setCursorToEnd, getSelectionRange, formatBlock, toggleList, toggleBlockquote, insertHorizontalRule, insertTableElement, alignText, createLink, removeLink, applyInlineStyleToSelection, getSelectionBounds, isSelectionCollapsed, insertHtmlAtCursor, addTableRow, addTableColumn, deleteTableRow, deleteTableColumn, mergeTableCellsHorizontally, mergeTableCellsVertically, splitTableCell, hasInlineStyleInSelection, hasAllInlineStyleInSelection } from './utils/selection';
 	import { htmlToMarkdown, markdownToHtml } from './utils/converter';
 	import { sanitizeHtml } from '$lib/utils/htmlSanitizer';
 	import {
 		Bold, Italic, Underline, Strikethrough, Link as LinkIcon, Image as ImageIcon,
 		Undo, Redo, Move, List, ListOrdered, Quote, Code, Minus, Table as TableIcon,
 		AlignLeft, AlignCenter, AlignRight, AlignJustify, Type, Palette, Trash2,
-		Heading1, Heading2, Heading3
+		Heading1, Heading2, Heading3, Video, Mic
 	} from 'lucide-svelte';
 
 	interface Props {
 		value?: string;
 		placeholder?: string;
 		onchange?: (html: string) => void;
+		autoSaveId?: string;
+		onExportMarkdown?: () => void;
 	}
 
 	let {
 		value = '',
 		placeholder = '内容を入力するか、 "/" でコマンドを表示...',
-		onchange
+		onchange,
+		autoSaveId,
+		onExportMarkdown
 	}: Props = $props();
 
 	let editorRef: HTMLDivElement | undefined = $state();
 	let fileInputRef: HTMLInputElement | undefined = $state();
 	let menuState = $state({ show: false, x: 0, y: 0 });
 	let innerHTML = $state('');
+
+	// AbortController for event listener cleanup
+	let abortController: AbortController | null = null;
 
 	// History State for Undo/Redo
 	let history = $state<string[]>([]);
@@ -46,11 +53,22 @@
 	// Element Resizing & Moving State
 	let selectedElement = $state<HTMLElement | null>(null);
 	let resizing = $state(false);
+	let resizeHandle = $state<'nw' | 'n' | 'ne' | 'e' | 'se' | 's' | 'sw' | 'w' | null>(null);
 	let startX = 0;
 	let startY = 0;
 	let startWidth = 0;
 	let startHeight = 0;
+	let startLeft = 0;
+	let startTop = 0;
 	let overlayPos = $state<{left: number, top: number, width: number, height: number} | null>(null);
+
+	// リサイズ中のサイズ表示
+	let resizeDimension = $state<{width: number, height: number} | null>(null);
+
+	// アスペクト比維持
+	let maintainAspectRatio = $state(false);
+	let initialAspectRatio = 1;
+	let shiftKeyPressed = $state(false);
 
 	// Drag and Drop State
 	let draggedElement = $state<HTMLElement | null>(null);
@@ -59,7 +77,6 @@
 
 	// Color Picker State
 	let showColorPicker = $state(false);
-	let showBgColorPicker = $state(false);
 	let colorPickerPosition = $state({ x: 0, y: 0 });
 	let currentColor = $state('#000000');
 
@@ -68,6 +85,46 @@
 
 	// Upload Loading State
 	let isUploading = $state(false);
+
+	// Link Edit Dialog State
+	let showLinkDialog = $state(false);
+	let linkUrl = $state('');
+	let linkTarget = $state('_blank');
+	let editingLink = $state<HTMLAnchorElement | null>(null);
+
+	// Inline Toolbar State
+	let showInlineToolbar = $state(false);
+	let inlineToolbarPos = $state({ x: 0, y: 0 });
+
+	// Inline Style State (for button active states)
+	let isBold = $state(false);
+	let isItalic = $state(false);
+	let isUnderline = $state(false);
+	let isStrikethrough = $state(false);
+
+	// Auto Save State
+	let autoSaveInterval: ReturnType<typeof setInterval> | null = null;
+	const AUTO_SAVE_INTERVAL = 30000; // 30 seconds
+	const LOCAL_STORAGE_KEY = 'rich_editor_backup';
+
+	// Media Embed Dialog State
+	let showMediaDialog = $state(false);
+	let mediaType = $state<'video' | 'audio'>('video');
+	let mediaUrl = $state('');
+	let mediaPosition = $state({ x: 0, y: 0 });
+
+	// Markdown Export State
+	let showMarkdownDialog = $state(false);
+	let markdownContent = $state('');
+
+	// Table Context Menu State
+	let tableContextMenu = $state<{show: boolean, x: number, y: number, cell: HTMLTableCellElement | null, table: HTMLTableElement | null}>({
+		show: false,
+		x: 0,
+		y: 0,
+		cell: null,
+		table: null
+	});
 
 	// Color Names for Accessibility
 	const colorNames: Record<string, string> = {
@@ -126,13 +183,51 @@
 	}
 
 	onMount(async () => {
+		abortController = new AbortController();
+
 		if (editorRef) {
-			document.execCommand('defaultParagraphSeparator', false, 'p');
+			// Try to load from localStorage first
+			const backup = loadFromLocalStorage();
+			if (backup && backup.html) {
+				const now = Date.now();
+				const hoursSinceBackup = (now - backup.timestamp) / (1000 * 60 * 60);
+
+				if (hoursSinceBackup < 24) { // 24 時間以内のバックアップのみ使用
+					editorRef.innerHTML = sanitizeHtml(backup.html);
+					innerHTML = editorRef.innerHTML;
+					if (backup.history && backup.history.length > 0) {
+						history = backup.history;
+						historyIndex = backup.historyIndex;
+					}
+					console.log(`Loaded backup from ${hoursSinceBackup.toFixed(1)} hours ago`);
+					// 要素に ID を付与
+					assignElementIds();
+					return;
+				}
+			}
+
+			// No valid backup, use provided value
+			const p = document.createElement('p');
+			p.innerHTML = '<br>';
+			editorRef.appendChild(p);
 			editorRef.innerHTML = sanitizeHtml(value) || '<p><br></p>';
 			innerHTML = editorRef.innerHTML;
 			saveToHistory(innerHTML);
+			// 要素に ID を付与
+			assignElementIds();
 		}
 	});
+
+	function assignElementIds() {
+		if (!editorRef) return;
+		// リサイズ可能な要素に ID を付与
+		const resizableTags = ['IMG', 'PRE', 'BLOCKQUOTE', 'IFRAME', 'VIDEO', 'TABLE', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'P', 'UL', 'OL', 'HR'];
+		editorRef.querySelectorAll(resizableTags.join(', ')).forEach((el, index) => {
+			if (!el.getAttribute('data-element-id')) {
+				el.setAttribute('data-element-id', `el-${Date.now()}-${index}`);
+			}
+		});
+	}
 
 	function saveToHistory(html: string) {
 		// 大きすぎるエントリはスキップ
@@ -140,13 +235,13 @@
 			console.warn('History entry too large, skipping');
 			return;
 		}
-		
+
 		// 重複チェック
 		if (history[historyIndex] === html) return;
-		
+
 		const newHistory = history.slice(0, historyIndex + 1);
 		newHistory.push(html);
-		
+
 		// 履歴数制限
 		if (newHistory.length > MAX_HISTORY) {
 			newHistory.shift();
@@ -154,6 +249,52 @@
 			historyIndex++;
 		}
 		history = newHistory;
+	}
+
+	function saveToLocalStorage(html: string) {
+		if (!autoSaveId) return;
+		try {
+			const backupKey = `${LOCAL_STORAGE_KEY}_${autoSaveId}`;
+			const backupData = {
+				html,
+				timestamp: Date.now(),
+				history: history.slice(-5), // 最新の 5 つのみ保存
+				historyIndex: historyIndex
+			};
+			localStorage.setItem(backupKey, JSON.stringify(backupData));
+		} catch (err) {
+			console.warn('Failed to save to localStorage:', err);
+		}
+	}
+
+	function loadFromLocalStorage() {
+		if (!autoSaveId) return null;
+		try {
+			const backupKey = `${LOCAL_STORAGE_KEY}_${autoSaveId}`;
+			const backupData = localStorage.getItem(backupKey);
+			if (backupData) {
+				const parsed = JSON.parse(backupData);
+				return {
+					html: parsed.html,
+					timestamp: parsed.timestamp,
+					history: parsed.history || [],
+					historyIndex: parsed.historyIndex || 0
+				};
+			}
+		} catch (err) {
+			console.warn('Failed to load from localStorage:', err);
+		}
+		return null;
+	}
+
+	function clearLocalStorage() {
+		if (!autoSaveId) return;
+		try {
+			const backupKey = `${LOCAL_STORAGE_KEY}_${autoSaveId}`;
+			localStorage.removeItem(backupKey);
+		} catch (err) {
+			console.warn('Failed to clear localStorage:', err);
+		}
 	}
 
 	function undo() {
@@ -177,6 +318,8 @@
 			editorRef.innerHTML = sanitizeHtml(html);
 			innerHTML = editorRef.innerHTML;
 			if (onchange) onchange(innerHTML);
+			// 要素 ID を再付与
+			assignElementIds();
 			requestAnimationFrame(updateOverlayPos);
 		}
 	}
@@ -192,16 +335,31 @@
 			}
 			selectedElement = target;
 			selectedElement.setAttribute('draggable', 'true');
+			// 要素に ID を付与して識別可能に
+			if (!selectedElement.getAttribute('data-element-id')) {
+				selectedElement.setAttribute('data-element-id', `el-${Date.now()}`);
+			}
 			updateOverlayPos();
 		} else if (!target.closest('.resize-handle') && !target.closest('.rich-editor') &&
-			!target.closest('.move-handle') && !target.closest('.color-picker')) {
+			!target.closest('.move-handle') && !target.closest('.color-picker') &&
+			!target.closest('.table-context-menu') && !target.closest('.toolbar-btn')) {
 			if (selectedElement) {
 				selectedElement.removeAttribute('draggable');
 			}
 			selectedElement = null;
 			overlayPos = null;
 			showColorPicker = false;
-			showBgColorPicker = false;
+			closeTableContextMenu();
+		}
+	}
+
+	function handleGlobalContextMenu(e: MouseEvent) {
+		const target = e.target as HTMLElement;
+		if (target.tagName === 'TD' || target.tagName === 'TH') {
+			const table = target.closest('table');
+			if (table && editorRef?.contains(table)) {
+				handleTableContextMenu(e, target as HTMLTableCellElement);
+			}
 		}
 	}
 
@@ -209,18 +367,64 @@
 	function handleDragKeydown(e: KeyboardEvent) {
 		if (!selectedElement) return;
 
-		if (e.key === 'ArrowUp' && e.altKey) {
+		// Alt + ArrowUp/Down: 1 つ移動
+		if (e.key === 'ArrowUp' && e.altKey && !e.shiftKey) {
 			e.preventDefault();
 			const prev = selectedElement.previousElementSibling;
 			if (prev && editorRef?.contains(prev)) {
 				selectedElement.parentElement?.insertBefore(selectedElement, prev);
 				saveAndNotify();
 			}
-		} else if (e.key === 'ArrowDown' && e.altKey) {
+		} else if (e.key === 'ArrowDown' && e.altKey && !e.shiftKey) {
 			e.preventDefault();
 			const next = selectedElement.nextElementSibling;
 			if (next && editorRef?.contains(next)) {
 				selectedElement.parentElement?.insertBefore(selectedElement, next.nextElementSibling);
+				saveAndNotify();
+			}
+		}
+		
+		// Alt + Shift + ArrowUp/Down: 5 つ移動（複数ブロック飛ばし）
+		if (e.key === 'ArrowUp' && e.altKey && e.shiftKey) {
+			e.preventDefault();
+			let target = selectedElement;
+			for (let i = 0; i < 5; i++) {
+				const prev = target.previousElementSibling;
+				if (prev && editorRef?.contains(prev)) {
+					target = prev;
+				}
+			}
+			if (target !== selectedElement) {
+				selectedElement.parentElement?.insertBefore(selectedElement, target);
+				saveAndNotify();
+			}
+		} else if (e.key === 'ArrowDown' && e.altKey && e.shiftKey) {
+			e.preventDefault();
+			let target = selectedElement;
+			for (let i = 0; i < 5; i++) {
+				const next = target.nextElementSibling;
+				if (next && editorRef?.contains(next)) {
+					target = next;
+				}
+			}
+			if (target !== selectedElement) {
+				selectedElement.parentElement?.insertBefore(selectedElement, target.nextElementSibling);
+				saveAndNotify();
+			}
+		}
+		
+		// Alt + PageUp/PageDown: 最初/最後に移動
+		if (e.key === 'PageUp' && e.altKey) {
+			e.preventDefault();
+			const first = editorRef?.firstElementChild;
+			if (first && first !== selectedElement) {
+				editorRef?.insertBefore(selectedElement, first);
+				saveAndNotify();
+			}
+		} else if (e.key === 'PageDown' && e.altKey) {
+			e.preventDefault();
+			if (editorRef) {
+				editorRef.appendChild(selectedElement);
 				saveAndNotify();
 			}
 		}
@@ -231,20 +435,32 @@
 			innerHTML = editorRef.innerHTML;
 			saveToHistory(innerHTML);
 			if (onchange) onchange(innerHTML);
+			if (autoSaveId) {
+				saveToLocalStorage(innerHTML);
+			}
 		}
 		updateOverlayPos();
 	}
 
-	function startResize(e: MouseEvent) {
+	function startResize(e: MouseEvent, handle?: 'nw' | 'n' | 'ne' | 'e' | 'se' | 's' | 'sw' | 'w') {
 		if (!selectedElement) return;
 		resizing = true;
+		resizeHandle = handle || 'se';
 		startX = e.clientX;
 		startY = e.clientY;
 
-		// テキスト要素の場合は現在の表示サイズ、それ以外は clientSize
-		const isTextElement = ['H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'P', 'UL', 'OL', 'HR', 'BLOCKQUOTE', 'PRE'].includes(selectedElement.tagName);
-		startWidth = isTextElement ? selectedElement.offsetWidth : selectedElement.clientWidth;
-		startHeight = isTextElement ? selectedElement.offsetHeight : selectedElement.clientHeight;
+		// 現在のスタイルから幅・高さを取得
+		const computedStyle = window.getComputedStyle(selectedElement);
+		const currentWidth = parseFloat(computedStyle.width) || selectedElement.clientWidth;
+		const currentHeight = parseFloat(computedStyle.height) || selectedElement.clientHeight;
+
+		startWidth = currentWidth;
+		startHeight = currentHeight;
+		
+		// アスペクト比を計算
+		if (selectedElement.tagName === 'IMG' || selectedElement.tagName === 'VIDEO') {
+			initialAspectRatio = currentWidth / currentHeight;
+		}
 
 		e.preventDefault();
 		e.stopPropagation();
@@ -260,25 +476,95 @@
 		const deltaY = e.clientY - startY;
 
 		const isTextElement = ['H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'P', 'UL', 'OL', 'HR', 'BLOCKQUOTE', 'PRE'].includes(selectedElement.tagName);
+		const isHeadingElement = ['H1', 'H2', 'H3', 'H4', 'H5', 'H6'].includes(selectedElement.tagName);
+		const isImageOrVideo = ['IMG', 'VIDEO', 'IFRAME'].includes(selectedElement.tagName);
 		const minWidth = isTextElement ? 100 : 50;
 		const minHeight = isTextElement ? 30 : 20;
 
-		const newWidth = Math.max(minWidth, startWidth + deltaX);
-		const newHeight = Math.max(minHeight, startHeight + deltaY);
+		let newWidth = startWidth;
+		let newHeight = startHeight;
+
+		// Shift キーの状態を更新
+		shiftKeyPressed = e.shiftKey;
+
+		// ハンドル位置に応じてリサイズ方向を変更
+		if (resizeHandle?.includes('e')) {
+			newWidth = Math.max(minWidth, startWidth + deltaX);
+		}
+		if (resizeHandle?.includes('w')) {
+			newWidth = Math.max(minWidth, startWidth - deltaX);
+		}
+		if (resizeHandle?.includes('s')) {
+			newHeight = Math.max(minHeight, startHeight + deltaY);
+		}
+		if (resizeHandle?.includes('n')) {
+			newHeight = Math.max(minHeight, startHeight - deltaY);
+		}
+
+		// アスペクト比維持（Shift キー押しまたはトグルオン）
+		if ((e.shiftKey || maintainAspectRatio) && isImageOrVideo) {
+			if (resizeHandle?.includes('e') || resizeHandle?.includes('w')) {
+				newHeight = newWidth / initialAspectRatio;
+			} else if (resizeHandle?.includes('s') || resizeHandle?.includes('n')) {
+				newWidth = newHeight * initialAspectRatio;
+			}
+		}
 
 		selectedElement.style.width = `${newWidth}px`;
 		selectedElement.style.height = `${newHeight}px`;
+
+		// 見出し要素はフォントサイズも連動させる
+		if (isHeadingElement) {
+			// 幅の変化率を計算
+			const widthRatio = newWidth / startWidth;
+			const computedFontSize = window.getComputedStyle(selectedElement).fontSize;
+			const currentFontSize = parseFloat(computedFontSize) || 16;
+			
+			// 初期フォントサイズを保存
+			if (!selectedElement.hasAttribute('data-initial-font-size')) {
+				selectedElement.setAttribute('data-initial-font-size', currentFontSize.toString());
+			}
+			
+			const initialFontSize = parseFloat(selectedElement.getAttribute('data-initial-font-size') || '16');
+			
+			// 幅の変化に応じてフォントサイズを調整（0.5 倍の比率で）
+			const fontRatio = 1 + (widthRatio - 1) * 0.5;
+			const newFontSize = Math.max(12, initialFontSize * fontRatio);
+			
+			selectedElement.style.fontSize = `${newFontSize.toFixed(1)}px`;
+		}
+
+		// リサイズ中のサイズを表示
+		resizeDimension = { width: Math.round(newWidth), height: Math.round(newHeight) };
 
 		updateOverlayPos();
 	}
 
 	function stopResize() {
 		resizing = false;
+		resizeHandle = null;
+		resizeDimension = null;
+		shiftKeyPressed = false;
 		window.removeEventListener('mousemove', handleResize);
+
+		if (selectedElement) {
+			// style 属性を直接保存
+			const styleAttr = selectedElement.getAttribute('style');
+			if (styleAttr) {
+				// data-element-id を付与して識別可能に
+				if (!selectedElement.getAttribute('data-element-id')) {
+					selectedElement.setAttribute('data-element-id', `el-${Date.now()}`);
+				}
+			}
+		}
+
 		if (editorRef) {
 			innerHTML = editorRef.innerHTML;
 			saveToHistory(innerHTML);
 			if (onchange) onchange(innerHTML);
+			if (autoSaveId) {
+				saveToLocalStorage(innerHTML);
+			}
 		}
 	}
 
@@ -291,6 +577,9 @@
 			const html = editorRef.innerHTML;
 			saveToHistory(html);
 			if (onchange) onchange(html);
+			if (autoSaveId) {
+				saveToLocalStorage(html);
+			}
 		}
 	}
 
@@ -304,21 +593,56 @@
 		// 内容が異なる場合のみ更新
 		const sanitizedValue = sanitizeHtml(value);
 		if (sanitizedValue !== editorRef.innerHTML) {
+			// 現在の要素の style 情報を保持（data-element-id 付きの要素のみ）
+			const elementsWithId = editorRef.querySelectorAll('[data-element-id]');
+			const styleMap = new Map<string, string>();
+			elementsWithId.forEach((el) => {
+				const id = el.getAttribute('data-element-id');
+				if (id && el.getAttribute('style')) {
+					styleMap.set(id, el.getAttribute('style') || '');
+				}
+			});
+
 			editorRef.innerHTML = sanitizedValue;
-			innerHTML = sanitizedValue;
+			innerHTML = editorRef.innerHTML;
 			saveToHistory(sanitizedValue);
+
+			// style 情報を復元
+			styleMap.forEach((style, id) => {
+				const el = editorRef.querySelector(`[data-element-id="${id}"]`);
+				if (el && style) {
+					el.setAttribute('style', style);
+				}
+			});
 		}
 	});
 
 	$effect(() => {
-		window.addEventListener('click', handleGlobalClick);
-		window.addEventListener('scroll', updateOverlayPos, { capture: true, passive: true });
-		window.addEventListener('resize', updateOverlayPos, { passive: true });
+		const controller = new AbortController();
+
+		window.addEventListener('click', handleGlobalClick, { signal: controller.signal });
+		window.addEventListener('scroll', updateOverlayPos, { capture: true, passive: true, signal: controller.signal });
+		window.addEventListener('resize', updateOverlayPos, { passive: true, signal: controller.signal });
+		document.addEventListener('selectionchange', handleSelectionChange, { signal: controller.signal });
+
+		// Auto-save interval
+		if (autoSaveId) {
+			autoSaveInterval = setInterval(() => {
+				if (editorRef && innerHTML) {
+					saveToLocalStorage(innerHTML);
+				}
+			}, AUTO_SAVE_INTERVAL);
+		}
 
 		return () => {
-			window.removeEventListener('click', handleGlobalClick);
-			window.removeEventListener('scroll', updateOverlayPos, { capture: true });
-			window.removeEventListener('resize', updateOverlayPos);
+			controller.abort();
+			if (autoSaveInterval) {
+				clearInterval(autoSaveInterval);
+			}
+			// クリーンアップ時にも保存
+			if (editorRef && autoSaveId) {
+				saveToLocalStorage(editorRef.innerHTML);
+			}
 		};
 	});
 
@@ -327,38 +651,93 @@
 		const target = e.target as HTMLElement;
 		if (!editorRef?.contains(target)) return;
 
-		draggedElement = target;
-		target.style.opacity = '0.4';
+		// 編集可能な要素のみドラッグ許可
+		const allowedTags = ['P', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'UL', 'OL', 'BLOCKQUOTE', 'PRE', 'TABLE', 'HR', 'DIV', 'IMG', 'VIDEO', 'AUDIO', 'IFRAME'];
+		if (!allowedTags.includes(target.tagName)) return;
 
-		// プレースホルダー作成
+		// 既存のプレースホルダーを削除（増殖防止）
+		if (dragPlaceholder && dragPlaceholder.parentElement) {
+			dragPlaceholder.remove();
+		}
+		dragPlaceholder = null;
+
+		draggedElement = target;
+		
+		target.style.opacity = '0.4';
+		target.style.background = 'rgba(59, 130, 246, 0.1)';
+		target.style.transition = 'opacity 0.15s, background 0.15s';
+
+		// プレースホルダー作成（もっと目立たせる）
 		dragPlaceholder = document.createElement('div');
 		dragPlaceholder.className = 'drag-placeholder';
-		dragPlaceholder.style.cssText = 'height: 100px; background: rgba(59, 130, 246, 0.2); border: 2px dashed #3b82f6; border-radius: 8px; margin: 1rem 0;';
+		dragPlaceholder.style.cssText = 'height: 60px; background: linear-gradient(135deg, rgba(59, 130, 246, 0.5), rgba(147, 51, 234, 0.5)); border: 4px solid #3b82f6; border-radius: 12px; margin: 0; display: flex; align-items: center; justify-content: center; color: #3b82f6; font-weight: 700; font-size: 16px; animation: placeholder-pulse 0.8s infinite;';
+		dragPlaceholder.innerHTML = '<span style="font-size: 20px;">📍</span> <span style="margin-left: 8px;">ここに移動</span>';
 
 		e.dataTransfer?.setData('text/plain', target.tagName);
 		e.dataTransfer!.effectAllowed = 'move';
+		e.dataTransfer!.setDragImage(dragPlaceholder, 50, 30);
 	}
 
-	// ドラッグ中
+	// ドラッグ中 - 簡易化
 	function handleDragOver(e: DragEvent) {
 		e.preventDefault();
 		e.dataTransfer!.dropEffect = 'move';
 
-		if (!draggedElement) return;
+		if (!draggedElement || !editorRef || !dragPlaceholder) return;
 
-		// ドロップ先の要素を探す
+		// 既存のプレースホルダーを一旦削除（増殖防止）
+		if (dragPlaceholder.parentElement) {
+			dragPlaceholder.remove();
+		}
+
+		// マウスポインターの位置の要素を取得
 		const elements = document.elementsFromPoint(e.clientX, e.clientY);
-		const dropTarget = elements.find(el => {
-			const parent = el.parentElement;
-			return parent && editorRef?.contains(parent) &&
-				['P', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'UL', 'OL', 'BLOCKQUOTE', 'PRE', 'TABLE', 'HR', 'DIV'].includes(parent.tagName);
-		});
+		
+		// エディター内かどうかをチェック
+		const isOverEditor = elements.some(el => editorRef?.contains(el) || el === editorRef);
+		if (!isOverEditor) return;
 
-		if (dropTarget && dropTarget !== draggedElement && dragPlaceholder) {
-			const parent = dropTarget.parentElement as HTMLElement;
-			if (dragPlaceholder.parentElement !== parent) {
-				parent.insertBefore(dragPlaceholder, dropTarget);
+		// ドロップ先の候補を探す
+		let insertTarget: HTMLElement | null = null;
+		let insertBefore = true;
+
+		for (const el of elements) {
+			// 直接の子供として挿入できるブロック要素
+			if (editorRef.contains(el) && 
+				['P', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'UL', 'OL', 'BLOCKQUOTE', 'PRE', 'TABLE', 'HR', 'DIV', 'IMG', 'VIDEO', 'AUDIO', 'IFRAME'].includes(el.tagName) &&
+				el !== draggedElement &&
+				!el.contains(draggedElement)) {
+				
+				insertTarget = el;
+				
+				// 要素の 1/3 以上か以下かで判断（余裕を持たせる）
+				const rect = el.getBoundingClientRect();
+				const third = rect.height / 3;
+				
+				if (e.clientY < rect.top + third) {
+					// 上 1/3: この要素の前に挿入
+					insertBefore = true;
+				} else if (e.clientY > rect.bottom - third) {
+					// 下 1/3: この要素の後に挿入
+					insertBefore = false;
+				} else {
+					// 中央：何もしない（現在の位置を維持）
+					insertTarget = null;
+				}
+				break;
 			}
+		}
+
+		// プレースホルダーを配置
+		if (insertTarget) {
+			if (insertBefore) {
+				insertTarget.parentElement?.insertBefore(dragPlaceholder, insertTarget);
+			} else {
+				insertTarget.parentElement?.insertBefore(dragPlaceholder, insertTarget.nextElementSibling);
+			}
+		} else {
+			// 最後尾に配置
+			editorRef.appendChild(dragPlaceholder);
 		}
 	}
 
@@ -368,10 +747,6 @@
 
 		const placeholderParent = dragPlaceholder.parentElement;
 		if (placeholderParent && placeholderParent.contains(dragPlaceholder)) {
-			// ドラッグ元の位置を保存
-			const originalParent = draggedElement.parentElement;
-			const originalNext = draggedElement.nextElementSibling;
-
 			// プレースホルダーの位置に移動
 			placeholderParent.insertBefore(draggedElement, dragPlaceholder);
 
@@ -383,12 +758,18 @@
 				innerHTML = editorRef.innerHTML;
 				saveToHistory(innerHTML);
 				if (onchange) onchange(innerHTML);
+				if (autoSaveId) {
+					saveToLocalStorage(innerHTML);
+				}
 			}
 		}
 
 		// クリーンアップ
 		if (draggedElement) {
 			draggedElement.style.opacity = '1';
+			draggedElement.style.background = '';
+			draggedElement.style.transform = 'none';
+			draggedElement.style.transition = 'none';
 		}
 		draggedElement = null;
 		dragPlaceholder = null;
@@ -460,8 +841,45 @@
 	}
 
 	function format(command: string, value: string = '') {
-		document.execCommand(command, false, value);
-		if (editorRef) {
+		if (!editorRef) return;
+
+		// エディターにフォーカスを戻す
+		editorRef.focus();
+
+		let result = { applied: false, removed: false };
+
+		switch (command) {
+			case 'bold':
+				result = applyInlineStyleToSelection('b', {}, true);
+				break;
+			case 'italic':
+				result = applyInlineStyleToSelection('i', {}, true);
+				break;
+			case 'underline':
+				result = applyInlineStyleToSelection('u', {}, true);
+				break;
+			case 'strikeThrough':
+				result = applyInlineStyleToSelection('s', {}, true);
+				break;
+			case 'justifyLeft':
+				alignText('left');
+				result.applied = true;
+				break;
+			case 'justifyCenter':
+				alignText('center');
+				result.applied = true;
+				break;
+			case 'justifyRight':
+				alignText('right');
+				result.applied = true;
+				break;
+			case 'justifyFull':
+				alignText('justify');
+				result.applied = true;
+				break;
+		}
+
+		if (editorRef && (result.applied || result.removed)) {
 			innerHTML = editorRef.innerHTML;
 			saveToHistory(innerHTML);
 			if (onchange) onchange(innerHTML);
@@ -470,53 +888,46 @@
 
 	function setFontSize(size: string) {
 		if (!editorRef) return;
-		document.execCommand('fontSize', false, '7');
-		const fontElements = editorRef.querySelectorAll('font[size="7"]');
-		fontElements.forEach(el => {
-			const span = document.createElement('span');
-			span.style.fontSize = size + 'px';
-			span.innerHTML = el.innerHTML;
-			el.replaceWith(span);
-		});
-		innerHTML = editorRef.innerHTML;
-		saveToHistory(innerHTML);
-		if (onchange) onchange(innerHTML);
+		
+		// エディターにフォーカスを戻す
+		editorRef.focus();
+		
+		const result = applyInlineStyleToSelection('span', { fontSize: size + 'px' });
+		
+		if (result.applied || result.removed) {
+			innerHTML = editorRef.innerHTML;
+			saveToHistory(innerHTML);
+			if (onchange) onchange(innerHTML);
+		}
 	}
 
 	function setTextColor(color: string) {
 		if (!editorRef) return;
-		document.execCommand('foreColor', false, color);
-		currentColor = color;
-		showColorPicker = false;
-		innerHTML = editorRef.innerHTML;
-		saveToHistory(innerHTML);
-		if (onchange) onchange(innerHTML);
-	}
-
-	function setBackgroundColor(color: string) {
-		if (!editorRef) return;
-		const selection = window.getSelection();
-		if (!selection || !selection.rangeCount) return;
-
-		const range = selection.getRangeAt(0);
-		const selectedText = range.toString();
-
-		if (selectedText) {
-			const span = document.createElement('span');
-			span.style.backgroundColor = color;
-			range.surroundContents(span);
+		
+		// エディターにフォーカスを戻す
+		editorRef.focus();
+		
+		// 選択範囲に色を適用
+		const result = applyInlineStyleToSelection('span', { color });
+		
+		if (result.applied || result.removed) {
+			currentColor = color;
+			showColorPicker = false;
+			innerHTML = editorRef.innerHTML;
+			saveToHistory(innerHTML);
+			if (onchange) onchange(innerHTML);
 		}
-
-		showBgColorPicker = false;
-		innerHTML = editorRef.innerHTML;
-		saveToHistory(innerHTML);
-		if (onchange) onchange(innerHTML);
 	}
 
-	function toggleColorPicker(isBg: boolean, event: MouseEvent) {
+	function toggleColorPicker(event: MouseEvent) {
+		event.preventDefault();
+		event.stopPropagation();
+
 		const button = (event.target as HTMLElement).closest('.toolbar-btn') as HTMLElement;
+		if (!button || !editorRef) return;
+
 		const rect = button.getBoundingClientRect();
-		const outer = editorRef?.closest('.editor-outer');
+		const outer = editorRef.closest('.editor-outer');
 
 		if (outer) {
 			const outerRect = outer.getBoundingClientRect();
@@ -526,12 +937,30 @@
 			};
 		}
 
-		if (isBg) {
-			showBgColorPicker = !showBgColorPicker;
-			showColorPicker = false;
-		} else {
-			showColorPicker = !showColorPicker;
-			showBgColorPicker = false;
+		showColorPicker = !showColorPicker;
+	}
+
+	function handleColorPickerButton(event: MouseEvent) {
+		event.preventDefault();
+		event.stopPropagation();
+		
+		// カラーピッカーの表示状態をトグル
+		showColorPicker = !showColorPicker;
+		
+		// 位置を計算
+		if (editorRef) {
+			const button = (event.target as HTMLElement).closest('.toolbar-btn') as HTMLElement;
+			if (button) {
+				const rect = button.getBoundingClientRect();
+				const outer = editorRef.closest('.editor-outer');
+				if (outer) {
+					const outerRect = outer.getBoundingClientRect();
+					colorPickerPosition = {
+						x: rect.left - outerRect.left,
+						y: rect.bottom - outerRect.top + 4
+					};
+				}
+			}
 		}
 	}
 
@@ -554,6 +983,9 @@
 			clearTimeout(historyTimeout);
 			historyTimeout = setTimeout(() => {
 				saveToHistory(innerHTML);
+				if (autoSaveId) {
+					saveToLocalStorage(innerHTML);
+				}
 			}, 1000);
 		}, INPUT_DEBOUNCE_DELAY);
 
@@ -681,17 +1113,17 @@
 		for (const { pattern, tag } of shortcuts) {
 			if (pattern.test(text)) {
 				if (tag === 'li') {
-					document.execCommand('insertUnorderedList');
+					toggleList('UL');
 					const sel = window.getSelection();
 					if (sel && sel.anchorNode) {
 						const li = sel.anchorNode.parentElement?.closest('li');
 						if (li) li.textContent = '';
 					}
 				} else if (tag === 'hr') {
-					document.execCommand('insertHorizontalRule');
+					insertHorizontalRule();
 					if (node.parentElement) node.parentElement.innerHTML = '';
 				} else if (tag === 'pre') {
-					document.execCommand('formatBlock', false, 'PRE');
+					formatBlock('PRE');
 					const sel = window.getSelection();
 					if (sel && sel.anchorNode) {
 						const pre = (sel.anchorNode as HTMLElement).closest('pre');
@@ -733,17 +1165,15 @@
 		}
 
 		switch (commandId) {
-			case 'h1': document.execCommand('formatBlock', false, 'H1'); break;
-			case 'h2': document.execCommand('formatBlock', false, 'H2'); break;
-			case 'h3': document.execCommand('formatBlock', false, 'H3'); break;
-			case 'bullet': document.execCommand('insertUnorderedList'); break;
-			case 'number': document.execCommand('insertOrderedList'); break;
-			case 'quote': document.execCommand('formatBlock', false, 'BLOCKQUOTE'); break;
-			case 'hr': document.execCommand('insertHorizontalRule'); break;
+			case 'h1': formatBlock('H1'); break;
+			case 'h2': formatBlock('H2'); break;
+			case 'h3': formatBlock('H3'); break;
+			case 'bullet': toggleList('UL'); break;
+			case 'number': toggleList('OL'); break;
+			case 'quote': toggleBlockquote(); break;
+			case 'hr': insertHorizontalRule(); break;
 			case 'image': fileInputRef?.click(); break;
-			case 'code':
-				document.execCommand('formatBlock', false, 'PRE');
-				break;
+			case 'code': formatBlock('PRE'); break;
 			case 'table': insertTable(); break;
 		}
 
@@ -755,30 +1185,402 @@
 
 	function insertTable() {
 		if (!editorRef) return;
-
-		const rows = 3;
-		const cols = 3;
-
-		let tableHtml = '<table style="width: 100%; border-collapse: collapse; margin: 1rem 0;">';
-		for (let i = 0; i < rows; i++) {
-			tableHtml += '<tr>';
-			for (let j = 0; j < cols; j++) {
-				tableHtml += '<td style="border: 1px solid #d1d5db; padding: 0.75rem; min-width: 80px;">&nbsp;</td>';
-			}
-			tableHtml += '</tr>';
-		}
-		tableHtml += '</table><p><br></p>';
-
-		document.execCommand('insertHTML', false, tableHtml);
+		insertTableElement(3, 3);
 		innerHTML = editorRef.innerHTML;
 		saveToHistory(innerHTML);
 		if (onchange) onchange(innerHTML);
+	}
+
+	function openLinkDialog() {
+		if (!editorRef) return;
+		const selection = window.getSelection();
+		if (!selection || selection.rangeCount === 0) return;
+
+		const range = selection.getRangeAt(0);
+		const node = range.commonAncestorContainer as HTMLElement;
+		const link = node.nodeType === Node.ELEMENT_NODE ? node : node.parentElement?.closest('a');
+
+		if (link) {
+			editingLink = link as HTMLAnchorElement;
+			linkUrl = editingLink.href;
+			linkTarget = editingLink.target || '_self';
+			showLinkDialog = true;
+		} else {
+			editingLink = null;
+			linkUrl = '';
+			linkTarget = '_blank';
+			showLinkDialog = true;
+		}
+	}
+
+	function insertLink() {
+		if (!linkUrl || !editorRef) return;
+
+		try {
+			const parsedUrl = new URL(linkUrl.startsWith('http') || linkUrl.startsWith('mailto:') ? linkUrl : `https://${linkUrl}`);
+			if (!['http:', 'https:', 'mailto:'].includes(parsedUrl.protocol)) {
+				alert('無効な URL プロトコルです。http, https, mailto のみ許可されています。');
+				return;
+			}
+
+			if (editingLink) {
+				editingLink.href = parsedUrl.href;
+				editingLink.target = linkTarget;
+				editingLink.rel = linkTarget === '_blank' ? 'noopener noreferrer' : '';
+			} else {
+				createLink(parsedUrl.href, linkTarget);
+			}
+
+			innerHTML = editorRef.innerHTML;
+			saveToHistory(innerHTML);
+			if (onchange) onchange(innerHTML);
+		} catch {
+			alert('無効な URL 形式です');
+			return;
+		}
+
+		showLinkDialog = false;
+		editingLink = null;
+		linkUrl = '';
+		linkTarget = '_blank';
+	}
+
+	function unlink() {
+		removeLink();
+		if (editorRef) {
+			innerHTML = editorRef.innerHTML;
+			saveToHistory(innerHTML);
+			if (onchange) onchange(innerHTML);
+		}
+		showLinkDialog = false;
+		editingLink = null;
+	}
+
+	function closeLinkDialog() {
+		showLinkDialog = false;
+		editingLink = null;
+		linkUrl = '';
+		linkTarget = '_blank';
+	}
+
+	function toggleLinkTarget() {
+		linkTarget = linkTarget === '_blank' ? '_self' : '_blank';
+	}
+
+	function openMediaDialog(type: 'video' | 'audio', event: MouseEvent) {
+		mediaType = type;
+		mediaUrl = '';
+		showMediaDialog = true;
+
+		const button = (event.target as HTMLElement).closest('.toolbar-btn') as HTMLElement;
+		if (button && editorRef) {
+			const rect = button.getBoundingClientRect();
+			const outer = editorRef.closest('.editor-outer');
+			if (outer) {
+				const outerRect = outer.getBoundingClientRect();
+				mediaPosition = {
+					x: rect.left - outerRect.left,
+					y: rect.bottom - outerRect.top + 4
+				};
+			}
+		}
+	}
+
+	function closeMediaDialog() {
+		showMediaDialog = false;
+		mediaUrl = '';
+	}
+
+	function insertMedia() {
+		if (!mediaUrl || !editorRef) return;
+
+		let mediaHtml = '';
+		if (mediaType === 'video') {
+			mediaHtml = `<video controls src="${sanitizeHtml(mediaUrl)}" style="max-width: 100%; height: auto; border-radius: 8px; margin: 1rem 0;"></video>`;
+		} else {
+			mediaHtml = `<audio controls src="${sanitizeHtml(mediaUrl)}" style="width: 100%; margin: 1rem 0;"></audio>`;
+		}
+
+		insertHtmlAtCursor(mediaHtml);
+
+		innerHTML = editorRef.innerHTML;
+		saveToHistory(innerHTML);
+		if (onchange) onchange(innerHTML);
+
+		closeMediaDialog();
+	}
+
+	function openMarkdownExport() {
+		if (!editorRef) return;
+		const html = editorRef.innerHTML;
+		markdownContent = htmlToMarkdown(html);
+		showMarkdownDialog = true;
+	}
+
+	function closeMarkdownExport() {
+		showMarkdownDialog = false;
+		markdownContent = '';
+	}
+
+	function copyMarkdown() {
+		navigator.clipboard.writeText(markdownContent).then(() => {
+			alert('Markdown をコピーしました');
+		}).catch(() => {
+			alert('コピーに失敗しました');
+		});
+	}
+
+	function downloadMarkdown() {
+		const blob = new Blob([markdownContent], { type: 'text/markdown' });
+		const url = URL.createObjectURL(blob);
+		const a = document.createElement('a');
+		a.href = url;
+		a.download = `export-${Date.now()}.md`;
+		a.click();
+		URL.revokeObjectURL(url);
+	}
+
+	function handleTableContextMenu(e: MouseEvent, cell: HTMLTableCellElement) {
+		e.preventDefault();
+		e.stopPropagation();
+		const table = cell.closest('table');
+		const outer = editorRef?.closest('.editor-outer');
+
+		if (outer) {
+			const outerRect = outer.getBoundingClientRect();
+			tableContextMenu = {
+				show: true,
+				x: e.clientX - outerRect.left,
+				y: e.clientY - outerRect.top,
+				cell: cell,
+				table: table || null
+			};
+		}
+	}
+
+	function closeTableContextMenu() {
+		tableContextMenu = { show: false, x: 0, y: 0, cell: null, table: null };
+	}
+
+	function tableAddRowAbove() {
+		if (!tableContextMenu.table || !tableContextMenu.cell) return;
+		const row = tableContextMenu.cell.parentElement;
+		if (!row) return;
+		addTableRow(tableContextMenu.table, row.rowIndex - 1);
+		saveAndNotify();
+		closeTableContextMenu();
+	}
+
+	function tableAddRowBelow() {
+		if (!tableContextMenu.table || !tableContextMenu.cell) return;
+		const row = tableContextMenu.cell.parentElement;
+		if (!row) return;
+		addTableRow(tableContextMenu.table, row.rowIndex);
+		saveAndNotify();
+		closeTableContextMenu();
+	}
+
+	function tableAddColumnLeft() {
+		if (!tableContextMenu.table || !tableContextMenu.cell) return;
+		addTableColumn(tableContextMenu.table, tableContextMenu.cell.cellIndex - 1);
+		saveAndNotify();
+		closeTableContextMenu();
+	}
+
+	function tableAddColumnRight() {
+		if (!tableContextMenu.table || !tableContextMenu.cell) return;
+		addTableColumn(tableContextMenu.table, tableContextMenu.cell.cellIndex);
+		saveAndNotify();
+		closeTableContextMenu();
+	}
+
+	function tableDeleteRow() {
+		if (!tableContextMenu.table || !tableContextMenu.cell) return;
+		const row = tableContextMenu.cell.parentElement;
+		if (!row) return;
+		deleteTableRow(tableContextMenu.table, row.rowIndex);
+		saveAndNotify();
+		closeTableContextMenu();
+	}
+
+	function tableDeleteColumn() {
+		if (!tableContextMenu.table || !tableContextMenu.cell) return;
+		deleteTableColumn(tableContextMenu.table, tableContextMenu.cell.cellIndex);
+		saveAndNotify();
+		closeTableContextMenu();
+	}
+
+	function tableMergeHorizontal() {
+		if (!tableContextMenu.cell) return;
+		mergeTableCellsHorizontally(tableContextMenu.cell);
+		saveAndNotify();
+		closeTableContextMenu();
+	}
+
+	function tableMergeVertical() {
+		if (!tableContextMenu.cell) return;
+		mergeTableCellsVertically(tableContextMenu.cell);
+		saveAndNotify();
+		closeTableContextMenu();
+	}
+
+	function tableSplit() {
+		if (!tableContextMenu.cell) return;
+		splitTableCell(tableContextMenu.cell);
+		saveAndNotify();
+		closeTableContextMenu();
+	}
+
+	function updateInlineToolbar() {
+		if (!editorRef) return;
+
+		if (isSelectionCollapsed()) {
+			showInlineToolbar = false;
+			return;
+		}
+
+		const bounds = getSelectionBounds();
+		if (!bounds) {
+			showInlineToolbar = false;
+			return;
+		}
+
+		const outer = editorRef.closest('.editor-outer');
+		if (!outer) return;
+
+		const outerRect = outer.getBoundingClientRect();
+		const editorWrapper = editorRef.parentElement;
+		if (!editorWrapper) return;
+
+		const wrapperRect = editorWrapper.getBoundingClientRect();
+
+		inlineToolbarPos = {
+			x: bounds.left - wrapperRect.left + bounds.width / 2,
+			y: bounds.top - wrapperRect.top - 10
+		};
+
+		showInlineToolbar = true;
+	}
+
+	function handleInlineFormat(command: string) {
+		// エディターにフォーカスを戻す
+		if (editorRef) {
+			editorRef.focus();
+		}
+		format(command);
+		updateInlineToolbar();
+	}
+
+	function handleSelectionChange() {
+		const selection = window.getSelection();
+		if (!selection || selection.rangeCount === 0) {
+			showInlineToolbar = false;
+			isBold = false;
+			isItalic = false;
+			isUnderline = false;
+			isStrikethrough = false;
+			return;
+		}
+
+		const range = selection.getRangeAt(0);
+		if (!editorRef?.contains(range.commonAncestorContainer)) {
+			showInlineToolbar = false;
+			isBold = false;
+			isItalic = false;
+			isUnderline = false;
+			isStrikethrough = false;
+			return;
+		}
+
+		// Update inline style states
+		isBold = hasInlineStyleInSelection('b') || hasInlineStyleInSelection('strong');
+		isItalic = hasInlineStyleInSelection('i') || hasInlineStyleInSelection('em');
+		isUnderline = hasInlineStyleInSelection('u');
+		isStrikethrough = hasInlineStyleInSelection('s');
+
+		if (range.collapsed) {
+			showInlineToolbar = false;
+		} else {
+			updateInlineToolbar();
+		}
+	}
+
+	// Enter キーの 2 回押し状態管理
+	let lastEnterTime = 0;
+	let enterCount = 0;
+	let enterTimeout: ReturnType<typeof setTimeout> | null = null;
+
+	function insertNewBlock() {
+		if (!editorRef) return;
+
+		const selection = window.getSelection();
+		if (!selection || selection.rangeCount === 0) return;
+
+		const range = selection.getRangeAt(0);
+		
+		// 新しい段落を作成
+		const newParagraph = document.createElement('p');
+		newParagraph.innerHTML = '<br>';
+		
+		// 現在のカーソル位置に挿入
+		range.insertNode(newParagraph);
+		
+		// カーソルを新しい段落に移動
+		const textNode = newParagraph.firstChild;
+		if (textNode) {
+			const newRange = document.createRange();
+			newRange.setStart(textNode, 0);
+			newRange.collapse(true);
+			selection.removeAllRanges();
+			selection.addRange(newRange);
+		}
+		
+		// 変更を保存
+		innerHTML = editorRef.innerHTML;
+		saveToHistory(innerHTML);
+		if (onchange) onchange(innerHTML);
+		if (autoSaveId) {
+			saveToLocalStorage(innerHTML);
+		}
 	}
 
 	function handleKeyDown(e: KeyboardEvent) {
 		if (selectedElement && (e.key === 'Backspace' || e.key === 'Delete')) {
 			e.preventDefault();
 			deleteSelectedElement();
+			return;
+		}
+
+		// Enter キー 2 回で新しいブロック
+		if (e.key === 'Enter') {
+			const now = Date.now();
+			
+			if (now - lastEnterTime < 300) {
+				// 2 回目の Enter（300ms 以内）
+				e.preventDefault();
+				
+				// タイマーをクリア
+				if (enterTimeout) {
+					clearTimeout(enterTimeout);
+				}
+				
+				// 新しい段落を挿入
+				insertNewBlock();
+				
+				// リセット
+				enterCount = 0;
+				lastEnterTime = 0;
+			} else {
+				// 1 回目の Enter
+				enterCount = 1;
+				lastEnterTime = now;
+				
+				// 300ms 後にリセット
+				enterTimeout = setTimeout(() => {
+					enterCount = 0;
+					lastEnterTime = 0;
+				}, 300);
+			}
 			return;
 		}
 
@@ -794,16 +1596,86 @@
 			return;
 		}
 
+		if ((e.ctrlKey || e.metaKey) && e.key === 'b') {
+			e.preventDefault();
+			format('bold');
+			return;
+		}
+		if ((e.ctrlKey || e.metaKey) && e.key === 'i') {
+			e.preventDefault();
+			format('italic');
+			return;
+		}
+		if ((e.ctrlKey || e.metaKey) && e.key === 'u') {
+			e.preventDefault();
+			format('underline');
+			return;
+		}
+
+		if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+			e.preventDefault();
+			openLinkDialog();
+			return;
+		}
+
+		if ((e.ctrlKey || e.metaKey) && e.key === 'l') {
+			e.preventDefault();
+			format('justifyLeft');
+			return;
+		}
+		if ((e.ctrlKey || e.metaKey) && e.key === 'e') {
+			e.preventDefault();
+			format('justifyCenter');
+			return;
+		}
+		if ((e.ctrlKey || e.metaKey) && e.key === 'r') {
+			e.preventDefault();
+			format('justifyRight');
+			return;
+		}
+
+		if ((e.ctrlKey || e.metaKey) && e.key === '1') {
+			e.preventDefault();
+			executeCommand('h1');
+			return;
+		}
+		if ((e.ctrlKey || e.metaKey) && e.key === '2') {
+			e.preventDefault();
+			executeCommand('h2');
+			return;
+		}
+		if ((e.ctrlKey || e.metaKey) && e.key === '3') {
+			e.preventDefault();
+			executeCommand('h3');
+			return;
+		}
+
+		if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === '7') {
+			e.preventDefault();
+			executeCommand('code');
+			return;
+		}
+
+		if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'q') {
+			e.preventDefault();
+			executeCommand('quote');
+			return;
+		}
+
 		if (e.key === 'Tab') {
 			e.preventDefault();
-			document.execCommand('indent');
+			const selection = window.getSelection();
+			if (selection && selection.rangeCount > 0) {
+				const range = selection.getRangeAt(0);
+				range.insertNode(document.createTextNode('\u00A0\u00A0'));
+			}
 		}
 	}
 </script>
 
 <div class="editor-outer">
 	<div class="editor-container">
-		<div class="toolbar">
+		<div class="toolbar" role="toolbar" aria-label="エディターツールバー">
 			<button type="button" class="toolbar-btn" onclick={undo} disabled={historyIndex <= 0} title="元に戻す (Ctrl+Z)" aria-label="元に戻す (Ctrl+Z)">
 				<Undo size={18} aria-hidden="true" />
 			</button>
@@ -812,31 +1684,28 @@
 			</button>
 			<div class="v-divider"></div>
 
-			<button type="button" class="toolbar-btn" onclick={() => format('bold')} title="太字 (Ctrl+B)" aria-label="太字 (Ctrl+B)">
+			<button type="button" class="toolbar-btn" class:active={isBold} onmousedown={(e) => { e.preventDefault(); format('bold'); }} title="太字 (Ctrl+B)" aria-label="太字 (Ctrl+B)">
 				<Bold size={18} aria-hidden="true" />
 			</button>
-			<button type="button" class="toolbar-btn" onclick={() => format('italic')} title="斜体 (Ctrl+I)" aria-label="斜体 (Ctrl+I)">
+			<button type="button" class="toolbar-btn" class:active={isItalic} onmousedown={(e) => { e.preventDefault(); format('italic'); }} title="イタリック (Ctrl+I)" aria-label="イタリック (Ctrl+I)">
 				<Italic size={18} aria-hidden="true" />
 			</button>
-			<button type="button" class="toolbar-btn" onclick={() => format('underline')} title="下線 (Ctrl+U)" aria-label="下線 (Ctrl+U)">
+			<button type="button" class="toolbar-btn" class:active={isUnderline} onmousedown={(e) => { e.preventDefault(); format('underline'); }} title="下線 (Ctrl+U)" aria-label="下線 (Ctrl+U)">
 				<Underline size={18} aria-hidden="true" />
 			</button>
-			<button type="button" class="toolbar-btn" onclick={() => format('strikeThrough')} title="取り消し線" aria-label="取り消し線">
+			<button type="button" class="toolbar-btn" class:active={isStrikethrough} onmousedown={(e) => { e.preventDefault(); format('strikeThrough'); }} title="取り消し線" aria-label="取り消し線">
 				<Strikethrough size={18} aria-hidden="true" />
 			</button>
 
 			<div class="v-divider"></div>
 
-			<button type="button" class="toolbar-btn" onclick={(e) => toggleColorPicker(false, e)} title="文字色" aria-label="文字色を選択">
+			<button type="button" class="toolbar-btn" onmousedown={handleColorPickerButton} title="文字色" aria-label="文字色を選択">
 				<Palette size={18} aria-hidden="true" />
-			</button>
-			<button type="button" class="toolbar-btn" onclick={(e) => toggleColorPicker(true, e)} title="背景色" aria-label="背景色を選択">
-				<div style="width: 18px; height: 18px; border-radius: 2px; background: #fbbf24; border: 2px solid #d1d5db;" aria-hidden="true"></div>
 			</button>
 
 			<div class="v-divider"></div>
 
-			<select onchange={(e) => {
+			<select onmousedown={(e) => { e.preventDefault(); editorRef?.focus(); }} onchange={(e) => {
 				const size = (e.target as HTMLSelectElement).value;
 				if (size) setFontSize(size);
 			}} class="toolbar-select" value={currentFontSize} aria-label="フォントサイズ">
@@ -855,66 +1724,52 @@
 
 			<div class="v-divider"></div>
 
-			<button type="button" class="toolbar-btn" onclick={() => executeCommand('h1')} title="見出し 1" aria-label="見出し 1">
+			<button type="button" class="toolbar-btn" onclick={() => executeCommand('h1')} title="見出し 1 (Ctrl+1)" aria-label="見出し 1">
 				<Heading1 size={18} aria-hidden="true" />
 			</button>
-			<button type="button" class="toolbar-btn" onclick={() => executeCommand('h2')} title="見出し 2" aria-label="見出し 2">
+			<button type="button" class="toolbar-btn" onclick={() => executeCommand('h2')} title="見出し 2 (Ctrl+2)" aria-label="見出し 2">
 				<Heading2 size={18} aria-hidden="true" />
 			</button>
-			<button type="button" class="toolbar-btn" onclick={() => executeCommand('h3')} title="見出し 3" aria-label="見出し 3">
+			<button type="button" class="toolbar-btn" onclick={() => executeCommand('h3')} title="見出し 3 (Ctrl+3)" aria-label="見出し 3">
 				<Heading3 size={18} aria-hidden="true" />
 			</button>
 
 			<div class="v-divider"></div>
 
-			<button type="button" class="toolbar-btn" onclick={() => format('justifyLeft')} title="左揃え" aria-label="左揃え">
+			<button type="button" class="toolbar-btn" onmousedown={(e) => { e.preventDefault(); format('justifyLeft'); }} title="左揃え (Ctrl+L)" aria-label="左揃え">
 				<AlignLeft size={18} aria-hidden="true" />
 			</button>
-			<button type="button" class="toolbar-btn" onclick={() => format('justifyCenter')} title="中央揃え" aria-label="中央揃え">
+			<button type="button" class="toolbar-btn" onmousedown={(e) => { e.preventDefault(); format('justifyCenter'); }} title="中央揃え (Ctrl+E)" aria-label="中央揃え">
 				<AlignCenter size={18} aria-hidden="true" />
 			</button>
-			<button type="button" class="toolbar-btn" onclick={() => format('justifyRight')} title="右揃え" aria-label="右揃え">
+			<button type="button" class="toolbar-btn" onmousedown={(e) => { e.preventDefault(); format('justifyRight'); }} title="右揃え (Ctrl+R)" aria-label="右揃え">
 				<AlignRight size={18} aria-hidden="true" />
 			</button>
-			<button type="button" class="toolbar-btn" onclick={() => format('justifyFull')} title="両端揃え" aria-label="両端揃え">
+			<button type="button" class="toolbar-btn" onmousedown={(e) => { e.preventDefault(); format('justifyFull'); }} title="両端揃え" aria-label="両端揃え">
 				<AlignJustify size={18} aria-hidden="true" />
 			</button>
 
 			<div class="v-divider"></div>
 
-			<button type="button" class="toolbar-btn" onclick={() => executeCommand('bullet')} title="箇条書き" aria-label="箇条書きリスト">
+			<button type="button" class="toolbar-btn" onmousedown={(e) => { e.preventDefault(); executeCommand('bullet'); }} title="箇条書き" aria-label="箇条書きリスト">
 				<List size={18} aria-hidden="true" />
 			</button>
-			<button type="button" class="toolbar-btn" onclick={() => executeCommand('number')} title="番号付きリスト" aria-label="番号付きリスト">
+			<button type="button" class="toolbar-btn" onmousedown={(e) => { e.preventDefault(); executeCommand('number'); }} title="番号付きリスト" aria-label="番号付きリスト">
 				<ListOrdered size={18} aria-hidden="true" />
 			</button>
 
 			<div class="v-divider"></div>
 
-			<button type="button" class="toolbar-btn" onclick={() => executeCommand('quote')} title="引用" aria-label="引用">
+			<button type="button" class="toolbar-btn" onmousedown={(e) => { e.preventDefault(); executeCommand('quote'); }} title="引用 (Ctrl+Shift+Q)" aria-label="引用">
 				<Quote size={18} aria-hidden="true" />
 			</button>
-			<button type="button" class="toolbar-btn" onclick={() => executeCommand('code')} title="コードブロック" aria-label="コードブロック">
+			<button type="button" class="toolbar-btn" onmousedown={(e) => { e.preventDefault(); executeCommand('code'); }} title="コードブロック (Ctrl+Shift+7)" aria-label="コードブロック">
 				<Code size={18} />
 			</button>
 
 			<div class="v-divider"></div>
 
-			<button type="button" class="toolbar-btn" onclick={() => {
-				const url = prompt('リンク先 URL を入力してください:');
-				if (url) {
-					try {
-						const parsedUrl = new URL(url.startsWith('http') || url.startsWith('mailto:') ? url : `https://${url}`);
-						if (!['http:', 'https:', 'mailto:'].includes(parsedUrl.protocol)) {
-							alert('無効な URL プロトコルです。http, https, mailto のみ許可されています。');
-							return;
-						}
-						format('createLink', parsedUrl.href);
-					} catch {
-						alert('無効な URL 形式です');
-					}
-				}
-			}} title="リンク" aria-label="リンクを挿入">
+			<button type="button" class="toolbar-btn" onclick={openLinkDialog} title="リンク (Ctrl+K)" aria-label="リンクを挿入">
 				<LinkIcon size={18} aria-hidden="true" />
 			</button>
 			<button type="button" class="toolbar-btn" onclick={() => fileInputRef?.click()} title="画像" aria-label="画像をアップロード" disabled={isUploading}>
@@ -929,6 +1784,21 @@
 			</button>
 			<button type="button" class="toolbar-btn" onclick={() => executeCommand('hr')} title="区切り線" aria-label="区切り線を挿入">
 				<Minus size={18} aria-hidden="true" />
+			</button>
+
+			<div class="v-divider"></div>
+
+			<button type="button" class="toolbar-btn" onclick={(e) => openMediaDialog('video', e)} title="動画を埋め込む" aria-label="動画を埋め込む">
+				<Video size={18} aria-hidden="true" />
+			</button>
+			<button type="button" class="toolbar-btn" onclick={(e) => openMediaDialog('audio', e)} title="音声を埋め込む" aria-label="音声を埋め込む">
+				<Mic size={18} aria-hidden="true" />
+			</button>
+
+			<div class="v-divider"></div>
+
+			<button type="button" class="toolbar-btn" onclick={openMarkdownExport} title="Markdown エクスポート" aria-label="Markdown エクスポート">
+				<Code size={18} aria-hidden="true" />
 			</button>
 
 			<input
@@ -958,6 +1828,7 @@
 				ondragstart={handleDragStart}
 				ondragover={handleDragOver}
 				ondragend={handleDragEnd}
+				oncontextmenu={handleGlobalContextMenu}
 				role="textbox"
 				tabindex="0"
 				aria-multiline="true"
@@ -973,18 +1844,196 @@
 					class="image-resizer-overlay"
 					style="left: {overlayPos.left}px; top: {overlayPos.top}px; width: {overlayPos.width}px; height: {overlayPos.height}px;"
 				>
-					<div class="move-handle">
-						<Move size={14} />
-					</div>
+					<!-- 移動ハンドル -->
 					<div
-						class="resize-handle se"
-						onmousedown={startResize}
-						onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') startResize(e as any); }}
-						onclick={(e) => e.stopPropagation()}
-						role="button"
-						tabindex="0"
-						aria-label="Resize element"
-					></div>
+						class="move-handle"
+						onmousedown={(e) => {
+							e.stopPropagation();
+							if (selectedElement) {
+								selectedElement.setAttribute('draggable', 'true');
+								// ドラッグ開始エフェクト
+								selectedElement.style.opacity = '0.4';
+								selectedElement.style.background = 'rgba(59, 130, 246, 0.1)';
+							}
+						}}
+						title="ドラッグして移動"
+					>
+						<Move size={14} />
+						<span>移動</span>
+					</div>
+					
+					<!-- クイック移動ボタン -->
+					<div class="quick-move-buttons">
+						<button
+							type="button"
+							class="quick-move-btn"
+							onclick={(e) => {
+								e.stopPropagation();
+								if (selectedElement && selectedElement.previousElementSibling) {
+									selectedElement.parentElement?.insertBefore(selectedElement, selectedElement.previousElementSibling);
+									saveAndNotify();
+								}
+							}}
+							title="1 つ上へ移動 (Alt+↑)"
+						>
+							<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+								<path d="M12 19V5"/>
+								<path d="M5 12l7-7 7 7"/>
+							</svg>
+						</button>
+						<button
+							type="button"
+							class="quick-move-btn"
+							onclick={(e) => {
+								e.stopPropagation();
+								if (selectedElement && selectedElement.nextElementSibling) {
+									selectedElement.parentElement?.insertBefore(selectedElement, selectedElement.nextElementSibling.nextElementSibling);
+									saveAndNotify();
+								}
+							}}
+							title="1 つ下へ移動 (Alt+↓)"
+						>
+							<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+								<path d="M12 5v14"/>
+								<path d="M19 12l-7 7-7-7"/>
+							</svg>
+						</button>
+						<button
+							type="button"
+							class="quick-move-btn"
+							onclick={(e) => {
+								e.stopPropagation();
+								if (selectedElement && editorRef) {
+									const first = editorRef.firstElementChild;
+									if (first && first !== selectedElement) {
+										editorRef.insertBefore(selectedElement, first);
+										saveAndNotify();
+									}
+								}
+							}}
+							title="最初に移動 (Alt+PageUp)"
+						>
+							<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+								<path d="M12 5v14"/>
+								<path d="M19 12l-7-7-7 7"/>
+							</svg>
+						</button>
+						<button
+							type="button"
+							class="quick-move-btn"
+							onclick={(e) => {
+								e.stopPropagation();
+								if (selectedElement && editorRef) {
+									editorRef.appendChild(selectedElement);
+									saveAndNotify();
+								}
+							}}
+							title="最後に移動 (Alt+PageDown)"
+						>
+							<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+								<path d="M12 5v14"/>
+								<path d="M5 12l7 7 7-7"/>
+							</svg>
+						</button>
+					</div>
+					
+					<!-- アスペクト比維持トグル -->
+					{#if selectedElement.tagName === 'IMG' || selectedElement.tagName === 'VIDEO'}
+						<button
+							type="button"
+							class="aspect-ratio-toggle"
+							class:active={maintainAspectRatio}
+							onclick={(e) => {
+								e.stopPropagation();
+								maintainAspectRatio = !maintainAspectRatio;
+							}}
+							title="アスペクト���を維持 (Shift キーでも切り替え可能)"
+						>
+							<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+								<path d="M5 5h14v14H5z"/>
+								<path d="M9 9l6 6"/>
+							</svg>
+						</button>
+					{/if}
+					
+					<!-- リサイズ中のサイズ表示 -->
+					{#if resizeDimension}
+						<div class="resize-dimension-display">
+							{resizeDimension.width} × {resizeDimension.height} px
+							{#if maintainAspectRatio || shiftKeyPressed}
+								<span class="aspect-ratio-indicator"> 🔒</span>
+							{/if}
+						</div>
+					{/if}
+					
+					<!-- 8 方向リサイズハンドル -->
+					<div class="resize-handle nw" onmousedown={(e) => startResize(e, 'nw')} title="左上からリサイズ"></div>
+					<div class="resize-handle n" onmousedown={(e) => startResize(e, 'n')} title="上からリサイズ"></div>
+					<div class="resize-handle ne" onmousedown={(e) => startResize(e, 'ne')} title="右上からリサイズ"></div>
+					<div class="resize-handle e" onmousedown={(e) => startResize(e, 'e')} title="右からリサイズ"></div>
+					<div class="resize-handle se" onmousedown={(e) => startResize(e, 'se')} title="右下からリサイズ"></div>
+					<div class="resize-handle s" onmousedown={(e) => startResize(e, 's')} title="下からリサイズ"></div>
+					<div class="resize-handle sw" onmousedown={(e) => startResize(e, 'sw')} title="左下からリサイズ"></div>
+					<div class="resize-handle w" onmousedown={(e) => startResize(e, 'w')} title="左からリサイズ"></div>
+					
+					<!-- クイックサイズプリセット -->
+					<div class="resize-presets">
+						<button type="button" class="preset-btn" onclick={(e) => {
+							e.stopPropagation();
+							if (selectedElement) {
+								const rect = selectedElement.getBoundingClientRect();
+								const parent = selectedElement.parentElement;
+								if (parent) {
+									const parentWidth = parent.clientWidth;
+									selectedElement.style.width = `${parentWidth * 0.25}px`;
+									if (maintainAspectRatio && (selectedElement.tagName === 'IMG' || selectedElement.tagName === 'VIDEO')) {
+										selectedElement.style.height = 'auto';
+									}
+									saveAndNotify();
+								}
+							}
+						}} title="幅 25%">25%</button>
+						<button type="button" class="preset-btn" onclick={(e) => {
+							e.stopPropagation();
+							if (selectedElement) {
+								const rect = selectedElement.getBoundingClientRect();
+								const parent = selectedElement.parentElement;
+								if (parent) {
+									const parentWidth = parent.clientWidth;
+									selectedElement.style.width = `${parentWidth * 0.5}px`;
+									if (maintainAspectRatio && (selectedElement.tagName === 'IMG' || selectedElement.tagName === 'VIDEO')) {
+										selectedElement.style.height = 'auto';
+									}
+									saveAndNotify();
+								}
+							}
+						}} title="幅 50%">50%</button>
+						<button type="button" class="preset-btn" onclick={(e) => {
+							e.stopPropagation();
+							if (selectedElement) {
+								const rect = selectedElement.getBoundingClientRect();
+								const parent = selectedElement.parentElement;
+								if (parent) {
+									const parentWidth = parent.clientWidth;
+									selectedElement.style.width = `${parentWidth * 0.75}px`;
+									if (maintainAspectRatio && (selectedElement.tagName === 'IMG' || selectedElement.tagName === 'VIDEO')) {
+										selectedElement.style.height = 'auto';
+									}
+									saveAndNotify();
+								}
+							}
+						}} title="幅 75%">75%</button>
+						<button type="button" class="preset-btn" onclick={(e) => {
+							e.stopPropagation();
+							if (selectedElement) {
+								selectedElement.style.width = '100%';
+								if (maintainAspectRatio && (selectedElement.tagName === 'IMG' || selectedElement.tagName === 'VIDEO')) {
+									selectedElement.style.height = 'auto';
+								}
+								saveAndNotify();
+							}
+						}} title="幅 100%">100%</button>
+					</div>
 				</div>
 			{/if}
 
@@ -993,11 +2042,11 @@
 					<div class="color-picker-title">文字色を選択</div>
 					<div class="color-grid">
 						{#each colorPalette as color}
-							<button
+			<button
 								type="button"
 								class="color-swatch"
 								style="background: {color};"
-								onclick={() => setTextColor(color)}
+								onclick={(e) => { e.preventDefault(); e.stopPropagation(); setTextColor(color); }}
 								title="{colorNames[color] || color} ({color})"
 								aria-label="{colorNames[color] || color}"
 							></button>
@@ -1006,20 +2055,24 @@
 				</div>
 			{/if}
 
-			{#if showBgColorPicker}
-				<div class="color-picker" style="left: {colorPickerPosition.x}px; top: {colorPickerPosition.y}px;">
-					<div class="color-picker-title">背景色を選択</div>
-					<div class="color-grid">
-						{#each colorPalette as color}
-							<button
-								type="button"
-								class="color-swatch"
-								style="background: {color};"
-								onclick={() => setBackgroundColor(color)}
-								title="{colorNames[color] || color} ({color})"
-								aria-label="{colorNames[color] || color}"
-							></button>
-						{/each}
+			{#if showMediaDialog}
+				<div class="color-picker" style="left: {mediaPosition.x}px; top: {mediaPosition.y}px;">
+					<div class="color-picker-title">{mediaType === 'video' ? '動画を埋め込む' : '音声を埋め込む'}</div>
+					<input
+						type="url"
+						value={mediaUrl}
+						oninput={(e) => mediaUrl = (e.target as HTMLInputElement).value}
+						placeholder="{mediaType === 'video' ? 'https://...' : 'https://...'}"
+						class="dialog-input"
+						style="margin-bottom: 0.75rem;"
+					/>
+					<div class="dialog-actions">
+						<button type="button" class="btn-secondary" onclick={closeMediaDialog}>
+							キャンセル
+						</button>
+						<button type="button" class="btn-primary" onclick={insertMedia} disabled={!mediaUrl}>
+							挿入
+						</button>
 					</div>
 				</div>
 			{/if}
@@ -1033,6 +2086,144 @@
 			onSelect={executeCommand}
 			onClose={() => menuState.show = false}
 		/>
+	{/if}
+
+	{#if showInlineToolbar}
+		<div
+			class="inline-toolbar"
+			style="left: {inlineToolbarPos.x}px; top: {inlineToolbarPos.y}px;"
+		>
+			<button type="button" class="inline-toolbar-btn" onclick={() => handleInlineFormat('bold')} title="太字" aria-label="太字">
+				<Bold size={16} />
+			</button>
+			<button type="button" class="inline-toolbar-btn" onclick={() => handleInlineFormat('italic')} title="イタリック" aria-label="イタリック">
+				<Italic size={16} />
+			</button>
+			<button type="button" class="inline-toolbar-btn" onclick={() => handleInlineFormat('underline')} title="下線" aria-label="下線">
+				<Underline size={16} />
+			</button>
+			<button type="button" class="inline-toolbar-btn" onclick={() => handleInlineFormat('strikeThrough')} title="取り消し線" aria-label="取り消し線">
+				<Strikethrough size={16} />
+			</button>
+			<div class="inline-toolbar-divider"></div>
+			<button type="button" class="inline-toolbar-btn" onclick={openLinkDialog} title="リンク" aria-label="リンク">
+				<LinkIcon size={16} />
+			</button>
+		</div>
+	{/if}
+
+	{#if showLinkDialog}
+		<div class="dialog-overlay" onclick={closeLinkDialog}>
+			<div class="link-dialog" onclick={(e) => e.stopPropagation()}>
+				<h3 class="dialog-title">{editingLink ? 'リンクを編集' : 'リンクを挿入'}</h3>
+				<div class="dialog-content">
+					<label class="dialog-label">
+						<span>URL</span>
+						<input
+							type="url"
+							value={linkUrl}
+							oninput={(e) => linkUrl = (e.target as HTMLInputElement).value}
+							placeholder="https://example.com"
+							class="dialog-input"
+						/>
+					</label>
+					<label class="dialog-label">
+						<span>ターゲット</span>
+						<div class="target-toggle">
+							<button
+								type="button"
+								class="target-btn"
+								class:active={linkTarget === '_blank'}
+								onclick={toggleLinkTarget}
+							>
+								新規タブ {linkTarget === '_blank' ? '✓' : ''}
+							</button>
+							<button
+								type="button"
+								class="target-btn"
+								class:active={linkTarget === '_self'}
+								onclick={toggleLinkTarget}
+							>
+								同じタブ {linkTarget === '_self' ? '✓' : ''}
+							</button>
+						</div>
+					</label>
+				</div>
+				<div class="dialog-actions">
+					{#if editingLink}
+						<button type="button" class="btn-danger" onclick={unlink}>
+							リンクを削除
+						</button>
+					{/if}
+					<button type="button" class="btn-secondary" onclick={closeLinkDialog}>
+						キャンセル
+					</button>
+					<button type="button" class="btn-primary" onclick={insertLink} disabled={!linkUrl}>
+						{editingLink ? '更新' : '挿入'}
+					</button>
+				</div>
+			</div>
+		</div>
+	{/if}
+
+	{#if showMarkdownDialog}
+		<div class="dialog-overlay" onclick={closeMarkdownExport}>
+			<div class="markdown-dialog" onclick={(e) => e.stopPropagation()}>
+				<h3 class="dialog-title">Markdown エクスポート</h3>
+				<div class="markdown-content">
+					<textarea value={markdownContent} readonly class="markdown-textarea"></textarea>
+				</div>
+				<div class="dialog-actions">
+					<button type="button" class="btn-secondary" onclick={copyMarkdown}>
+						コピー
+					</button>
+					<button type="button" class="btn-secondary" onclick={downloadMarkdown}>
+						ダウンロード
+					</button>
+					<button type="button" class="btn-primary" onclick={closeMarkdownExport}>
+						閉じる
+					</button>
+				</div>
+			</div>
+		</div>
+	{/if}
+
+	{#if tableContextMenu.show && tableContextMenu.cell}
+		<div
+			class="table-context-menu"
+			style="left: {tableContextMenu.x}px; top: {tableContextMenu.y}px;"
+			onclick={closeTableContextMenu}
+		>
+			<button type="button" class="context-menu-btn" onclick={(e) => { e.stopPropagation(); tableAddRowAbove(); }}>
+				上に行を追加
+			</button>
+			<button type="button" class="context-menu-btn" onclick={(e) => { e.stopPropagation(); tableAddRowBelow(); }}>
+				下に行を追加
+			</button>
+			<button type="button" class="context-menu-btn" onclick={(e) => { e.stopPropagation(); tableAddColumnLeft(); }}>
+				左に列を追加
+			</button>
+			<button type="button" class="context-menu-btn" onclick={(e) => { e.stopPropagation(); tableAddColumnRight(); }}>
+				右に列を追加
+			</button>
+			<div class="context-menu-divider"></div>
+			<button type="button" class="context-menu-btn" onclick={(e) => { e.stopPropagation(); tableDeleteRow(); }}>
+				行を削除
+			</button>
+			<button type="button" class="context-menu-btn" onclick={(e) => { e.stopPropagation(); tableDeleteColumn(); }}>
+				列を削除
+			</button>
+			<div class="context-menu-divider"></div>
+			<button type="button" class="context-menu-btn" onclick={(e) => { e.stopPropagation(); tableMergeHorizontal(); }}>
+				セルを結合（��）
+			</button>
+			<button type="button" class="context-menu-btn" onclick={(e) => { e.stopPropagation(); tableMergeVertical(); }}>
+				セルを結合（縦）
+			</button>
+			<button type="button" class="context-menu-btn" onclick={(e) => { e.stopPropagation(); tableSplit(); }}>
+				セルを分割
+			</button>
+		</div>
 	{/if}
 </div>
 
@@ -1058,8 +2249,10 @@
 		align-items: center;
 		gap: 2px;
 		padding: 8px;
-		background: #f9fafb;
-		border-bottom: 1px solid #e5e7eb;
+		background: rgba(249, 250, 251, 0.85);
+		backdrop-filter: blur(12px);
+		-webkit-backdrop-filter: blur(12px);
+		border-bottom: 1px solid rgba(229, 231, 235, 0.5);
 		flex-wrap: wrap;
 	}
 
@@ -1085,6 +2278,20 @@
 	.toolbar-btn:active:not(:disabled) {
 		background: #d1d5db;
 		transform: scale(0.95);
+	}
+
+	.toolbar-btn.active {
+		background: #3b82f6;
+		color: white;
+	}
+
+	.toolbar-btn.active:hover {
+		background: #2563eb;
+	}
+
+	.toolbar-btn:focus-visible {
+		outline: 2px solid #3b82f6;
+		outline-offset: 2px;
 	}
 
 	.toolbar-btn:disabled {
@@ -1138,6 +2345,7 @@
 		cursor: text;
 		background: #ffffff;
 		min-height: 400px;
+		overflow: visible;
 	}
 
 	.rich-editor {
@@ -1150,6 +2358,13 @@
 
 	.rich-editor:focus {
 		cursor: text;
+		box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
+		border-radius: 8px;
+	}
+
+	.rich-editor:focus-visible {
+		outline: 2px solid #3b82f6;
+		outline-offset: 2px;
 	}
 
 	.placeholder {
@@ -1164,13 +2379,16 @@
 
 	.color-picker {
 		position: absolute;
-		z-index: 1000;
-		background: #ffffff;
-		border: 1px solid #e5e7eb;
+		z-index: 10000;
+		background: rgba(255, 255, 255, 0.9);
+		backdrop-filter: blur(16px);
+		-webkit-backdrop-filter: blur(16px);
+		border: 1px solid rgba(229, 231, 235, 0.5);
 		border-radius: 12px;
 		box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.15), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
 		padding: 12px;
 		min-width: 280px;
+		pointer-events: auto;
 	}
 
 	.color-picker-title {
@@ -1210,49 +2428,306 @@
 		z-index: 50;
 		transition: none;
 		border-radius: 4px;
+		box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15), 0 4px 12px rgba(0, 0, 0, 0.15);
+		animation: resizer-appear 0.2s ease-out;
+	}
+
+	@keyframes resizer-appear {
+		from { opacity: 0; transform: scale(0.98); }
+		to { opacity: 1; transform: scale(1); }
+	}
+	
+	@keyframes placeholder-pulse {
+		0%, 100% { opacity: 0.7; transform: scale(1); }
+		50% { opacity: 1; transform: scale(1.02); }
 	}
 
 	.move-handle {
 		position: absolute;
-		top: -28px;
+		top: -36px;
 		left: 0;
-		background: #3b82f6;
+		background: rgba(59, 130, 246, 0.9);
+		backdrop-filter: blur(8px);
+		-webkit-backdrop-filter: blur(8px);
 		color: white;
-		padding: 4px 8px;
-		border-radius: 6px 6px 0 0;
+		padding: 6px 12px;
+		border-radius: 6px 6px 4px 4px;
 		display: flex;
 		align-items: center;
-		gap: 4px;
-		font-size: 11px;
+		gap: 6px;
+		font-size: 12px;
 		font-weight: 600;
+		cursor: grab;
+		pointer-events: auto;
+		border: 1px solid rgba(59, 130, 246, 0.5);
+		box-shadow: 0 2px 8px rgba(59, 130, 246, 0.4);
+		transition: all 0.15s;
 	}
 
+	.move-handle:hover {
+		background: rgba(37, 99, 235, 0.95);
+		box-shadow: 0 4px 12px rgba(59, 130, 246, 0.5);
+		transform: translateY(-1px);
+	}
+
+	.move-handle:active {
+		cursor: grabbing;
+		transform: translateY(0);
+	}
+	
+	/* クイック移動ボタン */
+	.quick-move-buttons {
+		position: absolute;
+		top: -36px;
+		right: 60px;
+		display: flex;
+		gap: 4px;
+		pointer-events: auto;
+		z-index: 55;
+	}
+
+	.quick-move-btn {
+		background: rgba(139, 92, 246, 0.9);
+		backdrop-filter: blur(8px);
+		-webkit-backdrop-filter: blur(8px);
+		color: white;
+		border: 1px solid rgba(139, 92, 246, 0.5);
+		width: 32px;
+		height: 32px;
+		border-radius: 6px;
+		cursor: pointer;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		transition: all 0.15s;
+		box-shadow: 0 2px 8px rgba(139, 92, 246, 0.4);
+	}
+
+	.quick-move-btn:hover {
+		background: rgba(124, 58, 237, 0.95);
+		box-shadow: 0 4px 12px rgba(139, 92, 246, 0.5);
+		transform: translateY(-1px);
+	}
+
+	.quick-move-btn:active {
+		transform: translateY(0);
+		box-shadow: 0 2px 6px rgba(139, 92, 246, 0.3);
+	}
+
+	/* アスペクト比トグル */
+	.aspect-ratio-toggle {
+		position: absolute;
+		top: -36px;
+		right: 0;
+		background: rgba(16, 185, 129, 0.9);
+		backdrop-filter: blur(8px);
+		-webkit-backdrop-filter: blur(8px);
+		color: white;
+		border: 1px solid rgba(16, 185, 129, 0.5);
+		padding: 6px 10px;
+		border-radius: 6px;
+		cursor: pointer;
+		pointer-events: auto;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		transition: all 0.15s;
+		box-shadow: 0 2px 8px rgba(16, 185, 129, 0.4);
+	}
+
+	.aspect-ratio-toggle:hover {
+		background: rgba(5, 150, 105, 0.95);
+		box-shadow: 0 4px 12px rgba(16, 185, 129, 0.5);
+		transform: translateY(-1px);
+	}
+
+	.aspect-ratio-toggle.active {
+		background: rgba(5, 150, 105, 0.95);
+		animation: pulse-lock 1.5s infinite;
+	}
+
+	@keyframes pulse-lock {
+		0%, 100% { box-shadow: 0 2px 8px rgba(16, 185, 129, 0.4); }
+		50% { box-shadow: 0 4px 16px rgba(16, 185, 129, 0.6); }
+	}
+
+	/* 8 方向リサイズハンドル */
 	.resize-handle {
 		position: absolute;
 		width: 14px;
 		height: 14px;
-		background: #3b82f6;
-		border: 2px solid white;
+		background: rgba(255, 255, 255, 0.9);
+		backdrop-filter: blur(4px);
+		-webkit-backdrop-filter: blur(4px);
+		border: 2px solid #3b82f6;
 		pointer-events: auto;
 		cursor: nwse-resize;
-		box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-		border-radius: 2px;
+		box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+		border-radius: 3px;
+		transition: all 0.15s;
+		z-index: 52;
+	}
+
+	.resize-handle:hover {
+		transform: scale(1.3);
+		background: rgba(59, 130, 246, 0.9);
+		box-shadow: 0 4px 12px rgba(59, 130, 246, 0.5);
+	}
+
+	.resize-handle:active {
+		transform: scale(1.4);
+		background: rgba(37, 99, 235, 0.9);
+	}
+
+	.resize-handle.nw {
+		left: -7px;
+		top: -7px;
+		cursor: nwse-resize;
+	}
+
+	.resize-handle.n {
+		left: 50%;
+		top: -7px;
+		transform: translateX(-50%);
+		cursor: ns-resize;
+	}
+
+	.resize-handle.n:hover,
+	.resize-handle.n:active {
+		transform: translateX(-50%) scale(1.3);
+	}
+
+	.resize-handle.ne {
+		right: -7px;
+		top: -7px;
+		cursor: nesw-resize;
+	}
+
+	.resize-handle.e {
+		right: -7px;
+		top: 50%;
+		transform: translateY(-50%);
+		cursor: ew-resize;
+	}
+
+	.resize-handle.e:hover,
+	.resize-handle.e:active {
+		transform: translateY(-50%) scale(1.3);
 	}
 
 	.resize-handle.se {
 		right: -7px;
 		bottom: -7px;
+		cursor: nwse-resize;
+	}
+
+	.resize-handle.s {
+		left: 50%;
+		bottom: -7px;
+		transform: translateX(-50%);
+		cursor: ns-resize;
+	}
+
+	.resize-handle.s:hover,
+	.resize-handle.s:active {
+		transform: translateX(-50%) scale(1.3);
+	}
+
+	.resize-handle.sw {
+		left: -7px;
+		bottom: -7px;
+		cursor: nesw-resize;
+	}
+
+	.resize-handle.w {
+		left: -7px;
+		top: 50%;
+		transform: translateY(-50%);
+		cursor: ew-resize;
+	}
+
+	.resize-handle.w:hover,
+	.resize-handle.w:active {
+		transform: translateY(-50%) scale(1.3);
+	}
+
+	/* クイックサイズプリセット */
+	.resize-presets {
+		position: absolute;
+		bottom: -40px;
+		left: 0;
+		right: 0;
+		display: flex;
+		justify-content: center;
+		gap: 6px;
+		pointer-events: auto;
+		z-index: 53;
+	}
+
+	.preset-btn {
+		background: rgba(255, 255, 255, 0.9);
+		backdrop-filter: blur(8px);
+		-webkit-backdrop-filter: blur(8px);
+		border: 1px solid rgba(229, 231, 235, 0.5);
+		color: #6b7280;
+		padding: 4px 12px;
+		border-radius: 6px;
+		font-size: 12px;
+		font-weight: 500;
+		cursor: pointer;
+		transition: all 0.15s;
+		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+	}
+
+	.preset-btn:hover {
+		background: rgba(59, 130, 246, 0.9);
+		backdrop-filter: blur(8px);
+		-webkit-backdrop-filter: blur(8px);
+		border-color: rgba(59, 130, 246, 0.5);
+		color: white;
+		box-shadow: 0 4px 8px rgba(59, 130, 246, 0.3);
+		transform: translateY(-2px);
+	}
+
+	.preset-btn:active {
+		transform: translateY(0);
+	}
+
+	.resize-dimension-display {
+		position: absolute;
+		top: -48px;
+		right: 0;
+		background: rgba(31, 41, 55, 0.95);
+		color: white;
+		padding: 6px 12px;
+		border-radius: 6px;
+		font-size: 13px;
+		font-weight: 600;
+		white-space: nowrap;
+		pointer-events: none;
+		z-index: 54;
+		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+		display: flex;
+		align-items: center;
+		gap: 6px;
+	}
+
+	.aspect-ratio-indicator {
+		font-size: 14px;
 	}
 
 	/* Drag and Drop Styles */
 	:global(.rich-editor [draggable="true"]) {
 		cursor: grab;
-		outline: 2px solid transparent;
-		transition: outline-color 0.15s;
+		outline: 2px solid rgba(59, 130, 246, 0.4);
+		outline-offset: 2px;
+		transition: outline-color 0.15s, transform 0.15s;
+		border-radius: 8px;
 	}
 
 	:global(.rich-editor [draggable="true"]:hover) {
-		outline-color: rgba(59, 130, 246, 0.3);
+		outline-color: rgba(59, 130, 246, 0.6);
+		background: rgba(59, 130, 246, 0.05);
 	}
 
 	:global(.rich-editor [draggable="true"]:active) {
@@ -1260,17 +2735,23 @@
 	}
 
 	:global(.drag-placeholder) {
-		height: 100px;
-		background: rgba(59, 130, 246, 0.2);
-		border: 2px dashed #3b82f6;
-		border-radius: 8px;
+		height: 80px;
+		background: linear-gradient(135deg, rgba(59, 130, 246, 0.3), rgba(147, 51, 234, 0.3));
+		border: 3px dashed #3b82f6;
+		border-radius: 12px;
 		margin: 1rem 0;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		color: #3b82f6;
+		font-weight: 600;
+		font-size: 14px;
 		animation: pulse 1s infinite;
 	}
 
 	@keyframes pulse {
-		0%, 100% { opacity: 0.6; }
-		50% { opacity: 1; }
+		0%, 100% { opacity: 0.6; transform: scale(1); }
+		50% { opacity: 1; transform: scale(1.02); }
 	}
 
 	/* Editor content styles */
@@ -1403,8 +2884,8 @@
 		}
 
 		.toolbar-btn {
-			width: 40px;
-			height: 40px;
+			width: 44px;
+			height: 44px;
 			flex-shrink: 0;
 		}
 
@@ -1416,6 +2897,7 @@
 		.toolbar-select {
 			flex-shrink: 0;
 			font-size: 12px;
+			height: 44px;
 		}
 
 		.color-grid {
@@ -1426,12 +2908,346 @@
 			min-width: 200px;
 			left: 0 !important;
 		}
+
+		.inline-toolbar {
+			overflow-x: auto;
+			max-width: calc(100vw - 2rem);
+		}
+
+		.inline-toolbar-btn {
+			width: 40px;
+			height: 40px;
+			flex-shrink: 0;
+		}
 	}
 
 	@media (max-width: 480px) {
 		.toolbar-btn {
+			width: 44px;
+			height: 44px;
+		}
+
+		.inline-toolbar-btn {
 			width: 36px;
 			height: 36px;
 		}
+
+		.color-swatch {
+			width: 28px;
+			height: 28px;
+		}
+	}
+
+	/* Link Dialog Styles */
+	.dialog-overlay {
+		position: fixed;
+		inset: 0;
+		background: rgba(0, 0, 0, 0.6);
+		backdrop-filter: blur(4px);
+		-webkit-backdrop-filter: blur(4px);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		z-index: 2000;
+	}
+
+	.link-dialog {
+		background: rgba(255, 255, 255, 0.95);
+		backdrop-filter: blur(16px);
+		-webkit-backdrop-filter: blur(16px);
+		border-radius: 12px;
+		padding: 1.5rem;
+		min-width: 400px;
+		max-width: 90vw;
+		box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+		border: 1px solid rgba(229, 231, 235, 0.5);
+	}
+
+	.dialog-title {
+		font-size: 1.125rem;
+		font-weight: 600;
+		color: #1f2937;
+		margin-bottom: 1rem;
+	}
+
+	.dialog-content {
+		display: flex;
+		flex-direction: column;
+		gap: 1rem;
+		margin-bottom: 1.5rem;
+	}
+
+	.dialog-label {
+		display: flex;
+		flex-direction: column;
+		gap: 0.5rem;
+	}
+
+	.dialog-label span {
+		font-size: 0.875rem;
+		font-weight: 500;
+		color: #6b7280;
+	}
+
+	.dialog-input {
+		width: 100%;
+		padding: 0.625rem 0.75rem;
+		border: 1px solid #d1d5db;
+		border-radius: 6px;
+		font-size: 0.875rem;
+		outline: none;
+		transition: border-color 0.15s, box-shadow 0.15s;
+	}
+
+	.dialog-input:focus {
+		border-color: #3b82f6;
+		box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+	}
+
+	.target-toggle {
+		display: flex;
+		gap: 0.5rem;
+	}
+
+	.target-btn {
+		flex: 1;
+		padding: 0.5rem 0.75rem;
+		border: 1px solid #d1d5db;
+		border-radius: 6px;
+		background: #ffffff;
+		font-size: 0.875rem;
+		cursor: pointer;
+		transition: all 0.15s;
+	}
+
+	.target-btn:hover {
+		background: #f9fafb;
+		border-color: #9ca3af;
+	}
+
+	.target-btn.active {
+		background: #3b82f6;
+		border-color: #3b82f6;
+		color: #ffffff;
+	}
+
+	.dialog-actions {
+		display: flex;
+		justify-content: flex-end;
+		gap: 0.5rem;
+	}
+
+	.btn-primary,
+	.btn-secondary,
+	.btn-danger {
+		padding: 0.5rem 1rem;
+		border-radius: 6px;
+		font-size: 0.875rem;
+		font-weight: 500;
+		cursor: pointer;
+		transition: all 0.15s;
+		border: none;
+	}
+
+	.btn-primary {
+		background: #3b82f6;
+		color: #ffffff;
+	}
+
+	.btn-primary:hover:not(:disabled) {
+		background: #2563eb;
+	}
+
+	.btn-primary:disabled {
+		opacity: 0.5;
+		cursor: not-allowed;
+	}
+
+	.btn-secondary {
+		background: #f3f4f6;
+		color: #374151;
+	}
+
+	.btn-secondary:hover {
+		background: #e5e7eb;
+	}
+
+	.btn-danger {
+		background: #fee2e2;
+		color: #dc2626;
+	}
+
+	.btn-danger:hover {
+		background: #fecaca;
+	}
+
+	/* Inline Toolbar Styles */
+	.inline-toolbar {
+		position: absolute;
+		display: flex;
+		align-items: center;
+		gap: 2px;
+		padding: 6px;
+		background: rgba(31, 41, 55, 0.9);
+		backdrop-filter: blur(16px);
+		-webkit-backdrop-filter: blur(16px);
+		border-radius: 8px;
+		box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.1);
+		z-index: 1000;
+		transform: translateX(-50%) translateY(-100%);
+		pointer-events: auto;
+	}
+
+	.inline-toolbar::after {
+		content: '';
+		position: absolute;
+		top: 100%;
+		left: 50%;
+		transform: translateX(-50%);
+		border: 6px solid transparent;
+		border-top-color: #1f2937;
+	}
+
+	.inline-toolbar-btn {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 32px;
+		height: 32px;
+		background: transparent;
+		border: none;
+		border-radius: 4px;
+		color: #f9fafb;
+		cursor: pointer;
+		transition: all 0.15s;
+	}
+
+	.inline-toolbar-btn:hover {
+		background: #374151;
+	}
+
+	.inline-toolbar-btn:active {
+		background: #4b5563;
+		transform: scale(0.95);
+	}
+
+	.inline-toolbar-divider {
+		width: 1px;
+		height: 20px;
+		background: #4b5563;
+		margin: 0 4px;
+	}
+
+	@media (max-width: 480px) {
+		.link-dialog {
+			min-width: auto;
+			width: 90vw;
+		}
+	}
+
+	/* Markdown Dialog Styles */
+	.markdown-dialog {
+		background: rgba(255, 255, 255, 0.95);
+		backdrop-filter: blur(16px);
+		-webkit-backdrop-filter: blur(16px);
+		border-radius: 12px;
+		padding: 1.5rem;
+		min-width: 500px;
+		max-width: 90vw;
+		max-height: 80vh;
+		box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+		border: 1px solid rgba(229, 231, 235, 0.5);
+		display: flex;
+		flex-direction: column;
+	}
+
+	.markdown-content {
+		flex: 1;
+		min-height: 300px;
+		margin-bottom: 1.5rem;
+	}
+
+	.markdown-textarea {
+		width: 100%;
+		height: 100%;
+		min-height: 300px;
+		padding: 0.75rem;
+		border: 1px solid #d1d5db;
+		border-radius: 6px;
+		font-family: 'Fira Code', 'Consolas', monospace;
+		font-size: 0.875rem;
+		resize: vertical;
+		outline: none;
+		transition: border-color 0.15s, box-shadow 0.15s;
+	}
+
+	.markdown-textarea:focus {
+		border-color: #3b82f6;
+		box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+	}
+
+	@media (max-width: 480px) {
+		.markdown-dialog {
+			min-width: auto;
+			width: 90vw;
+		}
+
+		.markdown-textarea {
+			min-height: 200px;
+		}
+	}
+
+	/* Table Context Menu Styles */
+	.table-context-menu {
+		position: absolute;
+		background: rgba(255, 255, 255, 0.95);
+		backdrop-filter: blur(16px);
+		-webkit-backdrop-filter: blur(16px);
+		border: 1px solid rgba(229, 231, 235, 0.5);
+		border-radius: 8px;
+		box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+		padding: 4px;
+		min-width: 180px;
+		z-index: 3000;
+	}
+
+	.context-menu-btn {
+		display: block;
+		width: 100%;
+		padding: 8px 12px;
+		background: transparent;
+		border: none;
+		border-radius: 4px;
+		text-align: left;
+		font-size: 0.875rem;
+		color: #374151;
+		cursor: pointer;
+		transition: all 0.15s;
+	}
+
+	.context-menu-btn:hover {
+		background: #f3f4f6;
+	}
+
+	.context-menu-btn:active {
+		background: #e5e7eb;
+	}
+
+	.context-menu-divider {
+		height: 1px;
+		background: #e5e7eb;
+		margin: 4px 0;
+	}
+
+	/* Table cell hover effect */
+	:global(.rich-editor table td),
+	:global(.rich-editor table th) {
+		transition: background-color 0.15s;
+		cursor: context-menu;
+	}
+
+	:global(.rich-editor table td:hover),
+	:global(.rich-editor table th:hover) {
+		background-color: rgba(59, 130, 246, 0.1);
 	}
 </style>
