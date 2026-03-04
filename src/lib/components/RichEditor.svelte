@@ -373,15 +373,23 @@
 	function handleDragStart(e: DragEvent) {
 		const target = e.target as HTMLElement;
 		if (!editorRef?.contains(target)) return;
-		draggedElement = target; target.style.opacity = '0.4';
+		if (!selectedElement || target !== selectedElement) return;
+		e.stopPropagation();
+		draggedElement = target;
+		target.style.opacity = '0.4';
 		dragPlaceholder = document.createElement('div');
 		dragPlaceholder.className = 'drag-placeholder';
 		dragPlaceholder.innerHTML = '<span>📍 ここに移動</span>';
+		if (e.dataTransfer) {
+			e.dataTransfer.effectAllowed = 'move';
+			e.dataTransfer.setData('text/plain', '');
+		}
 	}
 
 	function handleDragOver(e: DragEvent) {
 		e.preventDefault();
 		if (!draggedElement || !editorRef || !dragPlaceholder) return;
+		if (e.dataTransfer) e.dataTransfer.dropEffect = 'move';
 		const elements = document.elementsFromPoint(e.clientX, e.clientY);
 		const target = elements.find(el => editorRef?.contains(el) && el !== draggedElement && el !== dragPlaceholder) as HTMLElement;
 		if (target) {

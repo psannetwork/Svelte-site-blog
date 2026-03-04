@@ -525,15 +525,50 @@ export function insertTextAtCursor(text: string) {
 
 /**
  * Formats a block element (e.g., change P to H1).
+ * 複数選択に対応：document.execCommand を使用してブラウザネイティブのフォーマットを適用
  */
 export function formatBlock(newTagName: string) {
 	const selection = window.getSelection();
 	if (!selection || selection.rangeCount === 0) return null;
 
 	const range = selection.getRangeAt(0);
-	const node = range.startContainer;
-	const block = getBlockElement(node.nodeType === Node.TEXT_NODE ? node.parentElement : (node as HTMLElement));
+	
+	// execCommand を使用してブロックフォーマットを適用
+	// ブラウザが自動的に選択範囲内のすべてのブロック要素に適用してくれる
+	document.execCommand('formatBlock', false, newTagName.toUpperCase());
+	
+	// カーソル位置を調整
+	setTimeout(() => {
+		const newSelection = window.getSelection();
+		if (newSelection && newSelection.rangeCount > 0) {
+			const newRange = newSelection.getRangeAt(0);
+			// 選択範囲の終了位置にカーソルを移動
+			newRange.collapse(false);
+			newSelection.removeAllRanges();
+			newSelection.addRange(newRange);
+		}
+	}, 0);
+	
+	return null;
+}
 
+/**
+ * Checks if a node is a block element.
+ */
+function isBlockElement(node: Node): boolean {
+	if (node.nodeType !== Node.ELEMENT_NODE) return false;
+	const blockTags = ['P', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'LI', 'BLOCKQUOTE', 'PRE'];
+	return blockTags.includes((node as HTMLElement).tagName);
+}
+
+/**
+ * Formats a single block element.
+ */
+function formatSingleBlock(
+	block: HTMLElement | null,
+	newTagName: string,
+	range: Range
+) {
 	if (!block) {
 		const newBlock = document.createElement(newTagName);
 		newBlock.textContent = '\u200B';
