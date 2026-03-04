@@ -642,9 +642,18 @@
 
 	function updateInlineToolbar() {
 		const bounds = getSelectionBounds();
-		const wrapperRect = editorRef?.parentElement?.getBoundingClientRect();
+		const wrapperRect = editorRef?.closest('.editor-outer')?.getBoundingClientRect();
 		if (bounds && wrapperRect) {
-			inlineToolbarPos = { x: bounds.left - wrapperRect.left + bounds.width / 2, y: bounds.top - wrapperRect.top - 10 };
+			const toolbarWidth = 140;
+			const toolbarHeight = 40;
+			let x = bounds.left - wrapperRect.left + bounds.width / 2;
+			let y = bounds.top - wrapperRect.top - toolbarHeight - 8;
+			
+			if (x < toolbarWidth / 2) x = toolbarWidth / 2;
+			if (x > wrapperRect.width - toolbarWidth / 2) x = wrapperRect.width - toolbarWidth / 2;
+			if (y < 0) y = bounds.bottom - wrapperRect.top + 8;
+			
+			inlineToolbarPos = { x, y };
 			showInlineToolbar = true;
 		}
 	}
@@ -1052,7 +1061,7 @@
 	
 	.inline-toolbar {
 		position: absolute; display: flex; background: #1e293b; color: white;
-		padding: 4px; border-radius: 8px; transform: translate(-50%, -100%); margin-top: -8px;
+		padding: 4px; border-radius: 8px; transform: translate(-50%, 0);
 	}
 	.inline-toolbar button {
 		background: transparent; border: none; color: white; padding: 4px 8px; cursor: pointer; border-radius: 4px;

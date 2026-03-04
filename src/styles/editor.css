@@ -60,38 +60,23 @@
 
 /* RichEditor ダークモード */
 .dark .rich-editor {
-	color: #f8fafc;
+	color: #0f172a;
 	background: #ffffff !important;
 }
 
 .dark .rich-editor p,
 .dark .rich-editor li {
-	color: #f8fafc !important;
+	color: #0f172a !important;
 }
 
-/* エディタ内の見出しもダークモードで白に反転 */
+/* エディタ内の見出しもダークモードで黒色のまま */
 .dark .rich-editor h1,
 .dark .rich-editor h2,
 .dark .rich-editor h3,
 .dark .rich-editor h4,
 .dark .rich-editor h5,
 .dark .rich-editor h6 {
-	color: #f8fafc !important;
-}
-
-/* ダークモード時のインラインカラー反転 - エディタで設定した黒色を白色に変換 */
-.dark .rich-editor [style*="color: rgb(0, 0, 0)"],
-.dark .rich-editor [style*="color:#000000"],
-.dark .rich-editor [style*="color: #000000"],
-.dark .rich-editor [style*="color:rgb(0,0,0)"] {
-	color: #ffffff !important;
-}
-
-.dark .rich-editor [style*="color: rgb(15, 23, 42)"],
-.dark .rich-editor [style*="color:#0f172a"],
-.dark .rich-editor [style*="color: #0f172a"],
-.dark .rich-editor [style*="color:rgb(15,23,42)"] {
-	color: #f8fafc !important;
+	color: #0f172a !important;
 }
 
 .dark .placeholder {
