@@ -70,7 +70,6 @@
 	// Drag and Drop State
 	let draggedElement = $state<HTMLElement | null>(null);
 	let dragPlaceholder = $state<HTMLElement | null>(null);
-	let dragOverElement = $state<HTMLElement | null>(null);
 
 	// Color Picker State
 	let showColorPicker = $state(false);
@@ -98,6 +97,9 @@
 	let isItalic = $state(false);
 	let isUnderline = $state(false);
 	let isStrikethrough = $state(false);
+
+	// Image Alignment State
+	let imageAlignment = $state<'left' | 'center' | 'right'>('center');
 
 	// Auto Save State
 	let autoSaveInterval: ReturnType<typeof setInterval> | null = null;
@@ -261,9 +263,31 @@
 		const resizableTags = ['IMG', 'PRE', 'BLOCKQUOTE', 'IFRAME', 'VIDEO', 'TABLE', 'HR'];
 		const draggableTags = ['IMG', 'PRE', 'BLOCKQUOTE', 'IFRAME', 'VIDEO', 'TABLE', 'HR', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'P', 'UL', 'OL', 'LI'];
 
+		// 移動ボタンをクリックした場合は選択を維持
+		if (target.closest('.overlay-control.move-up') || target.closest('.overlay-control.move-down')) {
+			return;
+		}
+
+		// 削除ボタンをクリックした場合は何もしない
+		if (target.closest('.overlay-control.delete')) {
+			return;
+		}
+
+		// 配置ボタンをクリックした場合は何もしない
+		if (target.closest('.overlay-control.align')) {
+			return;
+		}
+
 		if (resizableTags.includes(target.tagName) && editorRef?.contains(target)) {
 			selectedElement = target;
 			selectedElement.setAttribute('draggable', 'true');
+			// 画像の場合は配置状態を取得
+			if (target.tagName === 'IMG') {
+				const parent = target.parentElement;
+				const alignClass = parent?.classList.contains('image-align-left') ? 'left' :
+					parent?.classList.contains('image-align-right') ? 'right' : 'center';
+				imageAlignment = alignClass;
+			}
 			updateOverlayPos();
 		} else if (draggableTags.includes(target.tagName) && editorRef?.contains(target)) {
 			// リサイズはできないがドラッグ可能な要素（テキスト系）
@@ -318,6 +342,12 @@
 			if (autoSaveId) saveToLocalStorage(innerHTML);
 		}
 		updateOverlayPos();
+		// 選択状態を維持
+		if (selectedElement) {
+			requestAnimationFrame(() => {
+				updateOverlayPos();
+			});
+		}
 	}
 
 	function startResize(e: MouseEvent, handle?: any) {
@@ -364,6 +394,90 @@
 		saveAndNotify();
 	}
 
+	function setImageAlignment(align: 'left' | 'center' | 'right') {
+		if (!selectedElement || selectedElement.tagName !== 'IMG') return;
+		imageAlignment = align;
+		// 親の figure 要素を取得または作成
+		let figure = selectedElement.parentElement;
+		if (!figure || figure.tagName !== 'FIGURE') {
+			figure = document.createElement('figure');
+			figure.className = 'image-wrapper';
+			selectedElement.parentElement?.insertBefore(figure, selectedElement);
+			figure.appendChild(selectedElement);
+		}
+		// クラスをリセットして新しい配置クラスを追加
+		figure.classList.remove('image-align-left', 'image-align-center', 'image-align-right');
+		figure.classList.add(`image-align-${align}`);
+		
+		// インラインスタイルもクリア（CSS クラスに任せる）
+		figure.style.clear = '';
+		figure.style.float = '';
+		figure.style.display = '';
+		figure.style.margin = '';
+		figure.style.textAlign = '';
+		
+		// 画像自体のインラインスタイルもリセット（配置に影響するもの）
+		selectedElement.style.display = '';
+		selectedElement.style.margin = '';
+		selectedElement.style.float = '';
+		selectedElement.style.maxWidth = '';
+		selectedElement.style.textAlign = '';
+		
+		// キャプションがない場合は追加
+		if (!figure.querySelector('figcaption')) {
+			const caption = document.createElement('figcaption');
+			caption.contentEditable = 'true';
+			caption.textContent = 'キャプション (オプション)';
+			caption.style.cssText = 'text-align: center; font-size: 0.875rem; color: #94a3b8; margin-top: 0.5rem;';
+			figure.appendChild(caption);
+		}
+		saveAndNotify();
+	}
+
+	function moveElementUp() {
+		if (!selectedElement) return;
+		const elementId = selectedElement.getAttribute('data-element-id');
+		// 画像が figure でラップされている場合は figure を移動
+		const elementToMove = selectedElement.tagName === 'IMG' && selectedElement.parentElement?.tagName === 'FIGURE'
+			? selectedElement.parentElement
+			: selectedElement;
+		const prev = elementToMove.previousElementSibling;
+		if (prev) {
+			elementToMove.parentElement?.insertBefore(elementToMove, prev);
+			// 選択状態を維持するために innerHTML 更新をスキップ
+			if (autoSaveId) saveToLocalStorage(editorRef!.innerHTML);
+			requestAnimationFrame(() => {
+				if (elementId) {
+					selectedElement = editorRef?.querySelector(`[data-element-id="${elementId}"]`) || null;
+				}
+				updateOverlayPos();
+				selectedElement?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+			});
+		}
+	}
+
+	function moveElementDown() {
+		if (!selectedElement) return;
+		const elementId = selectedElement.getAttribute('data-element-id');
+		// 画像が figure でラップされている場合は figure を移動
+		const elementToMove = selectedElement.tagName === 'IMG' && selectedElement.parentElement?.tagName === 'FIGURE'
+			? selectedElement.parentElement
+			: selectedElement;
+		const next = elementToMove.nextElementSibling;
+		if (next) {
+			elementToMove.parentElement?.insertBefore(elementToMove, next.nextElementSibling);
+			// 選択状態を維持するために innerHTML 更新をスキップ
+			if (autoSaveId) saveToLocalStorage(editorRef!.innerHTML);
+			requestAnimationFrame(() => {
+				if (elementId) {
+					selectedElement = editorRef?.querySelector(`[data-element-id="${elementId}"]`) || null;
+				}
+				updateOverlayPos();
+				selectedElement?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+			});
+		}
+	}
+
 	$effect(() => {
 		if (!editorRef || !value || document.activeElement === editorRef) return;
 		const sanitized = sanitizeHtml(value);
@@ -378,111 +492,9 @@
 		window.addEventListener('scroll', updateOverlayPos, { capture: true, passive: true, signal: controller.signal });
 		window.addEventListener('resize', updateOverlayPos, { signal: controller.signal });
 		document.addEventListener('selectionchange', handleSelectionChange, { signal: controller.signal });
-		// ドラッグ終了時にプレースホルダーを削除
-		window.addEventListener('dragend', cleanupDragPlaceholder, { signal: controller.signal });
 		if (autoSaveId) autoSaveInterval = setInterval(() => editorRef && saveToLocalStorage(editorRef.innerHTML), AUTO_SAVE_INTERVAL);
 		return () => { controller.abort(); if (autoSaveInterval) clearInterval(autoSaveInterval); };
 	});
-
-	function cleanupDragPlaceholder() {
-		if (dragPlaceholder) {
-			dragPlaceholder.remove();
-			dragPlaceholder = null;
-		}
-		draggedElement = null;
-	}
-
-	function handleDragStart(e: DragEvent) {
-		const target = e.target as HTMLElement;
-		if (!editorRef?.contains(target)) return;
-		// 移動アイコンからドラッグされた場合
-		if (target.closest('.overlay-control.move')) {
-			e.stopPropagation();
-			if (!selectedElement) return;
-			draggedElement = selectedElement;
-			selectedElement.style.opacity = '0.4';
-			dragPlaceholder = document.createElement('div');
-			dragPlaceholder.className = 'drag-placeholder';
-			dragPlaceholder.innerHTML = '<span>📍 ここに移動</span>';
-			// プレースホルダーを挿入位置に追加
-			selectedElement.after(dragPlaceholder);
-			if (e.dataTransfer) {
-				e.dataTransfer.effectAllowed = 'move';
-				e.dataTransfer.setData('text/plain', '');
-				const canvas = document.createElement('canvas');
-				canvas.width = 1;
-				canvas.height = 1;
-				e.dataTransfer.setDragImage(canvas, 0, 0);
-			}
-			return;
-		}
-		// 要素自体からドラッグされた場合
-		if (!selectedElement || target !== selectedElement) return;
-		e.stopPropagation();
-		draggedElement = target;
-		target.style.opacity = '0.4';
-		dragPlaceholder = document.createElement('div');
-		dragPlaceholder.className = 'drag-placeholder';
-		dragPlaceholder.innerHTML = '<span>📍 ここに移動</span>';
-		// プレースホルダーを挿入位置に追加
-		target.after(dragPlaceholder);
-		if (e.dataTransfer) {
-			e.dataTransfer.effectAllowed = 'move';
-			e.dataTransfer.setData('text/plain', '');
-			const canvas = document.createElement('canvas');
-			canvas.width = 1;
-			canvas.height = 1;
-			e.dataTransfer.setDragImage(canvas, 0, 0);
-		}
-	}
-
-	function handleDragOver(e: DragEvent) {
-		e.preventDefault();
-		if (!draggedElement || !editorRef || !dragPlaceholder) return;
-		if (e.dataTransfer) e.dataTransfer.dropEffect = 'move';
-		const elements = document.elementsFromPoint(e.clientX, e.clientY);
-		// エディター内のブロック要素を探す
-		const draggableTags = ['P', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'IMG', 'VIDEO', 'TABLE', 'BLOCKQUOTE', 'PRE', 'UL', 'OL', 'HR'];
-		const target = elements.find(el => {
-			return editorRef?.contains(el) &&
-			       el !== draggedElement &&
-			       el !== dragPlaceholder &&
-			       (draggableTags.includes(el.tagName) || el.closest(draggableTags.join(', ')));
-		}) as HTMLElement;
-		if (target) {
-			const dropTarget = target.tagName === 'P' || draggableTags.includes(target.tagName)
-				? target
-				: target.closest(draggableTags.join(', ')) as HTMLElement;
-			if (dropTarget && dropTarget !== draggedElement && dropTarget !== dragPlaceholder) {
-				const rect = dropTarget.getBoundingClientRect();
-				if (e.clientY < rect.top + rect.height / 2) dropTarget.before(dragPlaceholder);
-				else dropTarget.after(dragPlaceholder);
-			}
-		} else if (editorRef?.contains(e.target as Node)) {
-			// ドロップ先要素がない場合はエディターの末尾に配置
-			editorRef.appendChild(dragPlaceholder);
-		}
-	}
-
-	function handleDragEnd() {
-		if (draggedElement && dragPlaceholder?.parentElement) {
-			dragPlaceholder.replaceWith(draggedElement);
-			draggedElement.style.opacity = '1';
-			draggedElement.removeAttribute('draggable');
-			saveAndNotify();
-		}
-		// プレースホルダーを確実に削除
-		if (dragPlaceholder) {
-			dragPlaceholder.remove();
-		}
-		draggedElement = null;
-		dragPlaceholder = null;
-	}
-
-	function handleDrop(e: DragEvent) {
-		e.preventDefault();
-		handleDragEnd();
-	}
 
 	async function handleImageUpload(e: Event) {
 		const file = (e.target as HTMLInputElement).files?.[0];
@@ -938,10 +950,6 @@
 				contenteditable="true"
 				oninput={handleInput}
 				onkeydown={handleKeyDown}
-				ondragstart={handleDragStart}
-				ondragover={handleDragOver}
-				ondragend={handleDragEnd}
-				ondrop={handleDrop}
 				oncontextmenu={handleGlobalContextMenu}
 			></div>
 
@@ -952,8 +960,20 @@
 			{#if selectedElement && overlayPos}
 				<div class="image-resizer-overlay {['H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'P', 'LI', 'UL', 'OL'].includes(selectedElement.tagName) ? 'text-only' : ''}" style="left: {overlayPos.left}px; top: {overlayPos.top}px; width: {overlayPos.width}px; height: {overlayPos.height}px;">
 					<div class="overlay-controls">
-						<div class="overlay-control move" draggable="true" ondragstart={handleDragStart} title="ドラッグで移動"><Move size={14} /></div>
-						<button class="overlay-control delete" onclick={deleteSelectedElement} title="削除"><Trash2 size={14} /></button>
+						{#if selectedElement.tagName === 'IMG'}
+							<button class="overlay-control align {imageAlignment === 'left' ? 'active' : ''}" onclick={() => setImageAlignment('left')} title="左寄せ">
+								<AlignLeft size={18} />
+							</button>
+							<button class="overlay-control align {imageAlignment === 'center' ? 'active' : ''}" onclick={() => setImageAlignment('center')} title="中央揃え">
+								<AlignCenter size={18} />
+							</button>
+							<button class="overlay-control align {imageAlignment === 'right' ? 'active' : ''}" onclick={() => setImageAlignment('right')} title="右寄せ">
+								<AlignRight size={18} />
+							</button>
+						{/if}
+						<button class="overlay-control move-up" onclick={moveElementUp} title="上に移動"><ChevronDown size={18} style="transform: rotate(180deg);" /></button>
+						<button class="overlay-control move-down" onclick={moveElementDown} title="下に移動"><ChevronDown size={18} /></button>
+						<button class="overlay-control delete" onclick={deleteSelectedElement} title="削除"><Trash2 size={18} /></button>
 					</div>
 					{#if !['H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'P', 'LI', 'UL', 'OL'].includes(selectedElement.tagName)}
 						<div class="resize-handle nw" onmousedown={(e) => startResize(e, 'nw')}></div>
@@ -1132,16 +1152,35 @@
 		display: none;
 	}
 	.overlay-controls {
-		position: absolute; top: -32px; left: 50%; transform: translateX(-50%);
-		display: flex; gap: 4px; pointer-events: auto;
+		position: absolute; top: -44px; left: 50%; transform: translateX(-50%);
+		display: flex; gap: 6px; pointer-events: auto;
+		user-select: none;
+		-webkit-user-select: none;
 	}
 	.overlay-control {
-		background: #3b82f6; color: white; border: none; border-radius: 4px;
-		width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; cursor: pointer;
+		background: #3b82f6; color: white; border: none; border-radius: 8px;
+		width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; cursor: pointer;
+		transition: all 0.2s;
+		box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+		user-select: none;
+		-webkit-user-select: none;
+		-moz-user-select: none;
+		-ms-user-select: none;
 	}
+	.overlay-control:hover {
+		background: #2563eb;
+		transform: scale(1.1);
+	}
+	.overlay-control.move-up { background: #10b981; }
+	.overlay-control.move-up:hover { background: #059669; }
+	.overlay-control.move-down { background: #10b981; }
+	.overlay-control.move-down:hover { background: #059669; }
 	.overlay-control.delete { background: #ef4444; }
-	.overlay-control.move { cursor: grab; }
-	.overlay-control.move:active { cursor: grabbing; }
+	.overlay-control.delete:hover { background: #dc2626; }
+
+	.overlay-control.align { background: #64748b; }
+	.overlay-control.align:hover { background: #475569; }
+	.overlay-control.align.active { background: #3b82f6; }
 
 	.resize-handle {
 		position: absolute; width: 10px; height: 10px; background: white; border: 2px solid #3b82f6;
@@ -1227,19 +1266,57 @@
 	.table-menu .text-danger { color: #ef4444; }
 
 	:global(.rich-editor img) { max-width: 100%; border-radius: 8px; }
-	.drag-placeholder {
-		height: 3px;
-		background: #3b82f6;
-		margin: 4px 0;
-		border-radius: 2px;
-		position: relative;
+
+	/* Image Alignment Styles */
+	:global(.image-wrapper) {
+		margin: 2rem 0;
+		display: block;
 	}
-	.drag-placeholder span {
-		position: absolute;
-		left: 0;
-		top: -20px;
-		font-size: 12px;
-		color: #3b82f6;
-		white-space: nowrap;
+	:global(.image-align-left) {
+		float: left !important;
+		margin-right: 2rem !important;
+		max-width: 50% !important;
+		clear: none !important;
+		display: block !important;
+	}
+	:global(.image-align-center) {
+		margin-left: auto !important;
+		margin-right: auto !important;
+		text-align: center !important;
+		float: none !important;
+		clear: both !important;
+		display: block !important;
+		width: fit-content !important;
+	}
+	:global(.image-align-right) {
+		float: right !important;
+		margin-left: 2rem !important;
+		max-width: 50% !important;
+		clear: none !important;
+		display: block !important;
+	}
+	:global(.image-wrapper img) {
+		max-width: 100%;
+		height: auto;
+		border-radius: 2.5rem;
+		box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+	}
+	:global(.image-wrapper figcaption) {
+		text-align: center;
+		font-size: 0.75rem;
+		font-weight: 900;
+		margin-top: 1rem;
+		opacity: 0.6;
+		text-transform: uppercase;
+		letter-spacing: 0.1em;
+	}
+	/* Float clear fix */
+	:global(.rich-editor > p:not(.image-align-left):not(.image-align-right):not([style*="float"]):not(.image-align-center)),
+	:global(.rich-editor > h1:not(.image-align-left):not(.image-align-right):not([style*="float"]):not(.image-align-center)),
+	:global(.rich-editor > h2:not(.image-align-left):not(.image-align-right):not([style*="float"]):not(.image-align-center)),
+	:global(.rich-editor > h3:not(.image-align-left):not(.image-align-right):not([style*="float"]):not(.image-align-center)),
+	:global(.rich-editor > ul:not(.image-align-left):not(.image-align-right):not([style*="float"]):not(.image-align-center)),
+	:global(.rich-editor > ol:not(.image-align-left):not(.image-align-right):not([style*="float"]):not(.image-align-center)) {
+		clear: both;
 	}
 </style>

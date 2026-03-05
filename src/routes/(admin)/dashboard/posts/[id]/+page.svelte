@@ -109,7 +109,12 @@
     bind:this={formElement}
     method="POST"
     class="space-y-8"
-    use:enhance={async ({ formData, cancel }) => {
+    use:enhance={async ({ formData, submitter }) => {
+      // 保存ボタンの場合は no_redirect を追加
+      const isSaveButton = submitter?.getAttribute('type') === 'submit';
+      if (!isSaveButton) {
+        formData.set('no_redirect', 'true');
+      }
       isSaving = true;
       return async ({ result, update }) => {
         isSaving = false;
@@ -241,6 +246,7 @@
       </div>
     </div>
 
+    <input type="hidden" name="no_redirect" value="true" />
     <input type="hidden" name="editorHtml" value={editorHtml} />
     {#if form?.message}<p class="text-psan-pink font-bold text-center">{form.message}</p>{/if}
   </form>

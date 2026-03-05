@@ -43,15 +43,18 @@ export function editorJsToHtml(blocks: any[]) {
 					const widthStyle = block.data.stretched
 						? 'width: 100%;'
 						: 'width: 70%; max-width: 800px;';
+					const imgAlignment = block.tunes?.textAlignment?.alignment || 'center';
+					const imageAlignClass =
+						imgAlignment === 'left' ? 'image-align-left' : imgAlignment === 'right' ? 'image-align-right' : 'image-align-center';
 					const classes = [
-						'mx-auto rounded-[40px] transition-all duration-700 shadow-2xl',
+						'rounded-[40px] transition-all duration-700 shadow-2xl',
 						block.data.withBorder ? 'border-8 border-slate-100 dark:border-slate-800' : '',
 						block.data.withBackground ? 'bg-slate-100 dark:bg-slate-800 p-6 md:p-16' : ''
 					].join(' ');
 					const caption = block.data.caption
 						? `<figcaption class="text-center text-xs mt-6 font-black opacity-60 uppercase tracking-widest">${sanitizeHtml(block.data.caption)}</figcaption>`
 						: '';
-					html += `<figure class="my-20 overflow-hidden flex flex-col items-center"><img src="${block.data.file.url}" alt="${sanitizeHtml(block.data.caption || '')}" class="${classes}" style="${widthStyle} height: auto; aspect-ratio: auto;" loading="lazy" decoding="async">${caption}</figure>`;
+					html += `<figure class="image-wrapper ${imageAlignClass} my-20"><img src="${block.data.file.url}" alt="${sanitizeHtml(block.data.caption || '')}" class="${classes}" style="${widthStyle} height: auto; aspect-ratio: auto;" loading="lazy" decoding="async">${caption}</figure>`;
 					break;
 				case 'code':
 					const escapedCode = (block.data.code || '')

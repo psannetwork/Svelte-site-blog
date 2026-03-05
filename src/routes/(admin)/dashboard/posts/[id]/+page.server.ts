@@ -55,6 +55,7 @@ export const actions: Actions = {
 		const visibility = formData.get('visibility') as string;
 		const editorHtml = formData.get('editorHtml') as string;
 		let thumbnailUrl = formData.get('thumbnail_url') as string;
+		const noRedirect = formData.get('no_redirect') as string;
 
 		if (!title || !editorHtml) {
 			return fail(400, { message: 'Title and content are required' });
@@ -85,6 +86,11 @@ export const actions: Actions = {
 			thumbnailUrl || null,
 			params.id
 		);
+
+		// no_redirect フラグがある場合はリダイレクトしない
+		if (noRedirect === 'true') {
+			return { success: true, message: '保存しました' };
+		}
 
 		throw redirect(302, '/dashboard/posts');
 	}
