@@ -11,7 +11,7 @@
 }
 
 @utility card-psan {
-	@apply bg-[--card-bg] border border-[--border-color] rounded-[32px] shadow-sm overflow-hidden transition-all;
+	@apply bg-[--card-bg] border border-[--border-color] rounded-[var(--border-radius-psan,32px)] shadow-sm overflow-hidden transition-all;
 }
 
 @utility btn-psan-primary {

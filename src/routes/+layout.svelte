@@ -168,11 +168,32 @@
 	}
 
 	$effect(() => {
-		const color = data.settings?.accent_color || '#00cc99';
+		const settings = data.settings || {};
 		const isDark = theme.current === 'dark';
-		document.documentElement.style.setProperty('--psan-green', color);
-		document.documentElement.style.setProperty('--accent-color', color);
-		document.documentElement.style.setProperty('--psan-green-fg', getContrastColor(color, isDark));
+
+		const accent = settings.accent_color || '#00CC99';
+		const radius = settings.border_radius || '32px';
+		const font = settings.font_family || "'Inter', 'Noto Sans JP', sans-serif";
+
+		document.documentElement.style.setProperty('--psan-green', accent);
+		document.documentElement.style.setProperty('--accent-color', accent);
+		document.documentElement.style.setProperty('--psan-green-fg', getContrastColor(accent, isDark));
+		document.documentElement.style.setProperty('--border-radius-psan', radius);
+		document.documentElement.style.setProperty('--font-family-psan', font);
+
+		if (isDark) {
+			document.documentElement.style.setProperty(
+				'--bg-secondary',
+				settings.bg_secondary_dark || '#1e293b'
+			);
+			document.documentElement.style.setProperty('--card-bg', settings.card_bg_dark || '#1e293b');
+		} else {
+			document.documentElement.style.setProperty(
+				'--bg-secondary',
+				settings.bg_secondary_light || '#f1f5f9'
+			);
+			document.documentElement.style.setProperty('--card-bg', settings.card_bg_light || '#ffffff');
+		}
 	});
 
 	function addNotification(message: string, type: 'success' | 'error' | 'info' = 'success') {

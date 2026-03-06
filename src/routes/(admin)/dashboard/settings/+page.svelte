@@ -169,6 +169,12 @@
 				'site_title',
 				'site_description',
 				'accent_color',
+				'font_family',
+				'border_radius',
+				'bg_secondary_light',
+				'bg_secondary_dark',
+				'card_bg_light',
+				'card_bg_dark',
 				'is_site_public',
 				'custom_css',
 				'site_icon_url',
@@ -367,6 +373,124 @@
 						oninput={() => markEdited('allowed_extensions')}
 						class="w-full bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700 rounded-2xl p-4 font-mono text-xs text-main"
 					/>
+				</div>
+			</section>
+
+			<section class="card-dashboard p-10 space-y-8">
+				<div>
+					<h3 class="text-2xl font-black text-psan-green italic uppercase tracking-tighter">
+						Design Settings
+					</h3>
+					<p class="text-xs text-muted font-bold mt-1">Customize your site's look and feel.</p>
+				</div>
+				<div class="grid md:grid-cols-2 gap-8">
+					<div class="space-y-3">
+						<label
+							for="font_family"
+							class="text-[10px] font-black text-muted uppercase tracking-widest"
+							>Font Family</label
+						>
+						<input
+							id="font_family"
+							name="font_family"
+							value={data.settings?.font_family}
+							oninput={() => markEdited('font_family')}
+							class="w-full bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700 rounded-2xl p-4 font-mono text-xs text-main"
+							placeholder="'Inter', sans-serif"
+						/>
+					</div>
+					<div class="space-y-3">
+						<label
+							for="border_radius"
+							class="text-[10px] font-black text-muted uppercase tracking-widest"
+							>Border Radius (e.g. 32px, 1rem)</label
+						>
+						<input
+							id="border_radius"
+							name="border_radius"
+							value={data.settings?.border_radius}
+							oninput={() => markEdited('border_radius')}
+							class="w-full bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700 rounded-2xl p-4 font-mono text-xs text-main"
+							placeholder="32px"
+						/>
+					</div>
+				</div>
+
+				<div class="grid md:grid-cols-2 gap-8">
+					<div class="space-y-6">
+						<h4 class="text-[10px] font-black text-psan-green uppercase tracking-widest">
+							Light Mode Colors
+						</h4>
+						<div class="grid grid-cols-2 gap-4">
+							<div class="space-y-3">
+								<label
+									for="bg_secondary_light"
+									class="text-[9px] font-black text-muted uppercase tracking-widest"
+									>Secondary BG</label
+								>
+								<input
+									id="bg_secondary_light"
+									name="bg_secondary_light"
+									type="color"
+									value={data.settings?.bg_secondary_light}
+									oninput={() => markEdited('bg_secondary_light')}
+									class="w-full h-12 rounded-xl cursor-pointer bg-transparent"
+								/>
+							</div>
+							<div class="space-y-3">
+								<label
+									for="card_bg_light"
+									class="text-[9px] font-black text-muted uppercase tracking-widest"
+									>Card BG</label
+								>
+								<input
+									id="card_bg_light"
+									name="card_bg_light"
+									type="color"
+									value={data.settings?.card_bg_light}
+									oninput={() => markEdited('card_bg_light')}
+									class="w-full h-12 rounded-xl cursor-pointer bg-transparent"
+								/>
+							</div>
+						</div>
+					</div>
+					<div class="space-y-6">
+						<h4 class="text-[10px] font-black text-psan-pink uppercase tracking-widest">
+							Dark Mode Colors
+						</h4>
+						<div class="grid grid-cols-2 gap-4">
+							<div class="space-y-3">
+								<label
+									for="bg_secondary_dark"
+									class="text-[9px] font-black text-muted uppercase tracking-widest"
+									>Secondary BG</label
+								>
+								<input
+									id="bg_secondary_dark"
+									name="bg_secondary_dark"
+									type="color"
+									value={data.settings?.bg_secondary_dark}
+									oninput={() => markEdited('bg_secondary_dark')}
+									class="w-full h-12 rounded-xl cursor-pointer bg-transparent"
+								/>
+							</div>
+							<div class="space-y-3">
+								<label
+									for="card_bg_dark"
+									class="text-[9px] font-black text-muted uppercase tracking-widest"
+									>Card BG</label
+								>
+								<input
+									id="card_bg_dark"
+									name="card_bg_dark"
+									type="color"
+									value={data.settings?.card_bg_dark}
+									oninput={() => markEdited('card_bg_dark')}
+									class="w-full h-12 rounded-xl cursor-pointer bg-transparent"
+								/>
+							</div>
+						</div>
+					</div>
 				</div>
 			</section>
 

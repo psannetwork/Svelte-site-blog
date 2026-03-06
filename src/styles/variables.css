@@ -8,7 +8,7 @@
 	--color-main: var(--text-main);
 	--color-muted: var(--text-muted);
 
-	--font-sans: 'Inter', 'Noto Sans JP', sans-serif;
+	--font-sans: var(--font-family-psan, 'Inter', 'Noto Sans JP', sans-serif);
 }
 
 :root {
@@ -20,6 +20,7 @@
 	--text-muted: #475569;
 	--card-bg: #ffffff;
 	--border-color: #cbd5e1;
+	--border-radius-psan: 32px;
 	color-scheme: light;
 }
 
