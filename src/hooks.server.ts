@@ -117,8 +117,9 @@ export const handle: Handle = async ({ event, resolve }) => {
 	response.headers.set('X-Content-Type-Options', 'nosniff');
 	response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
 	response.headers.set('Permissions-Policy', 'geolocation=(), camera=(), microphone=()');
+	response.headers.set('Cross-Origin-Opener-Policy', 'same-origin');
 
-	// HSTS (HTTPS 強制) - 本番環境でのみ推奨
+	// HSTS (HTTPS 強制)
 	if (process.env.NODE_ENV === 'production') {
 		response.headers.set(
 			'Strict-Transport-Security',
@@ -126,7 +127,8 @@ export const handle: Handle = async ({ event, resolve }) => {
 		);
 	}
 
-	// CSP (Content Security Policy) - 本番環境では 'unsafe-inline' と 'unsafe-eval' を削除することを推奨
+	// CSP (Content Security Policy)
+	// 'unsafe-inline' と 'unsafe-eval' は SvelteKit の hydration や Editor.js の動作に必要ですが、可能な限り制限します
 	const csp = [
 		"default-src 'self'",
 		"script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: https://challenges.cloudflare.com https://static.cloudflareinsights.com",
@@ -136,7 +138,8 @@ export const handle: Handle = async ({ event, resolve }) => {
 		"font-src 'self' https://fonts.gstatic.com",
 		"img-src 'self' data: blob: *",
 		"frame-src 'self' https://challenges.cloudflare.com https://www.youtube.com https://player.vimeo.com",
-		"connect-src 'self' blob: https://challenges.cloudflare.com"
+		"connect-src 'self' blob: https://challenges.cloudflare.com",
+		"require-trusted-types-for 'script'"
 	].join('; ');
 
 	response.headers.set('Content-Security-Policy', csp);

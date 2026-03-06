@@ -178,7 +178,7 @@
 					>{data.settings?.site_title || 'PSANBLOG'}</span
 				>
 			</div>
-			<p class="text-[10px] font-black tracking-[0.3em] text-muted uppercase">
+			<p class="text-[10px] font-black tracking-[0.3em] text-main uppercase">
 				© 2026 PSANNETWORK ALL RIGHTS RESERVED.
 			</p>
 		</div>

@@ -83,7 +83,7 @@
 			{/if}
 			<a
 				href="/"
-				class="block text-[10px] font-black tracking-widest text-muted opacity-80 hover:opacity-100 transition-colors uppercase"
+				class="block text-[10px] font-black tracking-widest text-muted hover:text-psan-green transition-colors uppercase"
 				>Back to Home</a
 			>
 		</div>
