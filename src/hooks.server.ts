@@ -138,8 +138,7 @@ export const handle: Handle = async ({ event, resolve }) => {
 		"font-src 'self' https://fonts.gstatic.com",
 		"img-src 'self' data: blob: *",
 		"frame-src 'self' https://challenges.cloudflare.com https://www.youtube.com https://player.vimeo.com",
-		"connect-src 'self' blob: https://challenges.cloudflare.com",
-		"require-trusted-types-for 'script'"
+		"connect-src 'self' blob: https://challenges.cloudflare.com"
 	].join('; ');
 
 	response.headers.set('Content-Security-Policy', csp);
