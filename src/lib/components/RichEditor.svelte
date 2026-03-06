@@ -30,6 +30,7 @@
 
 	let editorRef: HTMLDivElement | undefined = $state();
 	let fileInputRef: HTMLInputElement | undefined = $state();
+	let videoInputRef: HTMLInputElement | undefined = $state();
 	let menuState = $state({ show: false, x: 0, y: 0 });
 	let innerHTML = $state('');
 
@@ -508,10 +509,33 @@
 		} catch (err) { alert('アップロード失敗'); } finally { isUploading = false; }
 	}
 
+	async function handleVideoUpload(e: Event) {
+		const file = (e.target as HTMLInputElement).files?.[0];
+		if (!file) return;
+		isUploading = true;
+		const formData = new FormData(); formData.append('video', file);
+		try {
+			const res = await fetch('/api/upload?type=misc', { method: 'POST', body: formData });
+			const result = await res.json();
+			if (result.success) insertVideoAtCursor(result.file.url);
+		} catch (err) { alert('アップロード失敗'); } finally { isUploading = false; }
+	}
+
 	function insertImageAtCursor(src: string) {
 		if (!editorRef) return; editorRef.focus();
 		const img = document.createElement('img'); img.src = src; img.style.maxWidth = '100%';
 		window.getSelection()?.getRangeAt(0).insertNode(img);
+		saveAndNotify();
+	}
+
+	function insertVideoAtCursor(src: string) {
+		if (!editorRef) return; editorRef.focus();
+		const video = document.createElement('video');
+		video.src = src;
+		video.style.maxWidth = '100%';
+		video.controls = true;
+		video.setAttribute('data-element-id', `el-${Date.now()}`);
+		window.getSelection()?.getRangeAt(0).insertNode(video);
 		saveAndNotify();
 	}
 
@@ -917,6 +941,9 @@
 				<button type="button" class="toolbar-btn" onmousedown={(e) => { e.preventDefault(); fileInputRef?.click(); }} title="画像">
 					<ImageIcon size={18} />
 				</button>
+				<button type="button" class="toolbar-btn" onmousedown={(e) => { e.preventDefault(); videoInputRef?.click(); }} title="動画をアップロード">
+					<Video size={18} />
+				</button>
 				<button type="button" class="toolbar-btn" onmousedown={(e) => { e.preventDefault(); toggleDropdown('insert', e); }} title="さらに挿入">
 					<MoreHorizontal size={18} />
 				</button>
@@ -927,8 +954,8 @@
 						<button onmousedown={(e) => { e.preventDefault(); executeCommand('code'); closeDropdowns(); }}><Code size={16} /> コードブロック</button>
 						<button onmousedown={(e) => { e.preventDefault(); executeCommand('hr'); closeDropdowns(); }}><Minus size={16} /> 区切り線</button>
 						<div class="v-divider" style="width: 100%; height: 1px; margin: 4px 0;"></div>
-						<button onmousedown={(e) => { e.preventDefault(); openMediaDialog('video', e); closeDropdowns(); }}><Video size={16} /> 動画</button>
-						<button onmousedown={(e) => { e.preventDefault(); openMediaDialog('audio', e); closeDropdowns(); }}><Mic size={16} /> 音声</button>
+						<button onmousedown={(e) => { e.preventDefault(); openMediaDialog('video', e); closeDropdowns(); }}><Video size={16} /> 動画 (URL)</button>
+						<button onmousedown={(e) => { e.preventDefault(); openMediaDialog('audio', e); closeDropdowns(); }}><Mic size={16} /> 音声 (URL)</button>
 					</div>
 				{/if}
 			</div>
@@ -941,6 +968,7 @@
 			</button>
 
 			<input type="file" bind:this={fileInputRef} onchange={handleImageUpload} accept="image/*" style="display: none;" />
+			<input type="file" bind:this={videoInputRef} onchange={handleVideoUpload} accept="video/*" style="display: none;" />
 		</div>
 
 		<div class="editor-wrapper">
@@ -1266,6 +1294,7 @@
 	.table-menu .text-danger { color: #ef4444; }
 
 	:global(.rich-editor img) { max-width: 100%; border-radius: 8px; }
+	:global(.rich-editor video) { max-width: 100%; border-radius: 8px; }
 
 	/* Image Alignment Styles */
 	:global(.image-wrapper) {

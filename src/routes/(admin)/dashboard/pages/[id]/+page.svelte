@@ -10,6 +10,7 @@
 
   let title = $state('');
   let editorHtml = $state('');
+  let isSaving = $state(false);
 
   $effect(() => {
     if (data.page && title === '') {
@@ -66,7 +67,15 @@
     action="?/savePage"
     class="space-y-8"
     use:enhance={async ({ formData, cancel }) => {
+      isSaving = true;
       return async ({ result, update }) => {
+        isSaving = false;
+        if (result.type === 'success' || result.type === 'redirect') {
+          // グローバル通知を表示
+          window.dispatchEvent(new CustomEvent('notify', { 
+            detail: { message: 'ページを保存しました', type: 'success' } 
+          }));
+        }
         await update({ reset: false });
       };
     }}
@@ -117,13 +126,6 @@
     </div>
 
     <input type="hidden" name="content" value={editorHtml} />
-    {#if form?.success}
-      <div
-        class="fixed top-24 left-1/2 -translate-x-1/2 bg-psan-green text-psan-green-fg px-10 py-4 rounded-full font-black shadow-2xl z-[101] animate-in fade-in slide-in-from-top-4 uppercase text-xs tracking-widest"
-      >
-        Page Saved!
-      </div>
-    {/if}
   </form>
 </div>
 

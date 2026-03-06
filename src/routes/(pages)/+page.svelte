@@ -5,6 +5,31 @@
 	const lang = $derived((data.settings?.site_language || 'ja') as Language);
 </script>
 
+<svelte:head>
+	<!-- 構造化データ (ItemList) -->
+	<script type="application/ld+json">
+		{
+			"@context": "https://schema.org",
+			"@type": "ItemList",
+			"itemListElement": data.posts.map((post, index) => ({
+				"@type": "ListItem",
+				"position": index + 1,
+				"item": {
+					"@type": "BlogPosting",
+					"headline": post.title,
+					"description": post.summary || "",
+					"image": post.thumbnail_url,
+					"datePublished": new Date(post.created_at).toISOString(),
+					"author": {
+						"@type": "Person",
+						"name": post.author_name
+					}
+				}
+			}))
+		}
+	</script>
+</svelte:head>
+
 <!-- 編集ボタン (Adminのみ) -->
 {#if data.user?.role === 'admin' || data.user?.role === 'editor'}
 	<div class="fixed bottom-8 right-8 z-[100]">

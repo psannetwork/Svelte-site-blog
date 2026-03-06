@@ -723,6 +723,15 @@ xy-color-picker {
 	box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25) !important;
 }
 
+.prose video {
+	max-width: 100% !important;
+	height: auto !important;
+	margin: 2rem auto !important;
+	display: block !important;
+	border-radius: 2.5rem !important;
+	box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25) !important;
+}
+
 .prose figure {
 	margin: 2rem 0 !important;
 }

@@ -102,6 +102,10 @@
         isSaving = false;
         if (result.type === 'success' || result.type === 'redirect') {
           localStorage.removeItem('autosave_new_post');
+          // グローバル通知を表示
+          window.dispatchEvent(new CustomEvent('notify', { 
+            detail: { message: '保存しました', type: 'success' } 
+          }));
         }
         await update({ reset: false });
       };
@@ -229,7 +233,6 @@
     </div>
 
     <input type="hidden" name="editorHtml" value={editorHtml} />
-    {#if form?.message}<p class="text-psan-pink font-bold text-center">{form.message}</p>{/if}
   </form>
 </div>
 

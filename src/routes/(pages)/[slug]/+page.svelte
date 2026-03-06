@@ -120,6 +120,60 @@
 	{#if data.settings.enable_turnstile === 'true'}
 		<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 	{/if}
+	
+	<!-- 記事固有の SEO メタタグ -->
+	<meta name="description" content={data.post.summary || `「${data.post.title}」の記事を読む`} />
+	<meta name="author" content={data.post.author_name || 'Unknown'} />
+	<meta name="article:published_time" content={new Date(data.post.created_at).toISOString()} />
+	{#if data.post.updated_at}
+		<meta name="article:modified_time" content={new Date(data.post.updated_at).toISOString()} />
+	{/if}
+	
+	<!-- Open Graph 記事用 -->
+	<meta property="og:type" content="article" />
+	<meta property="og:title" content={data.post.title} />
+	<meta property="og:description" content={data.post.summary || ''} />
+	{#if data.post.thumbnail_url}
+		<meta property="og:image" content={data.post.thumbnail_url} />
+	{/if}
+	<meta property="og:article:author" content={data.post.author_name || ''} />
+	<meta property="og:article:published_time" content={new Date(data.post.created_at).toISOString()} />
+	{#if data.post.updated_at}
+		<meta property="og:article:modified_time" content={new Date(data.post.updated_at).toISOString()} />
+	{/if}
+	
+	<!-- Twitter Cards 記事用 -->
+	<meta name="twitter:title" content={data.post.title} />
+	<meta name="twitter:description" content={data.post.summary || ''} />
+	{#if data.post.thumbnail_url}
+		<meta name="twitter:image" content={data.post.thumbnail_url} />
+	{/if}
+	
+	<!-- 構造化データ (Article) -->
+	<script type="application/ld+json">
+		{
+			"@context": "https://schema.org",
+			"@type": "BlogPosting",
+			"headline": data.post.title,
+			"description": data.post.summary || "",
+			"image": data.post.thumbnail_url,
+			"datePublished": new Date(data.post.created_at).toISOString(),
+			"dateModified": data.post.updated_at ? new Date(data.post.updated_at).toISOString() : new Date(data.post.created_at).toISOString(),
+			"author": {
+				"@type": "Person",
+				"name": data.post.author_name || "Unknown"
+			},
+			"publisher": {
+				"@type": "Organization",
+				"name": data.settings?.site_title || "Svelte Site Blog",
+				"logo": {
+					"@type": "ImageObject",
+					"url": data.settings?.site_icon_url || "https://blog.psannetwork.net/favicon.svg"
+				}
+			},
+			"url": `https://blog.psannetwork.net/${data.post.id}`
+		}
+	</script>
 </svelte:head>
 
 {#snippet commentItem(comment: any, depth = 0)}

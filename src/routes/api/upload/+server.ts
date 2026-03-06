@@ -9,26 +9,31 @@ export const POST: RequestHandler = async ({ request, locals, url }) => {
 	}
 
 	const formData = await request.formData();
-	const file = formData.get('image') as File;
+	const file = (formData.get('image') || formData.get('video')) as File;
 	const uploadType = (url.searchParams.get('type') || 'misc') as any;
 
 	if (!file) throw error(400, 'No file uploaded');
 
-	// セキュリティ：ファイルサイズ制限 (最大 10MB)
-	const MAX_FILE_SIZE = 10 * 1024 * 1024;
+	// セキュリティ：ファイルサイズ制限 (最大 100MB)
+	const MAX_FILE_SIZE = 100 * 1024 * 1024;
 	if (file.size > MAX_FILE_SIZE) {
 		throw error(400, `File size exceeds limit (${MAX_FILE_SIZE / 1024 / 1024}MB)`);
 	}
 
+	// 動画かどうかを判定
+	const isVideo = file.type.startsWith('video/');
+
 	const allowedExtensionsStr = getSetting(
 		'allowed_extensions',
-		'["jpg","jpeg","png","gif","webp","svg","ico"]'
+		'["jpg","jpeg","png","gif","webp","svg","ico","mp4","webm","ogg","mov"]'
 	);
 	let allowedExtensions: string[] = [];
 	try {
 		allowedExtensions = JSON.parse(allowedExtensionsStr);
 	} catch {
-		allowedExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'ico'];
+		allowedExtensions = isVideo 
+			? ['mp4', 'webm', 'ogg', 'mov']
+			: ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'ico'];
 	}
 
 	const ext = file.name.split('.').pop()?.toLowerCase();
@@ -37,14 +42,9 @@ export const POST: RequestHandler = async ({ request, locals, url }) => {
 	}
 
 	// Security: Verify MIME type
-	const allowedMimes = [
-		'image/jpeg',
-		'image/png',
-		'image/gif',
-		'image/webp',
-		'image/svg+xml',
-		'image/x-icon'
-	];
+	const allowedMimes = isVideo
+		? ['video/mp4', 'video/webm', 'video/ogg', 'video/quicktime']
+		: ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml', 'image/x-icon'];
 	if (!allowedMimes.includes(file.type)) {
 		throw error(400, `Invalid file content type: ${file.type}`);
 	}

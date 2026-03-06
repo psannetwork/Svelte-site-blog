@@ -28,6 +28,7 @@
 
 	let userEdited = $state<Record<string, boolean>>({});
 	let lastSyncTime = $state(0);
+	let previousLanguage = $state('ja');
 
 	let showRestoreModal = $state(false);
 	let selectedBackup = $state<any>(null);
@@ -43,6 +44,7 @@
 			siteDescription = s.site_description || '';
 			accentColor = s.accent_color || '#00CC99';
 			siteLanguage = s.site_language || 'ja';
+			previousLanguage = siteLanguage;
 			allowedExtensions = s.allowed_extensions || '.jpg,.jpeg,.png,.gif,.webp,.svg,.ico';
 			siteIconUrl = s.site_icon_url || '';
 			storageType = s.storage_type || 'local';
@@ -216,7 +218,21 @@
 				userEdited = {};
 				showSuccess = true;
 				setTimeout(() => (showSuccess = false), 3000);
-				await invalidateAll();
+				
+				// グローバル通知を表示
+				window.dispatchEvent(new CustomEvent('notify', { 
+					detail: { message: '設定を保存しました', type: 'success' } 
+				}));
+				
+				// 言語が変更された場合はページをリロード
+				const languageChanged = previousLanguage !== siteLanguage;
+				if (languageChanged) {
+					previousLanguage = siteLanguage;
+					await invalidateAll();
+					setTimeout(() => window.location.reload(), 500);
+				} else {
+					await invalidateAll();
+				}
 			}
 		} finally {
 			isSaving = false;

@@ -7,8 +7,28 @@
 
 	let { children, data } = $props();
 
+	// グローバル通知システム
+	type Notification = {
+		id: number;
+		message: string;
+		type: 'success' | 'error' | 'info';
+	};
+
+	let notifications = $state<Notification[]>([]);
+	let notificationId = $state(0);
+
 	onMount(() => {
 		theme.init();
+
+		// 言語設定を HTML タグに適用
+		if (data.settings?.site_language) {
+			document.documentElement.lang = data.settings.site_language;
+		}
+
+		// グローバル通知イベントをリッスン
+		window.addEventListener('notify', ((e: CustomEvent) => {
+			addNotification(e.detail.message, e.detail.type);
+		}) as EventListener);
 
 		// Color picker fix for Editor.js (editorjs-text-color-plugin)
 		const handleGlobalClick = (e: MouseEvent) => {
@@ -154,6 +174,14 @@
 		document.documentElement.style.setProperty('--accent-color', color);
 		document.documentElement.style.setProperty('--psan-green-fg', getContrastColor(color, isDark));
 	});
+
+	function addNotification(message: string, type: 'success' | 'error' | 'info' = 'success') {
+		const id = ++notificationId;
+		notifications.push({ id, message, type });
+		setTimeout(() => {
+			notifications = notifications.filter(n => n.id !== id);
+		}, 3000);
+	}
 </script>
 
 <svelte:head>
@@ -173,8 +201,67 @@
 		<!-- eslint-disable-next-line svelte/no-at-html-tags -->
 		{@html `<style>${sanitizeHtml(data.settings.custom_css)}</style>`}
 	{/if}
+
+	<!-- Open Graph / Facebook -->
+	<meta property="og:type" content="website" />
+	<meta property="og:site_name" content={data.settings?.site_title || 'Svelte Site Blog'} />
+	<meta property="og:title" content={page.data.pageTitle ? `${page.data.pageTitle} | ${data.settings?.site_title || 'Svelte Site Blog'}` : data.settings?.site_title || 'Svelte Site Blog'} />
+	{#if data.settings?.site_description}
+		<meta property="og:description" content={data.settings.site_description} />
+	{/if}
+	{#if page.data.ogImage}
+		<meta property="og:image" content={page.data.ogImage} />
+	{:else if data.settings?.site_icon_url}
+		<meta property="og:image" content={data.settings.site_icon_url} />
+	{/if}
+	<meta property="og:url" content={page.url.origin + page.url.pathname} />
+	<meta property="og:locale" content={data.settings?.site_language || 'ja_JP'} />
+	
+	<!-- Twitter Cards -->
+	<meta name="twitter:card" content="summary_large_image" />
+	<meta name="twitter:title" content={page.data.pageTitle ? `${page.data.pageTitle} | ${data.settings?.site_title || 'Svelte Site Blog'}` : data.settings?.site_title || 'Svelte Site Blog'} />
+	{#if data.settings?.site_description}
+		<meta name="twitter:description" content={data.settings.site_description} />
+	{/if}
+	{#if page.data.ogImage}
+		<meta name="twitter:image" content={page.data.ogImage} />
+	{:else if data.settings?.site_icon_url}
+		<meta name="twitter:image" content={data.settings.site_icon_url} />
+	{/if}
+	
+	<!-- Canonical URL -->
+	<link rel="canonical" href={page.url.origin + page.url.pathname} />
 </svelte:head>
 
 <div class="min-h-screen flex flex-col transition-colors duration-300">
 	{@render children()}
+	
+	<!-- グローバル通知 (右上にログ形式) -->
+	<div class="fixed top-4 right-4 z-[9999] space-y-2 pointer-events-none">
+		{#each notifications as notification (notification.id)}
+			<div
+				class="pointer-events-auto px-4 py-3 rounded-lg shadow-lg flex items-center gap-3 min-w-[280px] max-w-md animate-in slide-in-from-right-4 fade-in duration-300 {
+					notification.type === 'success' ? 'bg-psan-green text-white dark:text-psan-green-fg' :
+					notification.type === 'error' ? 'bg-psan-pink text-white' :
+					'bg-slate-800 text-white'
+				}"
+				role="status"
+			>
+				{#if notification.type === 'success'}
+					<svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
+					</svg>
+				{:else if notification.type === 'error'}
+					<svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12" />
+					</svg>
+				{:else}
+					<svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+					</svg>
+				{/if}
+				<span class="text-sm font-bold">{notification.message}</span>
+			</div>
+		{/each}
+	</div>
 </div>
