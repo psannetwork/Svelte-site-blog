@@ -388,7 +388,7 @@
 			{#each commentTree as comment}
 				{@render commentItem(comment)}
 			{:else}
-				<p class="text-center py-10 text-xs font-bold opacity-30 uppercase tracking-widest">
+				<p class="text-center py-10 text-xs font-black text-muted uppercase tracking-[0.3em]">
 					No comments yet.
 				</p>
 			{/each}
@@ -433,7 +433,7 @@
 				</form>
 			{:else}
 				<div class="card-psan p-10 text-center border-dashed border-2">
-					<p class="text-sm font-bold opacity-40 mb-6 uppercase tracking-widest">
+					<p class="text-xs font-black text-muted mb-8 uppercase tracking-[0.3em]">
 						Login required to comment
 					</p>
 					<a href="/auth/login" class="btn-psan-primary inline-flex">Login Now</a>

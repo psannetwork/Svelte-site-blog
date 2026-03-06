@@ -15,7 +15,11 @@
 }
 
 @utility btn-psan-primary {
-	@apply px-8 py-3 rounded-2xl bg-psan-green text-psan-green-fg font-black hover:bg-psan-green/90 active:scale-[0.98] transition-all shadow-lg shadow-psan-green/20 flex items-center justify-center gap-2;
+	@apply px-8 py-3 rounded-2xl bg-psan-green text-psan-green-fg font-black hover:bg-psan-green/90 active:scale-[0.98] shadow-lg shadow-psan-green/20 flex items-center justify-center gap-2;
+	transition:
+		background-color 0.2s ease,
+		transform 0.1s ease,
+		box-shadow 0.2s ease;
 }
 
 @utility btn-psan-ghost {

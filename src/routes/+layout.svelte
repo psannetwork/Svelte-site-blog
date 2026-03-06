@@ -230,7 +230,13 @@
 	{/if}
 	
 	<!-- Canonical URL -->
-	<link rel="canonical" href={page.url.origin + page.url.pathname} />
+	<link
+		rel="canonical"
+		href={(page.url.origin + (page.url.pathname === '/' ? '' : page.url.pathname)).replace(
+			/\/$/,
+			''
+		) || '/'}
+	/>
 </svelte:head>
 
 <div class="min-h-screen flex flex-col transition-colors duration-300">

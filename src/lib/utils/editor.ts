@@ -51,10 +51,14 @@ export function editorJsToHtml(blocks: any[]) {
 						block.data.withBorder ? 'border-8 border-slate-100 dark:border-slate-800' : '',
 						block.data.withBackground ? 'bg-slate-100 dark:bg-slate-800 p-6 md:p-16' : ''
 					].join(' ');
+					const captionText = sanitizeHtml(block.data.caption || '');
 					const caption = block.data.caption
-						? `<figcaption class="text-center text-xs mt-6 font-black opacity-80 uppercase tracking-widest">${sanitizeHtml(block.data.caption)}</figcaption>`
+						? `<figcaption class="text-center text-xs mt-6 font-black opacity-80 uppercase tracking-widest">${captionText}</figcaption>`
 						: '';
-					html += `<figure class="image-wrapper ${imageAlignClass} my-20"><img src="${block.data.file.url}" alt="${sanitizeHtml(block.data.caption || '')}" class="${classes}" style="${widthStyle} height: auto; aspect-ratio: auto;" loading="lazy" decoding="async">${caption}</figure>`;
+					// 最初の方の画像（LCP候補）は lazy loading を避ける
+					const isFirstImage = html.indexOf('<img') === -1;
+					const loadingAttr = isFirstImage ? 'fetchpriority="high"' : 'loading="lazy"';
+					html += `<figure class="image-wrapper ${imageAlignClass} my-20"><img src="${block.data.file.url}" alt="${captionText || 'Article image'}" class="${classes}" style="${widthStyle} height: auto; aspect-ratio: auto;" ${loadingAttr} decoding="async">${caption}</figure>`;
 					break;
 				case 'code':
 					const escapedCode = (block.data.code || '')
