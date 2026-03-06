@@ -976,6 +976,9 @@
 				bind:this={editorRef}
 				class="rich-editor"
 				contenteditable="true"
+				role="textbox"
+				aria-multiline="true"
+				tabindex="0"
 				oninput={handleInput}
 				onkeydown={handleKeyDown}
 				oncontextmenu={handleGlobalContextMenu}
@@ -1004,10 +1007,10 @@
 						<button class="overlay-control delete" onclick={deleteSelectedElement} title="削除"><Trash2 size={18} /></button>
 					</div>
 					{#if !['H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'P', 'LI', 'UL', 'OL'].includes(selectedElement.tagName)}
-						<div class="resize-handle nw" onmousedown={(e) => startResize(e, 'nw')}></div>
-						<div class="resize-handle ne" onmousedown={(e) => startResize(e, 'ne')}></div>
-						<div class="resize-handle se" onmousedown={(e) => startResize(e, 'se')}></div>
-						<div class="resize-handle sw" onmousedown={(e) => startResize(e, 'sw')}></div>
+						<div class="resize-handle nw" role="button" tabindex="0" aria-label="左上隅をリサイズ" onmousedown={(e) => startResize(e, 'nw')} onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') startResize(e, 'nw'); }}></div>
+						<div class="resize-handle ne" role="button" tabindex="0" aria-label="右上隅をリサイズ" onmousedown={(e) => startResize(e, 'ne')} onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') startResize(e, 'ne'); }}></div>
+						<div class="resize-handle se" role="button" tabindex="0" aria-label="右下隅をリサイズ" onmousedown={(e) => startResize(e, 'se')} onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') startResize(e, 'se'); }}></div>
+						<div class="resize-handle sw" role="button" tabindex="0" aria-label="左下隅をリサイズ" onmousedown={(e) => startResize(e, 'sw')} onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') startResize(e, 'sw'); }}></div>
 					{/if}
 				</div>
 			{/if}
@@ -1038,9 +1041,9 @@
 
 	<!-- モーダルダイアログ群 -->
 	{#if showLinkDialog}
-		<div class="modal-overlay" onclick={() => showLinkDialog = false}>
-			<div class="modal-card" onclick={e => e.stopPropagation()}>
-				<h3>リンクを挿入/編集</h3>
+		<div class="modal-overlay" role="button" tabindex="0" onclick={() => showLinkDialog = false} onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') showLinkDialog = false; }}>
+			<div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="link-dialog-title" tabindex="0" onclick={e => e.stopPropagation()} onkeydown={(e) => e.stopPropagation()}>
+				<h3 id="link-dialog-title">リンクを挿入/編集</h3>
 				<input type="url" bind:value={linkUrl} placeholder="https://..." class="modal-input" />
 				<div class="modal-actions">
 					{#if editingLink}
@@ -1054,9 +1057,9 @@
 	{/if}
 
 	{#if showMediaDialog}
-		<div class="modal-overlay" onclick={closeMediaDialog}>
-			<div class="modal-card" onclick={e => e.stopPropagation()}>
-				<h3>{mediaType === 'video' ? '動画' : '音声'}を埋め込む</h3>
+		<div class="modal-overlay" role="button" tabindex="0" onclick={closeMediaDialog} onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') closeMediaDialog(); }}>
+			<div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="media-dialog-title" tabindex="0" onclick={e => e.stopPropagation()} onkeydown={(e) => e.stopPropagation()}>
+				<h3 id="media-dialog-title">{mediaType === 'video' ? '動画' : '音声'}を埋め込む</h3>
 				<input type="url" bind:value={mediaUrl} placeholder="URL を入力..." class="modal-input" />
 				<div class="modal-actions">
 					<button onclick={closeMediaDialog}>キャンセル</button>
@@ -1067,9 +1070,9 @@
 	{/if}
 
 	{#if showMarkdownDialog}
-		<div class="modal-overlay" onclick={closeMarkdownExport}>
-			<div class="modal-card large" onclick={e => e.stopPropagation()}>
-				<h3>Markdown エクスポート</h3>
+		<div class="modal-overlay" role="button" tabindex="0" onclick={closeMarkdownExport} onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') closeMarkdownExport(); }}>
+			<div class="modal-card large" role="dialog" aria-modal="true" aria-labelledby="markdown-dialog-title" tabindex="0" onclick={e => e.stopPropagation()} onkeydown={(e) => e.stopPropagation()}>
+				<h3 id="markdown-dialog-title">Markdown エクスポート</h3>
 				<textarea bind:value={markdownContent} readonly class="modal-textarea"></textarea>
 				<div class="modal-actions">
 					<button onclick={copyMarkdown}>コピー</button>
@@ -1080,7 +1083,7 @@
 	{/if}
 
 	{#if tableContextMenu.show && tableContextMenu.cell}
-		<div class="table-menu" style="left: {tableContextMenu.x}px; top: {tableContextMenu.y}px;" onclick={closeTableContextMenu}>
+		<div class="table-menu" role="menu" tabindex="0" style="left: {tableContextMenu.x}px; top: {tableContextMenu.y}px;" onclick={closeTableContextMenu} onkeydown={(e) => { if (e.key === 'Escape') closeTableContextMenu(); }}>
 			<button onclick={() => {
 				if (tableContextMenu.table && tableContextMenu.cell) {
 					const row = tableContextMenu.cell.parentElement as HTMLTableRowElement;

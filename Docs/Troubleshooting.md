@@ -99,7 +99,49 @@ export default defineConfig({
 
 ---
 
+## ❓ ログインボタンを押すと 403 (Forbidden) エラーになる
+
+### 原因1: CSRF保護（クロスサイト攻撃対策）によるブロック
+
+SvelteKit のセキュリティ機能が、現在のドメインを「信頼されていない送信元」と判断してリクエストを遮断しています。Cloudflare やリバースプロキシ（Nginx 等）を使用している場合に発生しやすい問題です。
+
+### 解決策:
+
+1.  `svelte.config.js` を開き、`kit.csrf.trustedOrigins` に自分のドメインを追加します。
+2.  **重要:** 必ず `https://` または `http://` から始まるフルURLで指定してください。
+
+```javascript
+// svelte.config.js の例
+const config = {
+	kit: {
+		csrf: {
+			trustedOrigins: [
+				'https://blog.psannetwork.net',
+				'https://blogtest.psannetwork.net'
+			]
+		}
+	}
+};
+```
+
+---
+
+## ❓ ログイン時に「認証に失敗しました」と出る / `ERR_BLOCKED_BY_CLIENT`
+
+### 原因: Cloudflare Turnstile（画像認証）がブロックされている
+
+ブラウザの広告ブロック拡張機能（uBlock Origin, AdBlock 等）が、セキュリティ用の認証スクリプトを「広告」と誤認して読み込みをブロックしています。
+
+### 解決策:
+
+1.  ブラウザの広告ブロックをオフにするか、サイトをホワイトリストに追加してください。
+2.  別のブラウザ（シークレットモード等）で試してください。
+3.  管理者としてログインできる場合は、ダッシュボードの **[設定]** から **[Enable Cloudflare Turnstile]** を `OFF` にすることで、画像認証を無効化できます。
+
+---
+
 ## ❓ `Cross-site POST form submissions are forbidden`
+
 
 ### 原因: CSRF保護によるブロック
 

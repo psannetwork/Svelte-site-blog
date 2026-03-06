@@ -39,14 +39,9 @@
 	let showVersionPanel = $state(false);
 	let commitMessage = $state('');
 	let selectedVersion = $state<Version | null>(null);
-	let localContent = $state(currentContent);
 
 	// currentContent の変更を同期
-	$effect(() => {
-		if (browser && currentContent) {
-			localContent = currentContent;
-		}
-	});
+	let localContent = $derived(currentContent);
 
 	let pollInterval: ReturnType<typeof setInterval>;
 	let saveTimeout: ReturnType<typeof setTimeout>;

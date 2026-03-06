@@ -169,7 +169,7 @@
 	{@render children()}
 </main>
 
-<footer class="bg-[--bg-secondary] text-muted py-20 px-4 transition-colors">
+<footer class="bg-[--bg-secondary] py-20 px-4 transition-colors">
 	<div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-12">
 		<div class="space-y-4 text-center md:text-left">
 			<div class="flex items-center justify-center md:justify-start gap-2">
@@ -178,7 +178,7 @@
 					>{data.settings?.site_title || 'PSANBLOG'}</span
 				>
 			</div>
-			<p class="text-[10px] font-black tracking-[0.3em] opacity-60 uppercase">
+			<p class="text-[10px] font-black tracking-[0.3em] text-muted uppercase">
 				© 2026 PSANNETWORK ALL RIGHTS RESERVED.
 			</p>
 		</div>
@@ -186,9 +186,9 @@
 		<div
 			class="flex flex-wrap justify-center gap-10 text-[10px] font-black tracking-[0.2em] uppercase"
 		>
-			<a href="/" class="hover:text-psan-green transition-colors">Home</a>
-			<a href="/about" class="hover:text-psan-green transition-colors">About</a>
-			<a href="/privacy" class="hover:text-psan-green transition-colors">Privacy</a>
+			<a href="/" class="text-main hover:text-psan-green transition-colors">Home</a>
+			<a href="/about" class="text-main hover:text-psan-green transition-colors">About</a>
+			<a href="/privacy" class="text-main hover:text-psan-green transition-colors">Privacy</a>
 		</div>
 	</div>
 </footer>

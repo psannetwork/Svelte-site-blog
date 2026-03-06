@@ -13,7 +13,18 @@ const config = {
 		}),
 		csrf: {
 			// CSRF 保護を有効化
-			trustedOrigins: ['localhost', '127.0.0.1']
+			trustedOrigins: [
+				'localhost',
+				'127.0.0.1',
+				'http://localhost:5173',
+				'http://127.0.0.1:5173',
+				'http://localhost:5174',
+				'http://127.0.0.1:5174',
+				'https://blog.psannetwork.net',
+				'https://blogtest.psannetwork.net',
+				'http://blog.psannetwork.net',
+				'http://blogtest.psannetwork.net'
+			]
 		}
 	}
 };
