@@ -522,7 +522,7 @@
 								<option value="local">Local Filesystem</option>
 								<option value="database">SQLite Database</option>
 							</select>
-							<div class="flex gap-2 text-[9px] font-black uppercase opacity-60 ml-1">
+							<div class="flex gap-2 text-[9px] font-black uppercase text-muted ml-1">
 								<span>Local: {storageStats.local}</span>
 								<span>DB: {storageStats.database}</span>
 							</div>

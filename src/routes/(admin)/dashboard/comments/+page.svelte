@@ -95,7 +95,7 @@
 							{/if}
 
 							<span
-								class="text-[10px] font-black tracking-widest text-muted uppercase ml-auto md:ml-0 opacity-60"
+								class="text-[10px] font-black tracking-widest text-muted uppercase ml-auto md:ml-0"
 							>
 								{new Date(comment.created_at).toLocaleString()}
 							</span>
