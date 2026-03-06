@@ -37,5 +37,14 @@ export const DEFAULT_SETTINGS: Record<string, string> = {
 		blocks: [{ type: 'header', data: { text: '500 Server Error', level: 2 } }]
 	}),
 	custom_css: '',
-	monthly_goal_hits: '1000'
+	monthly_goal_hits: '1000',
+	header_menu: JSON.stringify([
+		{ label: 'HOME', url: '/' },
+		{ label: 'ABOUT', url: '/about' }
+	]),
+	footer_menu: JSON.stringify([
+		{ label: 'HOME', url: '/' },
+		{ label: 'ABOUT', url: '/about' },
+		{ label: 'PRIVACY', url: '/privacy' }
+	])
 };

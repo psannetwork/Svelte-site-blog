@@ -26,6 +26,10 @@
 	let siteIconUrl = $state('');
 	let storageType = $state('local');
 
+	// Navigation Menus
+	let headerMenuItems = $state<{ label: string; url: string }[]>([]);
+	let footerMenuItems = $state<{ label: string; url: string }[]>([]);
+
 	let userEdited = $state<Record<string, boolean>>({});
 	let lastSyncTime = $state(0);
 	let previousLanguage = $state('ja');
@@ -48,9 +52,58 @@
 			allowedExtensions = s.allowed_extensions || '.jpg,.jpeg,.png,.gif,.webp,.svg,.ico';
 			siteIconUrl = s.site_icon_url || '';
 			storageType = s.storage_type || 'local';
+			
+			try {
+				headerMenuItems = JSON.parse(s.header_menu || '[]');
+			} catch (e) {
+				headerMenuItems = [{ label: 'Home', url: '/' }];
+			}
+			try {
+				footerMenuItems = JSON.parse(s.footer_menu || '[]');
+			} catch (e) {
+				footerMenuItems = [{ label: 'Home', url: '/' }];
+			}
+			
 			lastSyncTime = parseInt(s._updated || '0');
 		}
 	});
+
+	function addMenuItem(target: 'header' | 'footer') {
+		const newItem = { label: 'New Link', url: '/' };
+		if (target === 'header') {
+			headerMenuItems = [...headerMenuItems, newItem];
+			markEdited('header_menu');
+		} else {
+			footerMenuItems = [...footerMenuItems, newItem];
+			markEdited('footer_menu');
+		}
+	}
+
+	function removeMenuItem(target: 'header' | 'footer', index: number) {
+		if (target === 'header') {
+			headerMenuItems = headerMenuItems.filter((_, i) => i !== index);
+			markEdited('header_menu');
+		} else {
+			footerMenuItems = footerMenuItems.filter((_, i) => i !== index);
+			markEdited('footer_menu');
+		}
+	}
+
+	function moveMenuItem(target: 'header' | 'footer', index: number, direction: 'up' | 'down') {
+		const items = target === 'header' ? [...headerMenuItems] : [...footerMenuItems];
+		const newIndex = direction === 'up' ? index - 1 : index + 1;
+
+		if (newIndex >= 0 && newIndex < items.length) {
+			[items[index], items[newIndex]] = [items[newIndex], items[index]];
+			if (target === 'header') {
+				headerMenuItems = items;
+				markEdited('header_menu');
+			} else {
+				footerMenuItems = items;
+				markEdited('footer_menu');
+			}
+		}
+	}
 
 	onMount(() => {
 		refreshSettings();
@@ -76,6 +129,18 @@
 					accentColor = s.accent_color || '#00CC99';
 					siteLanguage = s.site_language || 'ja';
 					siteIconUrl = s.site_icon_url || '';
+					
+					try {
+						headerMenuItems = JSON.parse(s.header_menu || '[]');
+					} catch (e) {
+						headerMenuItems = [{ label: 'Home', url: '/' }];
+					}
+					try {
+						footerMenuItems = JSON.parse(s.footer_menu || '[]');
+					} catch (e) {
+						footerMenuItems = [{ label: 'Home', url: '/' }];
+					}
+					
 					lastSyncTime = newTime;
 				}
 			}
@@ -175,6 +240,8 @@
 				'bg_secondary_dark',
 				'card_bg_light',
 				'card_bg_dark',
+				'header_menu',
+				'footer_menu',
 				'is_site_public',
 				'custom_css',
 				'site_icon_url',
@@ -207,7 +274,11 @@
 			];
 
 			for (const key of allKeys) {
-				const val = fd.get(key);
+				let val = fd.get(key);
+				
+				if (key === 'header_menu') val = JSON.stringify(headerMenuItems);
+				else if (key === 'footer_menu') val = JSON.stringify(footerMenuItems);
+				
 				if (key === 'is_site_public') updates[key] = val === 'on' ? 'false' : 'true';
 				else if (checkboxKeys.includes(key)) updates[key] = val === 'on' ? 'true' : 'false';
 				else if (val !== null) updates[key] = val.toString();
@@ -489,6 +560,178 @@
 									class="w-full h-12 rounded-xl cursor-pointer bg-transparent"
 								/>
 							</div>
+						</div>
+					</div>
+				</div>
+			</section>
+
+			<section class="card-dashboard p-10 space-y-8">
+				<div>
+					<h3 class="text-2xl font-black text-psan-green italic uppercase tracking-tighter">
+						Navigation Menus
+					</h3>
+					<p class="text-xs text-muted font-bold mt-1">Manage links in your header and footer.</p>
+				</div>
+				<div class="grid md:grid-cols-2 gap-8">
+					<div class="space-y-6">
+						<div class="flex items-center justify-between">
+							<h4 class="text-[10px] font-black text-psan-green uppercase tracking-widest">
+								Header Menu
+							</h4>
+							<button
+								type="button"
+								onclick={() => addMenuItem('header')}
+								class="btn-action-sm flex items-center gap-1"
+							>
+								Add Link
+							</button>
+						</div>
+						<div class="space-y-3">
+							{#each headerMenuItems as item, i}
+								<div class="flex gap-2 items-center group">
+									<div class="flex flex-col gap-1">
+										<button
+											type="button"
+											onclick={() => moveMenuItem('header', i, 'up')}
+											class="p-1 text-slate-400 hover:text-psan-green disabled:opacity-30"
+											disabled={i === 0}
+										>
+											<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+												><path
+													stroke-linecap="round"
+													stroke-linejoin="round"
+													stroke-width="2"
+													d="M5 15l7-7 7 7"
+												/></svg
+											>
+										</button>
+										<button
+											type="button"
+											onclick={() => moveMenuItem('header', i, 'down')}
+											class="p-1 text-slate-400 hover:text-psan-green disabled:opacity-30"
+											disabled={i === headerMenuItems.length - 1}
+										>
+											<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+												><path
+													stroke-linecap="round"
+													stroke-linejoin="round"
+													stroke-width="2"
+													d="M19 9l-7 7-7-7"
+												/></svg
+											>
+										</button>
+									</div>
+									<div class="flex-1 grid grid-cols-2 gap-2">
+										<input
+											bind:value={item.label}
+											oninput={() => markEdited('header_menu')}
+											class="bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700 rounded-xl p-3 text-xs font-bold text-main"
+											placeholder="Label"
+										/>
+										<input
+											bind:value={item.url}
+											oninput={() => markEdited('header_menu')}
+											class="bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700 rounded-xl p-3 text-xs font-mono text-muted"
+											placeholder="/url"
+										/>
+									</div>
+									<button
+										type="button"
+										onclick={() => removeMenuItem('header', i)}
+										class="p-2 text-slate-400 hover:text-psan-pink transition-colors"
+									>
+										<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+											><path
+												stroke-linecap="round"
+												stroke-linejoin="round"
+												stroke-width="2"
+												d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+											/></svg
+										>
+									</button>
+								</div>
+							{/each}
+						</div>
+					</div>
+
+					<div class="space-y-6">
+						<div class="flex items-center justify-between">
+							<h4 class="text-[10px] font-black text-psan-pink uppercase tracking-widest">
+								Footer Menu
+							</h4>
+							<button
+								type="button"
+								onclick={() => addMenuItem('footer')}
+								class="btn-action-sm flex items-center gap-1"
+							>
+								Add Link
+							</button>
+						</div>
+						<div class="space-y-3">
+							{#each footerMenuItems as item, i}
+								<div class="flex gap-2 items-center group">
+									<div class="flex flex-col gap-1">
+										<button
+											type="button"
+											onclick={() => moveMenuItem('footer', i, 'up')}
+											class="p-1 text-slate-400 hover:text-psan-green disabled:opacity-30"
+											disabled={i === 0}
+										>
+											<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+												><path
+													stroke-linecap="round"
+													stroke-linejoin="round"
+													stroke-width="2"
+													d="M5 15l7-7 7 7"
+												/></svg
+											>
+										</button>
+										<button
+											type="button"
+											onclick={() => moveMenuItem('footer', i, 'down')}
+											class="p-1 text-slate-400 hover:text-psan-green disabled:opacity-30"
+											disabled={i === footerMenuItems.length - 1}
+										>
+											<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+												><path
+													stroke-linecap="round"
+													stroke-linejoin="round"
+													stroke-width="2"
+													d="M19 9l-7 7-7-7"
+												/></svg
+											>
+										</button>
+									</div>
+									<div class="flex-1 grid grid-cols-2 gap-2">
+										<input
+											bind:value={item.label}
+											oninput={() => markEdited('footer_menu')}
+											class="bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700 rounded-xl p-3 text-xs font-bold text-main"
+											placeholder="Label"
+										/>
+										<input
+											bind:value={item.url}
+											oninput={() => markEdited('footer_menu')}
+											class="bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700 rounded-xl p-3 text-xs font-mono text-muted"
+											placeholder="/url"
+										/>
+									</div>
+									<button
+										type="button"
+										onclick={() => removeMenuItem('footer', i)}
+										class="p-2 text-slate-400 hover:text-psan-pink transition-colors"
+									>
+										<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+											><path
+												stroke-linecap="round"
+												stroke-linejoin="round"
+												stroke-width="2"
+												d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+											/></svg
+										>
+									</button>
+								</div>
+							{/each}
 						</div>
 					</div>
 				</div>

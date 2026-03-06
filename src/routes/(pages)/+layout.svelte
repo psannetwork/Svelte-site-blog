@@ -30,6 +30,43 @@
 		page.url.pathname;
 		if (data.user) checkNotifications();
 	});
+
+	// メニュー項目のパース（安全に）
+	let headerMenu = $state<{ label: string; url: string }[]>([]);
+	let footerMenu = $state<{ label: string; url: string }[]>([]);
+
+	$effect(() => {
+		try {
+			headerMenu = JSON.parse(
+				data.settings?.header_menu ||
+					JSON.stringify([
+						{ label: 'Home', url: '/' },
+						{ label: 'About', url: '/about' }
+					])
+			);
+		} catch (e) {
+			headerMenu = [
+				{ label: 'Home', url: '/' },
+				{ label: 'About', url: '/about' }
+			];
+		}
+		try {
+			footerMenu = JSON.parse(
+				data.settings?.footer_menu ||
+					JSON.stringify([
+						{ label: 'Home', url: '/' },
+						{ label: 'About', url: '/about' },
+						{ label: 'Privacy', url: '/privacy' }
+					])
+			);
+		} catch (e) {
+			footerMenu = [
+				{ label: 'Home', url: '/' },
+				{ label: 'About', url: '/about' },
+				{ label: 'Privacy', url: '/privacy' }
+			];
+		}
+	});
 </script>
 
 <svelte:head></svelte:head>
@@ -48,19 +85,15 @@
 			<div
 				class="hidden md:flex items-center gap-8 text-xs font-black opacity-70 uppercase tracking-widest"
 			>
-				<a
-					href="/"
-					class="hover:text-psan-green hover:opacity-100 transition-all {page.url.pathname === '/'
-						? 'opacity-100 text-psan-green'
-						: ''}">Home</a
-				>
-				<a
-					href="/about"
-					class="hover:text-psan-green hover:opacity-100 transition-all {page.url.pathname ===
-					'/about'
-						? 'opacity-100 text-psan-green'
-						: ''}">About</a
-				>
+				{#each headerMenu as item}
+					<a
+						href={item.url}
+						class="hover:text-psan-green hover:opacity-100 transition-all {page.url.pathname ===
+						item.url
+							? 'opacity-100 text-psan-green'
+							: ''}">{item.label}</a
+					>
+				{/each}
 			</div>
 		</div>
 
@@ -144,8 +177,9 @@
 		<div
 			class="md:hidden bg-white/95 dark:bg-slate-900/95 backdrop-blur-2xl border-b border-[--border-color] p-6 space-y-6 absolute top-20 left-0 w-full z-50 shadow-2xl"
 		>
-			<a href="/" class="block font-black text-xl">HOME</a>
-			<a href="/about" class="block font-black text-xl">ABOUT</a>
+			{#each headerMenu as item}
+				<a href={item.url} class="block font-black text-xl">{item.label}</a>
+			{/each}
 			<hr class="opacity-10" />
 			{#if data.user}
 				<a href="/account" class="block font-black">ACCOUNT</a>
@@ -186,9 +220,15 @@
 		<div
 			class="flex flex-wrap justify-center gap-10 text-[10px] font-black tracking-[0.2em] uppercase"
 		>
-			<a href="/" class="text-main hover:text-psan-green transition-colors">Home</a>
-			<a href="/about" class="text-main hover:text-psan-green transition-colors">About</a>
-			<a href="/privacy" class="text-main hover:text-psan-green transition-colors">Privacy</a>
+			{#each footerMenu as item}
+				<a
+					href={item.url}
+					class="text-main hover:text-psan-green transition-colors {page.url.pathname ===
+					item.url
+						? 'text-psan-green'
+						: ''}">{item.label}</a
+				>
+			{/each}
 		</div>
 	</div>
 </footer>
