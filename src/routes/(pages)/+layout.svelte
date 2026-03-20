@@ -5,6 +5,8 @@
 	let { children, data } = $props();
 	let isMenuOpen = $state(false);
 	let hasUnreadNotifications = $state(false);
+	let isSearchOpen = $state(false);
+	let searchQuery = $state('');
 
 	async function checkNotifications() {
 		if (!data.user) return;
@@ -67,6 +69,28 @@
 			];
 		}
 	});
+
+	function handleSearch(e: Event) {
+		e.preventDefault();
+		if (searchQuery.trim()) {
+			window.location.href = `/?search=${encodeURIComponent(searchQuery.trim())}`;
+		}
+		isSearchOpen = false;
+		searchQuery = '';
+	}
+
+	// URL から検索クエリを取得して保持
+	$effect(() => {
+		const params = new URLSearchParams(page.url.search);
+		const search = params.get('search');
+		if (search) {
+			searchQuery = search;
+			isSearchOpen = true;
+		} else {
+			searchQuery = '';
+			isSearchOpen = false;
+		}
+	});
 </script>
 
 <svelte:head></svelte:head>
@@ -97,7 +121,52 @@
 			</div>
 		</div>
 
-		<div class="flex items-center gap-4">
+		<div class="flex items-center gap-2 md:gap-4">
+			<!-- 検索機能 -->
+			{#if isSearchOpen}
+				<form
+					onsubmit={handleSearch}
+					class="absolute top-0 left-0 w-full h-20 bg-[--bg-main] flex items-center gap-2 px-4 md:px-8 z-50"
+				>
+					<input
+						type="text"
+						bind:value={searchQuery}
+						placeholder="Search articles..."
+						class="flex-1 bg-secondary dark:bg-slate-800 border-none rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-psan-green outline-none"
+					/>
+					<button
+						type="submit"
+						class="btn-psan-primary py-2 px-4 text-xs shrink-0"
+					>
+						Search
+					</button>
+					<button
+						type="button"
+						onclick={() => {
+							isSearchOpen = false;
+							searchQuery = '';
+							window.history.pushState({}, '', '/');
+						}}
+						class="p-2 text-muted hover:text-psan-pink shrink-0"
+						aria-label="検索を閉じる"
+					>
+						<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+							><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg
+						>
+					</button>
+				</form>
+			{/if}
+			
+			<button
+				onclick={() => (isSearchOpen = !isSearchOpen)}
+				class="p-3 rounded-2xl bg-slate-100 dark:bg-slate-800 hover:scale-110 transition-all text-slate-600 dark:text-slate-300"
+				aria-label="検索"
+			>
+				<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+					><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg
+				>
+			</button>
+
 			<button
 				onclick={() => theme.toggle()}
 				class="p-3 rounded-2xl bg-slate-100 dark:bg-slate-800 hover:scale-110 transition-all text-slate-600 dark:text-yellow-400"
@@ -175,26 +244,30 @@
 
 	{#if isMenuOpen}
 		<div
-			class="md:hidden bg-white/95 dark:bg-slate-900/95 backdrop-blur-2xl border-b border-[--border-color] p-6 space-y-6 absolute top-20 left-0 w-full z-50 shadow-2xl"
+			class="md:hidden bg-[--bg-main]/98 dark:bg-slate-900/98 backdrop-blur-2xl border-b border-[--border-color] p-6 space-y-6 fixed top-20 left-0 w-full z-40 shadow-2xl max-h-[calc(100vh-5rem)] overflow-y-auto"
 		>
-			{#each headerMenu as item}
-				<a href={item.url} class="block font-black text-xl">{item.label}</a>
-			{/each}
-			<hr class="opacity-10" />
+			<div class="flex flex-col gap-4">
+				{#each headerMenu as item}
+					<a href={item.url} class="block font-black text-lg py-2 hover:text-psan-green transition-colors">{item.label}</a>
+				{/each}
+			</div>
+			<hr class="opacity-10 my-4" />
+			<div class="flex flex-col gap-4">
 			{#if data.user}
-				<a href="/account" class="block font-black">ACCOUNT</a>
+				<a href="/account" class="block font-black text-lg py-2">ACCOUNT</a>
 				{#if ['admin', 'editor', 'author'].includes(data.user.role)}
-					<a href="/dashboard" class="block font-black text-psan-green">DASHBOARD</a>
+					<a href="/dashboard" class="block font-black text-lg py-2 text-psan-green">DASHBOARD</a>
 				{/if}
 				<form action="/auth/logout" method="POST">
-					<button class="font-black text-psan-pink">LOGOUT</button>
+					<button class="font-black text-lg text-psan-pink py-2">LOGOUT</button>
 				</form>
 			{:else}
-				<a href="/auth/login" class="block font-black">LOGIN</a>
+				<a href="/auth/login" class="block font-black text-lg py-2">LOGIN</a>
 				{#if String(data.settings?.allow_signup) === 'true'}
-					<a href="/auth/register" class="block font-black text-psan-green">SIGN UP</a>
+					<a href="/auth/register" class="block font-black text-lg py-2 text-psan-green">SIGN UP</a>
 				{/if}
 			{/if}
+			</div>
 		</div>
 	{/if}
 </header>

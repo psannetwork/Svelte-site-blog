@@ -10,11 +10,29 @@ export const load: LayoutServerLoad = async ({ locals, depends }) => {
 
 	const settings = getSettings();
 
-	const error404 = db.prepare("SELECT raw_json FROM pages WHERE id = 'error404'").get() as any;
-	const error500 = db.prepare("SELECT raw_json FROM pages WHERE id = 'error500'").get() as any;
+	// pages テーブルからエラーページを取得（DB 優先）
+	const error404Page = db.prepare("SELECT content, raw_json FROM pages WHERE id = 'error404'").get() as any;
+	const error500Page = db.prepare("SELECT content, raw_json FROM pages WHERE id = 'error500'").get() as any;
 
-	const error404Html = editorJsToHtml(JSON.parse(error404?.raw_json || '{"blocks":[]}').blocks);
-	const error500Html = editorJsToHtml(JSON.parse(error500?.raw_json || '{"blocks":[]}').blocks);
+	// content (HTML) があれば優先、なければ raw_json から変換
+	const getHtmlFromPage = (page: any, pageName: string): string => {
+		if (!page) return '';
+		if (page.content) return page.content;
+		if (page.raw_json) {
+			try {
+				const parsed = JSON.parse(page.raw_json);
+				if (parsed && parsed.blocks) {
+					return editorJsToHtml(parsed.blocks);
+				}
+			} catch (e) {
+				console.error(`[${pageName} LOAD ERROR] JSON parse failed:`, e);
+			}
+		}
+		return '';
+	};
+
+	const error404Html = getHtmlFromPage(error404Page, 'ERROR404');
+	const error500Html = getHtmlFromPage(error500Page, 'ERROR500');
 
 	return {
 		user: locals.user,

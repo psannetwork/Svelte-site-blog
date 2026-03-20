@@ -11,6 +11,7 @@
   let title = $state('');
   let editorHtml = $state('');
   let isSaving = $state(false);
+  let showPreview = $state(false);
 
   $effect(() => {
     if (data.page && title === '') {
@@ -45,6 +46,10 @@
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
       e.preventDefault();
       submitForm();
+    }
+    // Escape キーでプレビューを閉じる
+    if (e.key === 'Escape' && showPreview) {
+      showPreview = false;
     }
   }
 
@@ -95,7 +100,7 @@
         >
         <button
           type="button"
-          onclick={() => console.log('preview')}
+          onclick={() => (showPreview = true)}
           class="btn-psan-ghost text-xs py-2 border-psan-green text-psan-green hover:bg-psan-green hover:text-psan-green-fg transition-all min-w-[100px]"
         >
           Preview
@@ -127,6 +132,37 @@
 
     <input type="hidden" name="content" value={editorHtml} />
   </form>
+
+  <!-- プレビューモーダル -->
+  {#if showPreview}
+    <div
+      class="fixed inset-0 bg-black/50 backdrop-blur-sm z-[9999] flex items-center justify-center p-4 md:p-8"
+      onclick={() => (showPreview = false)}
+    >
+      <div
+        class="bg-[--bg-main] w-full max-w-4xl h-[90vh] rounded-3xl shadow-2xl overflow-hidden flex flex-col"
+        onclick={(e) => e.stopPropagation()}
+      >
+        <div class="flex items-center justify-between p-6 border-b border-[--border-color]">
+          <h3 class="text-xl font-black uppercase tracking-tighter">Preview: {title}</h3>
+          <button
+            onclick={() => (showPreview = false)}
+            class="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-psan-pink hover:text-white transition-all"
+            aria-label="プレビューを閉じる"
+          >
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+              ><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg
+            >
+          </button>
+        </div>
+        <div class="flex-1 overflow-y-auto p-8 md:p-12">
+          <article class="prose prose-slate prose-lg dark:prose-invert max-w-none">
+            {@html editorHtml}
+          </article>
+        </div>
+      </div>
+    </div>
+  {/if}
 </div>
 
 

@@ -551,6 +551,42 @@ xy-color-picker {
 	color: #e2e8f0 !important;
 }
 
+/* 追加：その他の暗い色の反転 */
+.dark .prose [style*="color: rgb(30, 41, 59)"],
+.dark .prose [style*="color:#1e293b"],
+.dark .prose [style*="color: #1e293b"],
+.dark .prose [style*="color:rgb(30,41,59)"] {
+	color: #cbd5e1 !important;
+}
+
+.dark .prose [style*="color: rgb(71, 85, 105)"],
+.dark .prose [style*="color:#475569"],
+.dark .prose [style*="color: #475569"],
+.dark .prose [style*="color:rgb(71,85,105)"] {
+	color: #94a3b8 !important;
+}
+
+/* 16 進数の短い表記にも対応 */
+.dark .prose [style*="color:#000"],
+.dark .prose [style*="color: #000 "] {
+	color: #ffffff !important;
+}
+
+.dark .prose [style*="color:#111"],
+.dark .prose [style*="color: #111 "] {
+	color: #f1f5f9 !important;
+}
+
+.dark .prose [style*="color:#222"],
+.dark .prose [style*="color: #222 "] {
+	color: #e2e8f0 !important;
+}
+
+.dark .prose [style*="color:#333"],
+.dark .prose [style*="color: #333 "] {
+	color: #cbd5e1 !important;
+}
+
 /* 公開ページの見出しスタイル - 親から継承 */
 .prose h1,
 .prose h2,

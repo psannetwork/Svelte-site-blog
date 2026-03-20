@@ -27,9 +27,35 @@
 		border-color: var(--border-color);
 	}
 
+	/* 入力フォームの可読性向上 */
+	input,
+	textarea,
+	select {
+		@apply bg-white dark:bg-[#1e293b] text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500;
+	}
+
 	.dark select,
 	.dark input,
 	.dark textarea {
 		@apply bg-[#1e293b] border-slate-600 text-white focus:border-psan-green focus:ring-1 focus:ring-psan-green outline-none;
+	}
+
+	/* モバイル対応 */
+	@media (max-width: 768px) {
+		body {
+			font-size: 14px;
+		}
+		
+		h1 {
+			font-size: 2rem;
+		}
+		
+		h2 {
+			font-size: 1.75rem;
+		}
+		
+		h3 {
+			font-size: 1.5rem;
+		}
 	}
 }
