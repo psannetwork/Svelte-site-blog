@@ -124,53 +124,82 @@ export function computeFinalColor(
 }
 
 /**
+ * インラインスタイルの色を HEX に変換
+ */
+function inlineColorToHex(color: string): string | null {
+	if (!color) return null;
+	
+	// HEX 形式
+	if (color.startsWith('#')) {
+		return color.length === 4 ? `#${color[1]}${color[1]}${color[2]}${color[2]}${color[3]}${color[3]}` : color;
+	}
+	
+	// RGB/RGBA 形式
+	const rgbMatch = color.match(/^rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/);
+	if (rgbMatch) {
+		const r = parseInt(rgbMatch[1]);
+		const g = parseInt(rgbMatch[2]);
+		const b = parseInt(rgbMatch[3]);
+		return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+	}
+	
+	return null;
+}
+
+/**
+ * 色が暗い色かどうかを判定（明度 50% 未満）
+ */
+function isDarkColor(hex: string): boolean {
+	const hsl = hexToHsl(hex);
+	return hsl.l < 50;
+}
+
+/**
+ * 暗い色を明るい色に変換
+ */
+function invertDarkColor(hex: string): string {
+	const hsl = hexToHsl(hex);
+	// 明度を反転（暗い→明るい）
+	return hslToHex({
+		h: hsl.h,
+		s: Math.min(hsl.s, 70),
+		l: Math.min(90, Math.max(100 - hsl.l, 30))
+	});
+}
+
+/**
  * 要素に色を適用する
  * @param el - 対象要素
  * @param isDark - ダークモードかどうか
  */
 export function applyColorToElement(el: HTMLElement, isDark: boolean): void {
-	let baseColor = el.getAttribute('data-color');
-	const mode = (el.getAttribute('data-color-mode') as 'auto' | 'fixed') || 'auto';
-
 	// code / pre は適用除外
 	if (el.closest('code, pre')) return;
 
 	// contenteditable 内（編集中）は適用除外 - 編集体験を損なわない
 	if (el.closest('[contenteditable="true"]')) return;
 
-	// data-color 属性がない場合はインラインスタイルから取得
+	const mode = (el.getAttribute('data-color-mode') as 'auto' | 'fixed') || 'auto';
+	
+	// fixed モードまたはライトモードならそのまま
+	if (mode === 'fixed' || !isDark) return;
+
+	// data-color 属性がある場合はそれを使用
+	let baseColor = el.getAttribute('data-color');
+	
+	// data-color がない場合はインラインスタイルから取得
 	if (!baseColor) {
 		const inlineColor = el.style.color;
-		if (!inlineColor) return;
-		// RGB 形式の場合は HEX に変換
-		if (inlineColor.startsWith('rgb')) {
-			baseColor = rgbToHex(inlineColor);
-		} else if (inlineColor.startsWith('#')) {
-			baseColor = inlineColor;
-		} else {
-			return;
-		}
+		baseColor = inlineColorToHex(inlineColor);
 	}
+	
+	if (!baseColor) return;
 
-	const finalColor = computeFinalColor(baseColor, mode, isDark);
-	el.style.setProperty('color', finalColor, 'important');
-}
-
-/**
- * RGB → HEX 変換
- */
-function rgbToHex(rgb: string): string {
-	// rgb(...) または rgba(...) 形式
-	const match = rgb.match(/^rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/);
-	if (!match) return '#000000';
-	const r = parseInt(match[1]);
-	const g = parseInt(match[2]);
-	const b = parseInt(match[3]);
-	return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
-}
-
-function toHex(v: number): string {
-	return v.toString(16).padStart(2, '0');
+	// 暗い色（黒系）のみを明るい色に変換
+	if (isDarkColor(baseColor)) {
+		const finalColor = invertDarkColor(baseColor);
+		el.style.setProperty('color', finalColor, 'important');
+	}
 }
 
 /**
@@ -179,8 +208,15 @@ function toHex(v: number): string {
  * @param isDark - ダークモードかどうか
  */
 export function applyColors(container: HTMLElement, isDark: boolean): void {
+	// data-color 属性付き要素
 	const elements = container.querySelectorAll('[data-color]');
 	elements.forEach((el) => {
+		applyColorToElement(el as HTMLElement, isDark);
+	});
+	
+	// インラインスタイルで色が設定された要素も処理
+	const inlineElements = container.querySelectorAll('[style*="color"]');
+	inlineElements.forEach((el) => {
 		applyColorToElement(el as HTMLElement, isDark);
 	});
 }

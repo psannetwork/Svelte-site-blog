@@ -73,9 +73,9 @@
 	function handleSearch(e: Event) {
 		e.preventDefault();
 		if (searchQuery.trim()) {
+			isSearchOpen = false;
 			window.location.href = `/?search=${encodeURIComponent(searchQuery.trim())}`;
 		}
-		isSearchOpen = false;
 		searchQuery = '';
 	}
 
@@ -122,49 +122,15 @@
 		</div>
 
 		<div class="flex items-center gap-2 md:gap-4">
-			<!-- 検索機能 -->
-			{#if isSearchOpen}
-				<form
-					onsubmit={handleSearch}
-					class="absolute top-0 left-0 w-full h-20 bg-[--bg-main] flex items-center gap-2 px-4 md:px-8 z-50"
-				>
-					<input
-						type="text"
-						bind:value={searchQuery}
-						placeholder="Search articles..."
-						class="flex-1 bg-secondary dark:bg-slate-800 border-none rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-psan-green outline-none"
-					/>
-					<button
-						type="submit"
-						class="btn-psan-primary py-2 px-4 text-xs shrink-0"
-					>
-						Search
-					</button>
-					<button
-						type="button"
-						onclick={() => {
-							isSearchOpen = false;
-							searchQuery = '';
-							window.history.pushState({}, '', '/');
-						}}
-						class="p-2 text-muted hover:text-psan-pink shrink-0"
-						aria-label="検索を閉じる"
-					>
-						<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"
-							><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg
-						>
-					</button>
-				</form>
-			{/if}
-			
 			<button
 				onclick={() => (isSearchOpen = !isSearchOpen)}
-				class="p-3 rounded-2xl bg-slate-100 dark:bg-slate-800 hover:scale-110 transition-all text-slate-600 dark:text-slate-300"
+				class="relative p-3 rounded-2xl bg-slate-100 dark:bg-slate-800 hover:scale-110 transition-all text-slate-600 dark:text-slate-300 hover:bg-psan-green hover:text-white group"
 				aria-label="検索"
 			>
-				<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+				<svg class="w-5 h-5 transition-transform group-hover:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24"
 					><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg
 				>
+				<span class="absolute -top-1 -right-1 w-2.5 h-2.5 bg-psan-pink rounded-full border-2 border-[--bg-main]"></span>
 			</button>
 
 			<button
@@ -271,6 +237,76 @@
 		</div>
 	{/if}
 </header>
+
+<!-- 検索モーダル (ヘッダーの外に配置) -->
+{#if isSearchOpen}
+	<div
+		class="fixed inset-0 bg-black/30 dark:bg-black/70 backdrop-blur-md z-[200] flex items-center justify-center p-4 animate-in fade-in duration-200"
+		onclick={() => {
+			isSearchOpen = false;
+			searchQuery = '';
+			window.history.pushState({}, '', '/');
+		}}
+	>
+		<form
+			onsubmit={(e) => {
+				e.preventDefault();
+				const query = searchQuery.trim();
+				if (query) {
+					isSearchOpen = false;
+					window.location.href = `/?search=${encodeURIComponent(query)}`;
+				}
+			}}
+			class="w-full max-w-3xl bg-[--bg-main] rounded-[2rem] shadow-2xl overflow-hidden transform transition-all translate-y-0"
+			onclick={(e) => e.stopPropagation()}
+		>
+			<div class="flex items-center justify-between gap-4 p-4 md:p-6 border-b border-[--border-color] bg-gradient-to-r from-psan-green/10 to-transparent dark:from-psan-green/5">
+				<div class="flex items-center gap-4 flex-1">
+					<svg class="w-6 h-6 md:w-8 md:h-8 text-psan-green shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+						><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg
+					>
+					<input
+						type="text"
+						bind:value={searchQuery}
+						placeholder="記事を検索..."
+						class="flex-1 bg-transparent border-none text-lg md:text-xl font-bold focus:ring-0 p-0 text-main placeholder:text-muted/40 outline-none"
+						autoFocus
+					/>
+				</div>
+				<button
+					type="submit"
+					class="btn-psan-primary py-3 px-6 md:px-8 text-sm md:text-base shrink-0 rounded-2xl shadow-lg"
+				>
+					検索
+				</button>
+				<button
+					type="button"
+					onclick={() => {
+						isSearchOpen = false;
+						searchQuery = '';
+						window.history.pushState({}, '', '/');
+					}}
+					class="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-all text-muted hover:text-psan-pink shrink-0"
+					aria-label="閉じる"
+				>
+					<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+						><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg
+					>
+				</button>
+			</div>
+			<div class="p-4 md:p-6 bg-slate-50 dark:bg-slate-900/50">
+				<div class="flex flex-wrap items-center gap-2">
+					<span class="text-[10px] font-black text-muted uppercase tracking-widest">🔥 人気タグ:</span>
+					<button type="button" onclick={() => { isSearchOpen = false; window.location.href = '/?search=技術'; }} class="px-3 py-1.5 bg-white dark:bg-slate-800 rounded-full text-xs font-bold hover:bg-psan-green hover:text-white transition-all shadow-sm">技術</button>
+					<button type="button" onclick={() => { isSearchOpen = false; window.location.href = '/?search=デザイン'; }} class="px-3 py-1.5 bg-white dark:bg-slate-800 rounded-full text-xs font-bold hover:bg-psan-green hover:text-white transition-all shadow-sm">デザイン</button>
+					<button type="button" onclick={() => { isSearchOpen = false; window.location.href = '/?search=チュートリアル'; }} class="px-3 py-1.5 bg-white dark:bg-slate-800 rounded-full text-xs font-bold hover:bg-psan-green hover:text-white transition-all shadow-sm">チュートリアル</button>
+					<button type="button" onclick={() => { isSearchOpen = false; window.location.href = '/?search=Svelte'; }} class="px-3 py-1.5 bg-white dark:bg-slate-800 rounded-full text-xs font-bold hover:bg-psan-green hover:text-white transition-all shadow-sm">Svelte</button>
+					<button type="button" onclick={() => { isSearchOpen = false; window.location.href = '/?search=UI'; }} class="px-3 py-1.5 bg-white dark:bg-slate-800 rounded-full text-xs font-bold hover:bg-psan-green hover:text-white transition-all shadow-sm">UI</button>
+				</div>
+			</div>
+		</form>
+	</div>
+{/if}
 
 <main class="flex-grow">
 	{@render children()}

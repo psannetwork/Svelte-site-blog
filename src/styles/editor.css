@@ -587,6 +587,75 @@ xy-color-picker {
 	color: #cbd5e1 !important;
 }
 
+/* 追加：RGB 表記のバリエーション */
+.dark .prose [style*="color:rgb(0,0,0)"],
+.dark .prose [style*="color: rgb(0,0,0)"],
+.dark .prose [style*="color:rgb( 0, 0, 0 )"] {
+	color: #ffffff !important;
+}
+
+.dark .prose [style*="color:rgb(17,17,17)"],
+.dark .prose [style*="color: rgb(17,17,17)"],
+.dark .prose [style*="color:rgb( 17, 17, 17 )"] {
+	color: #f1f5f9 !important;
+}
+
+.dark .prose [style*="color:rgb(34,34,34)"],
+.dark .prose [style*="color: rgb(34,34,34)"],
+.dark .prose [style*="color:rgb( 34, 34, 34 )"] {
+	color: #e2e8f0 !important;
+}
+
+.dark .prose [style*="color:rgb(51,51,51)"],
+.dark .prose [style*="color: rgb(51,51,51)"],
+.dark .prose [style*="color:rgb( 51, 51, 51 )"] {
+	color: #cbd5e1 !important;
+}
+
+/* 追加：濃い灰色系 (0x20-0x50) */
+.dark .prose [style*="color:rgb(32,32,32)"],
+.dark .prose [style*="color: rgb(32,32,32)"],
+.dark .prose [style*="color:#202020"],
+.dark .prose [style*="color: #202020"] {
+	color: #d1d5db !important;
+}
+
+.dark .prose [style*="color:rgb(48,48,48)"],
+.dark .prose [style*="color: rgb(48,48,48)"],
+.dark .prose [style*="color:#303030"],
+.dark .prose [style*="color: #303030"] {
+	color: #cbd5e1 !important;
+}
+
+.dark .prose [style*="color:rgb(64,64,64)"],
+.dark .prose [style*="color: rgb(64,64,64)"],
+.dark .prose [style*="color:#404040"],
+.dark .prose [style*="color: #404040"] {
+	color: #94a3b8 !important;
+}
+
+.dark .prose [style*="color:rgb(80,80,80)"],
+.dark .prose [style*="color: rgb(80,80,80)"],
+.dark .prose [style*="color:#505050"],
+.dark .prose [style*="color: #505050"] {
+	color: #64748b !important;
+}
+
+/* data-color-mode="auto" が設定された要素は必ず反転 */
+.dark .prose [data-color-mode="auto"][style*="color"] {
+	color: #ffffff !important;
+}
+
+.dark .prose [data-color-mode="auto"][style*="color: rgb"],
+.dark .prose [data-color-mode="auto"][style*="color:#"] {
+	/* JavaScript で個別に計算 */
+}
+
+/* 固定モードの要素は色を維持 */
+.dark .prose [data-color-mode="fixed"][style*="color"] {
+	/* 何もしない - 元の色を維持 */
+}
+
 /* 公開ページの見出しスタイル - 親から継承 */
 .prose h1,
 .prose h2,
@@ -821,4 +890,612 @@ xy-color-picker {
 	text-transform: uppercase !important;
 	letter-spacing: 0.1em !important;
 	color: inherit !important;
+}
+
+/* ========================================
+   新規追加：エディタ機能拡張スタイル
+   ======================================== */
+
+/* タスクリスト（チェックリスト） */
+.task-list-item {
+	display: flex;
+	align-items: center;
+	gap: 0.75rem;
+	margin: 0.75rem 0;
+	padding: 0.5rem 0;
+}
+
+.task-list-item input[type="checkbox"] {
+	width: 1.25rem;
+	height: 1.25rem;
+	cursor: pointer;
+	flex-shrink: 0;
+}
+
+.task-list-item span {
+	flex: 1;
+}
+
+/* コールアウトボックス */
+.callout {
+	padding: 1.5rem 1.5rem 1.5rem 3rem;
+	border-radius: 1rem;
+	margin: 2rem 0;
+	position: relative;
+	border-left: 4px solid;
+}
+
+.callout strong {
+	display: block;
+	margin-bottom: 0.5rem;
+	font-weight: 900;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+	font-size: 0.875rem;
+}
+
+.callout p {
+	margin: 0;
+	line-height: 1.7;
+}
+
+.callout-info {
+	background: rgba(59, 130, 246, 0.1);
+	border-left-color: #3b82f6;
+}
+
+.callout-info strong {
+	color: #3b82f6;
+}
+
+.callout-warning {
+	background: rgba(245, 158, 11, 0.1);
+	border-left-color: #f59e0b;
+}
+
+.callout-warning strong {
+	color: #f59e0b;
+}
+
+.callout-success {
+	background: rgba(34, 197, 94, 0.1);
+	border-left-color: #22c55e;
+}
+
+.callout-success strong {
+	color: #22c55e;
+}
+
+/* ダークモード対応 */
+.dark .callout-info {
+	background: rgba(59, 130, 246, 0.15);
+}
+
+.dark .callout-warning {
+	background: rgba(245, 158, 11, 0.15);
+}
+
+.dark .callout-success {
+	background: rgba(34, 197, 94, 0.15);
+}
+
+/* ボタン */
+.editor-button {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	padding: 0.875rem 2rem;
+	background: var(--psan-green);
+	color: var(--psan-green-fg, #ffffff);
+	font-weight: 700;
+	text-decoration: none;
+	border-radius: 2rem;
+	transition: all 0.2s ease;
+	box-shadow: 0 4px 14px -3px rgba(0, 204, 153, 0.4);
+	margin: 1rem 0;
+}
+
+.editor-button:hover {
+	transform: translateY(-2px);
+	box-shadow: 0 6px 20px -3px rgba(0, 204, 153, 0.5);
+	filter: brightness(1.1);
+}
+
+/* アコーディオン */
+.accordion {
+	border: 1px solid var(--border-color);
+	border-radius: 1rem;
+	margin: 1.5rem 0;
+	overflow: hidden;
+}
+
+.accordion summary {
+	padding: 1rem 1.5rem;
+	background: var(--bg-secondary);
+	font-weight: 700;
+	cursor: pointer;
+	list-style: none;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	transition: background 0.2s ease;
+}
+
+.accordion summary:hover {
+	background: var(--bg-secondary);
+	filter: brightness(0.95);
+}
+
+.accordion summary::-webkit-details-marker {
+	display: none;
+}
+
+.accordion summary::after {
+	content: '+';
+	font-size: 1.5rem;
+	font-weight: 300;
+	transition: transform 0.2s ease;
+}
+
+.accordion[open] summary::after {
+	content: '−';
+	transform: rotate(180deg);
+}
+
+.accordion-content {
+	padding: 1.5rem;
+	border-top: 1px solid var(--border-color);
+}
+
+/* プログレスバー */
+.progress-bar {
+	width: 100%;
+	height: 0.75rem;
+	background: var(--bg-secondary);
+	border-radius: 1rem;
+	overflow: hidden;
+	margin: 1rem 0;
+}
+
+.progress-fill {
+	height: 100%;
+	background: linear-gradient(90deg, var(--psan-green), #00ddaa);
+	border-radius: 1rem;
+	transition: width 0.3s ease;
+}
+
+.progress-label {
+	font-size: 0.75rem;
+	font-weight: 700;
+	color: var(--text-muted);
+	text-align: right;
+	margin-top: 0.25rem;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+}
+
+/* 目次（Table of Contents） */
+.table-of-contents {
+	background: var(--bg-secondary);
+	border: 1px solid var(--border-color);
+	border-radius: 1.5rem;
+	padding: 2rem;
+	margin: 2rem 0;
+}
+
+.table-of-contents h3 {
+	font-size: 1.125rem;
+	font-weight: 900;
+	margin-bottom: 1rem;
+	color: var(--text-main);
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+}
+
+.table-of-contents ul {
+	list-style: none;
+	padding: 0;
+	margin: 0;
+}
+
+.table-of-contents li {
+	margin: 0.5rem 0;
+}
+
+.table-of-contents a {
+	color: var(--text-muted);
+	text-decoration: none;
+	transition: color 0.2s ease;
+	display: block;
+	padding: 0.5rem 0;
+}
+
+.table-of-contents a:hover {
+	color: var(--psan-green);
+}
+
+/* 動画埋め込み */
+.video-embed {
+	position: relative;
+	padding-bottom: 56.25%; /* 16:9 アスペクト比 */
+	height: 0;
+	margin: 2rem 0;
+	border-radius: 1.5rem;
+	overflow: hidden;
+	box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.3);
+}
+
+.video-embed iframe {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	border: none;
+}
+
+/* Twitter/X 埋め込み */
+.twitter-embed {
+	margin: 2rem 0;
+	text-align: center;
+}
+
+.twitter-embed blockquote {
+	margin: 0 auto;
+}
+
+/* Instagram 埋め込み */
+.instagram-embed {
+	margin: 2rem 0;
+	text-align: center;
+}
+
+/* GitHub Gist */
+.github-gist {
+	margin: 2rem 0;
+}
+
+/* Twitch 埋め込み */
+.twitch-embed {
+	position: relative;
+	padding-bottom: 56.25%;
+	height: 0;
+	margin: 2rem 0;
+	border-radius: 1.5rem;
+	overflow: hidden;
+}
+
+.twitch-embed iframe {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	border: none;
+}
+
+/* Spotify 埋め込み */
+.spotify-embed {
+	margin: 2rem 0;
+	border-radius: 1.5rem;
+	overflow: hidden;
+}
+
+.spotify-embed iframe {
+	width: 100%;
+	height: 152px;
+	border: none;
+	border-radius: 1.5rem;
+}
+
+/* SoundCloud 埋め込み */
+.soundcloud-embed {
+	margin: 2rem 0;
+	border-radius: 1.5rem;
+	overflow: hidden;
+}
+
+.soundcloud-embed iframe {
+	width: 100%;
+	height: 166px;
+	border: none;
+}
+
+/* Google マップ埋め込み */
+.google-map-embed {
+	position: relative;
+	padding-bottom: 56.25%;
+	height: 0;
+	margin: 2rem 0;
+	border-radius: 1.5rem;
+	overflow: hidden;
+	box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.2);
+}
+
+.google-map-embed iframe {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	border: none;
+	border-radius: 1.5rem;
+}
+
+/* タブ切り替え */
+.tabs-container {
+	margin: 2rem 0;
+	border: 1px solid var(--border-color);
+	border-radius: 1.5rem;
+	overflow: hidden;
+}
+
+.tab-buttons {
+	display: flex;
+	background: var(--bg-secondary);
+	border-bottom: 1px solid var(--border-color);
+}
+
+.tab-btn {
+	flex: 1;
+	padding: 1rem 1.5rem;
+	background: transparent;
+	border: none;
+	font-weight: 700;
+	cursor: pointer;
+	transition: all 0.2s ease;
+	color: var(--text-muted);
+}
+
+.tab-btn:hover {
+	background: rgba(0, 204, 153, 0.1);
+	color: var(--psan-green);
+}
+
+.tab-btn.active {
+	background: var(--psan-green);
+	color: var(--psan-green-fg, #ffffff);
+}
+
+.tab-content {
+	display: none;
+	padding: 2rem;
+}
+
+.tab-content.active {
+	display: block;
+}
+
+/* タイムライン */
+.timeline {
+	margin: 2rem 0;
+	padding: 2rem 0;
+}
+
+.timeline-item {
+	display: flex;
+	gap: 1.5rem;
+	margin-bottom: 2rem;
+	position: relative;
+}
+
+.timeline-item:last-child {
+	margin-bottom: 0;
+}
+
+.timeline-item::before {
+	content: '';
+	position: absolute;
+	left: 1.25rem;
+	top: 3rem;
+	bottom: -2rem;
+	width: 2px;
+	background: var(--border-color);
+}
+
+.timeline-item:last-child::before {
+	display: none;
+}
+
+.timeline-marker {
+	width: 2.5rem;
+	height: 2.5rem;
+	border-radius: 50%;
+	background: var(--psan-green);
+	color: var(--psan-green-fg, #ffffff);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-weight: 900;
+	font-size: 0.875rem;
+	flex-shrink: 0;
+	z-index: 1;
+}
+
+.timeline-content {
+	flex: 1;
+	background: var(--bg-secondary);
+	padding: 1.5rem;
+	border-radius: 1rem;
+}
+
+.timeline-content h4 {
+	margin: 0 0 0.5rem 0;
+	font-weight: 700;
+}
+
+.timeline-content p {
+	margin: 0;
+	color: var(--text-muted);
+}
+
+/* プロフィールカード */
+.profile-card {
+	display: flex;
+	gap: 2rem;
+	align-items: center;
+	background: var(--bg-secondary);
+	padding: 2rem;
+	border-radius: 1.5rem;
+	margin: 2rem 0;
+}
+
+.profile-avatar {
+	width: 100px;
+	height: 100px;
+	border-radius: 50%;
+	background: linear-gradient(135deg, var(--psan-green), #00ddaa);
+	flex-shrink: 0;
+}
+
+.profile-info h3 {
+	margin: 0 0 0.5rem 0;
+	font-weight: 700;
+}
+
+.profile-info p {
+	margin: 0;
+	color: var(--text-muted);
+}
+
+/* ランキング表示 */
+.ranking-box {
+	margin: 2rem 0;
+}
+
+.rank-item {
+	display: flex;
+	align-items: center;
+	gap: 1rem;
+	padding: 1rem 1.5rem;
+	margin-bottom: 0.75rem;
+	border-radius: 1rem;
+	background: var(--bg-secondary);
+	transition: transform 0.2s ease;
+}
+
+.rank-item:hover {
+	transform: translateX(0.5rem);
+}
+
+.rank-num {
+	width: 2.5rem;
+	height: 2.5rem;
+	border-radius: 50%;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-weight: 900;
+	font-size: 1rem;
+	flex-shrink: 0;
+}
+
+.rank-1 .rank-num {
+	background: linear-gradient(135deg, #ffd700, #ffb700);
+	color: #000;
+}
+
+.rank-2 .rank-num {
+	background: linear-gradient(135deg, #c0c0c0, #a0a0a0);
+	color: #000;
+}
+
+.rank-3 .rank-num {
+	background: linear-gradient(135deg, #cd7f32, #b87333);
+	color: #fff;
+}
+
+.rank-content {
+	flex: 1;
+	font-weight: 500;
+}
+
+/* 脚注 */
+.footnote-ref {
+	font-size: 0.75rem;
+	vertical-align: super;
+}
+
+.footnote-ref a {
+	color: var(--psan-green);
+	text-decoration: none;
+}
+
+.footnote-ref a:hover {
+	text-decoration: underline;
+}
+
+.footnotes {
+	margin-top: 3rem;
+	padding-top: 2rem;
+	border-top: 2px solid var(--border-color);
+}
+
+.footnotes ol {
+	font-size: 0.875rem;
+	color: var(--text-muted);
+}
+
+/* 数式（LaTeX 風） */
+.math-block {
+	background: var(--bg-secondary);
+	padding: 1.5rem;
+	border-radius: 1rem;
+	margin: 2rem 0;
+	overflow-x: auto;
+	font-family: 'Times New Roman', serif;
+	font-size: 1.125rem;
+}
+
+.math-inline {
+	font-family: 'Times New Roman', serif;
+	padding: 0 0.25rem;
+}
+
+/* エディタ内でのスタイル */
+.rich-editor .task-list-item,
+.rich-editor .callout,
+.rich-editor .editor-button,
+.rich-editor .accordion,
+.rich-editor .progress-bar,
+.rich-editor .table-of-contents,
+.rich-editor .video-embed,
+.rich-editor .tabs-container,
+.rich-editor .timeline,
+.rich-editor .profile-card,
+.rich-editor .ranking-box {
+	cursor: default;
+}
+
+/* 公開ページでも同じスタイルを適用 */
+.prose .task-list-item,
+.prose .callout,
+.prose .editor-button,
+.prose .accordion,
+.prose .progress-bar,
+.prose .table-of-contents,
+.prose .video-embed,
+.prose .twitter-embed,
+.prose .instagram-embed,
+.prose .github-gist,
+.prose .twitch-embed,
+.prose .spotify-embed,
+.prose .soundcloud-embed,
+.prose .google-map-embed,
+.prose .tabs-container,
+.prose .timeline,
+.prose .profile-card,
+.prose .ranking-box,
+.prose .footnote-ref,
+.prose .math-block {
+	/* 上記のスタイルが継承される */
+}
+
+/* タブ切り替え機能 - 公開ページ用 */
+.prose .tabs-container .tab-buttons {
+	user-select: none;
+}
+
+.prose .tabs-container .tab-btn {
+	cursor: pointer;
 }

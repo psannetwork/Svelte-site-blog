@@ -672,15 +672,15 @@
 					// '/' の直前のテキストノードを取得
 					const beforeText = text.slice(0, slashIndex);
 					const afterText = text.slice(slashIndex + 1);
-					
+
 					// テキストノードを分割
 					node.textContent = beforeText;
-					
+
 					if (afterText) {
 						const afterNode = document.createTextNode(afterText);
 						node.parentNode?.insertBefore(afterNode, node.nextSibling);
 					}
-					
+
 					// カーソル位置を調整
 					range.setStart(node, beforeText.length);
 					range.setEnd(node, beforeText.length);
@@ -697,12 +697,15 @@
 		const currentSel = window.getSelection();
 		if (!currentSel?.rangeCount) return;
 
+		// テキスト系
 		if (id.startsWith('h')) {
 			formatBlock(id.toUpperCase());
 		} else if (id === 'bullet') {
 			toggleList('UL');
 		} else if (id === 'number') {
 			toggleList('OL');
+		} else if (id === 'todo') {
+			insertHtmlAtCursor('<div class="task-list-item"><input type="checkbox" contenteditable="false" /> <span>タスク</span></div>');
 		} else if (id === 'quote') {
 			toggleBlockquote();
 		} else if (id === 'hr') {
@@ -714,8 +717,84 @@
 		} else if (id === 'table') {
 			insertTableElement(3, 3);
 		}
+		// コールアウト
+		else if (id === 'callout-info') {
+			insertHtmlAtCursor('<div class="callout callout-info"><strong>情報</strong><p>ここに情報を入力してください。</p></div>');
+		} else if (id === 'callout-warning') {
+			insertHtmlAtCursor('<div class="callout callout-warning"><strong>警告</strong><p>ここに警告内容を入力してください。</p></div>');
+		} else if (id === 'callout-success') {
+			insertHtmlAtCursor('<div class="callout callout-success"><strong>成功</strong><p>ここに成功内容を入力してください。</p></div>');
+		}
+		// メディア埋め込み
+		else if (id === 'video') {
+			openMediaDialog('video', new MouseEvent('click') as any);
+		} else if (id === 'youtube') {
+			insertEmbedPrompt('youtube');
+		} else if (id === 'twitter') {
+			insertEmbedPrompt('twitter');
+		} else if (id === 'instagram') {
+			insertEmbedPrompt('instagram');
+		} else if (id === 'github') {
+			insertEmbedPrompt('github');
+		} else if (id === 'twitch') {
+			insertEmbedPrompt('twitch');
+		}
+		// レイアウト
+		else if (id === 'button') {
+			insertHtmlAtCursor('<a href="#" class="editor-button">ボタン</a>');
+		} else if (id === 'accordion') {
+			insertHtmlAtCursor('<details class="accordion"><summary>タイトル</summary><div class="accordion-content"><p>内容を入力してください。</p></div></details>');
+		} else if (id === 'progress') {
+			insertHtmlAtCursor('<div class="progress-bar"><div class="progress-fill" style="width: 50%;"></div></div><p class="progress-label">50%</p>');
+		} else if (id === 'toc') {
+			insertHtmlAtCursor('<div class="table-of-contents"><h3>目次</h3><ul><li><a href="#heading">見出しへのリンク</a></li></ul></div>');
+		} else if (id === 'tabs') {
+			insertHtmlAtCursor('<div class="tabs-container"><div class="tab-buttons"><button class="tab-btn active">タブ 1</button><button class="tab-btn">タブ 2</button></div><div class="tab-content active"><p>タブ 1 の内容</p></div><div class="tab-content"><p>タブ 2 の内容</p></div></div>');
+		} else if (id === 'timeline') {
+			insertHtmlAtCursor('<div class="timeline"><div class="timeline-item"><div class="timeline-marker">1</div><div class="timeline-content"><h4>イベント 1</h4><p>内容を入力</p></div></div></div>');
+		} else if (id === 'profile') {
+			insertHtmlAtCursor('<div class="profile-card"><div class="profile-avatar"></div><div class="profile-info"><h3>名前</h3><p>自己紹介</p></div></div>');
+		} else if (id === 'ranking') {
+			insertHtmlAtCursor('<div class="ranking-box"><div class="rank-item rank-1"><span class="rank-num">1</span><span class="rank-content">1 位の内容</span></div></div>');
+		} else if (id === 'footnote') {
+			insertHtmlAtCursor('<sup class="footnote-ref"><a href="#fn-1">[1]</a></sup>');
+		}
+		
 		menuState.show = false;
 		saveAndNotify();
+	}
+
+	function insertEmbedPrompt(type: string) {
+		const url = prompt(`${type === 'youtube' ? 'YouTube' : type === 'twitter' ? 'X (Twitter)' : type === 'instagram' ? 'Instagram' : type === 'github' ? 'GitHub' : type === 'twitch' ? 'Twitch' : type === 'spotify' ? 'Spotify' : type === 'soundcloud' ? 'SoundCloud' : 'Google Maps'} の URL または Embed ID を入力してください:`);
+		if (!url) return;
+		
+		let embedHtml = '';
+		
+		if (type === 'youtube') {
+			const videoId = url.includes('v=') ? url.split('v=')[1].split('&')[0] : url;
+			embedHtml = `<div class="video-embed youtube"><iframe src="https://www.youtube.com/embed/${videoId}" frameborder="0" allowfullscreen></iframe></div>`;
+		} else if (type === 'twitter') {
+			embedHtml = `<div class="twitter-embed" data-tweet-url="${url}"><blockquote class="twitter-tweet"><a href="${url}">Tweet</a></blockquote></div>`;
+		} else if (type === 'instagram') {
+			embedHtml = `<div class="instagram-embed"><blockquote class="instagram-media" data-instgrm-permalink="${url}"></blockquote></div>`;
+		} else if (type === 'github') {
+			const gistId = url.split('/').pop();
+			embedHtml = `<div class="github-gist" data-gist-id="${gistId}"></div>`;
+		} else if (type === 'twitch') {
+			const channelId = url.split('/').pop();
+			embedHtml = `<div class="twitch-embed"><iframe src="https://player.twitch.tv/?channel=${channelId}&parent=localhost" frameborder="0" allowfullscreen></iframe></div>`;
+		} else if (type === 'spotify') {
+			embedHtml = `<div class="spotify-embed"><iframe src="https://open.spotify.com/embed/track/${url.split('/').pop()}" frameborder="0" allowfullscreen></iframe></div>`;
+		} else if (type === 'soundcloud') {
+			embedHtml = `<div class="soundcloud-embed"><iframe src="https://w.soundcloud.com/player/?url=${encodeURIComponent(url)}" frameborder="0" allowfullscreen></iframe></div>`;
+		} else if (type === 'map') {
+			const query = prompt('住所または場所名を入力してください:');
+			if (query) {
+				embedHtml = `<div class="google-map-embed"><iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3240.0!2d${encodeURIComponent(query)}!3d35.6762!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMzXCsDQwJzM0LjMiIEUgMTM5wrA0NScwMC4wIkU" frameborder="0" allowfullscreen></iframe></div>`;
+			}
+		}
+		
+		insertHtmlAtCursor(embedHtml);
 	}
 
 	function openLinkDialog() {

@@ -32,22 +32,34 @@
 
 <!-- 検索結果表示 -->
 {#if data.searchQuery}
-	<div class="bg-psan-green/10 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 py-4 md:py-6">
-		<div class="max-w-7xl mx-auto px-4 flex items-center justify-between">
-			<div>
-				<p class="text-xs md:text-sm font-bold text-muted">
-					Search results for: <span class="text-psan-green font-black">"{data.searchQuery}"</span>
-				</p>
-				<p class="text-[10px] md:text-xs font-black text-muted mt-1">
-					{data.posts.length} article{data.posts.length !== 1 ? 's' : ''} found
-				</p>
+	<div class="bg-gradient-to-br from-psan-green/10 to-psan-pink/10 dark:from-slate-800 dark:to-slate-900 border-b border-slate-200 dark:border-slate-700 py-8 md:py-12">
+		<div class="max-w-7xl mx-auto px-4">
+			<div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+				<div>
+					<div class="flex items-center gap-3 mb-2">
+						<svg class="w-5 h-5 md:w-6 md:h-6 text-psan-green" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+							><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg
+						>
+						<h1 class="text-lg md:text-xl font-black uppercase tracking-tighter">Search Results</h1>
+					</div>
+					<p class="text-sm md:text-base font-medium text-muted">
+						キーワード: <span class="text-psan-green font-black">"{data.searchQuery}"</span>
+					</p>
+					<p class="text-xs md:text-sm font-bold text-muted mt-2 flex items-center gap-2">
+						<span class="inline-flex items-center justify-center w-6 h-6 rounded-full bg-psan-green text-white text-xs font-black">{data.posts.length}</span>
+						件の記事が見つかりました
+					</p>
+				</div>
+				<a
+					href="/"
+					class="inline-flex items-center gap-2 px-6 py-3 bg-slate-100 dark:bg-slate-800 rounded-2xl font-bold text-sm hover:bg-psan-pink hover:text-white transition-all group"
+				>
+					<svg class="w-4 h-4 transition-transform group-hover:-rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+						><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg
+					>
+					クリア
+				</a>
 			</div>
-			<a
-				href="/"
-				class="text-[10px] md:text-xs font-black text-psan-pink hover:underline uppercase tracking-widest"
-			>
-				Clear Search
-			</a>
 		</div>
 	</div>
 {/if}

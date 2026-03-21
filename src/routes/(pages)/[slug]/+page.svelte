@@ -17,6 +17,7 @@
 		const content = document.querySelector('article .prose');
 		if (content) {
 			applyColors(content as HTMLElement, theme.current === 'dark');
+			initTabs(content as HTMLElement);
 		}
 	});
 
@@ -25,8 +26,27 @@
 		const content = document.querySelector('article .prose');
 		if (content) {
 			applyColors(content as HTMLElement, theme.current === 'dark');
+			initTabs(content as HTMLElement);
 		}
 	});
+
+	// タブ切り替え機能の初期化
+	function initTabs(container: HTMLElement) {
+		const tabContainers = container.querySelectorAll('.tabs-container');
+		tabContainers.forEach(tabContainer => {
+			const buttons = tabContainer.querySelectorAll('.tab-btn');
+			const contents = tabContainer.querySelectorAll('.tab-content');
+			
+			buttons.forEach((btn, index) => {
+				btn.addEventListener('click', () => {
+					buttons.forEach(b => b.classList.remove('active'));
+					contents.forEach(c => c.classList.remove('active'));
+					btn.classList.add('active');
+					contents[index].classList.add('active');
+				});
+			});
+		});
+	}
 
 	// コメントの表示を 1000 文字に制限
 	function truncateComment(str: string, maxLength = 1000): string {
