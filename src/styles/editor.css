@@ -15,6 +15,140 @@
 	color: #0f172a !important;
 }
 
+/* Editor.js の段落とリスト - デフォルト行間 */
+.ce-paragraph,
+.ce-block__content {
+	line-height: 2.2;
+	padding: 0.5em 0;
+}
+
+/* Editor.js のリストアイテム */
+.ce-list__item {
+	line-height: 2.2;
+	padding: 0.3em 0;
+}
+
+/* 改行タグの行間 - 同じブロック内の改行 */
+.ce-paragraph br,
+.ce-block__content br,
+p br,
+div br {
+	line-height: 2.2;
+	min-height: 2.2em;
+	display: inline-block;
+	content: "";
+}
+
+/* 行間調整クラス - 最強の優先度で適用 */
+.ce-paragraph.line-height-10,
+.ce-block__content.line-height-10,
+p.line-height-10,
+div.line-height-10,
+li.line-height-10 { line-height: 1.0 !important; }
+.ce-paragraph.line-height-125,
+.ce-block__content.line-height-125,
+p.line-height-125,
+div.line-height-125,
+li.line-height-125 { line-height: 1.25 !important; }
+.ce-paragraph.line-height-15,
+.ce-block__content.line-height-15,
+p.line-height-15,
+div.line-height-15,
+li.line-height-15 { line-height: 1.5 !important; }
+.ce-paragraph.line-height-175,
+.ce-block__content.line-height-175,
+p.line-height-175,
+div.line-height-175,
+li.line-height-175 { line-height: 1.75 !important; }
+.ce-paragraph.line-height-20,
+.ce-block__content.line-height-20,
+p.line-height-20,
+div.line-height-20,
+li.line-height-20 { line-height: 2.0 !important; }
+.ce-paragraph.line-height-25,
+.ce-block__content.line-height-25,
+p.line-height-25,
+div.line-height-25,
+li.line-height-25 { line-height: 2.5 !important; }
+.ce-paragraph.line-height-30,
+.ce-block__content.line-height-30,
+p.line-height-30,
+div.line-height-30,
+li.line-height-30 { line-height: 3.0 !important; }
+
+/* 行間調整クラスの改行タグ - 最強の優先度 */
+.line-height-10 br { line-height: 1.0 !important; min-height: 1.0em !important; display: inline-block !important; }
+.line-height-125 br { line-height: 1.25 !important; min-height: 1.25em !important; display: inline-block !important; }
+.line-height-15 br { line-height: 1.5 !important; min-height: 1.5em !important; display: inline-block !important; }
+.line-height-175 br { line-height: 1.75 !important; min-height: 1.75em !important; display: inline-block !important; }
+.line-height-20 br { line-height: 2.0 !important; min-height: 2.0em !important; display: inline-block !important; }
+.line-height-25 br { line-height: 2.5 !important; min-height: 2.5em !important; display: inline-block !important; }
+.line-height-30 br { line-height: 3.0 !important; min-height: 3.0em !important; display: inline-block !important; }
+
+/* 行間スペーサー */
+.line-height-spacer {
+	display: inline-block !important;
+	width: 0 !important;
+	vertical-align: baseline !important;
+}
+
+/* エディタのリンクスタイル */
+.rich-editor a.editor-link,
+.rich-editor a {
+	color: var(--psan-green) !important;
+	text-decoration: underline !important;
+	cursor: pointer !important;
+}
+
+.rich-editor a.editor-link:hover,
+.rich-editor a:hover {
+	color: var(--psan-pink) !important;
+}
+
+/* 公開ページのリンクスタイル */
+.prose a {
+	color: var(--psan-green);
+	text-decoration: underline;
+	transition: color 0.2s ease;
+}
+
+.prose a:hover {
+	color: var(--psan-pink);
+}
+
+/* インラインスタイルで行間が設定された要素 - 優先して適用 */
+.ce-paragraph[style*="line-height"],
+.ce-block__content[style*="line-height"],
+p[style*="line-height"],
+div[style*="line-height"],
+li[style*="line-height"] {
+	/* インラインスタイルの値を使用 */
+}
+
+/* インラインスタイルで br の高さが設定された場合 */
+br[style*="line-height"],
+br[style*="height"] {
+	/* インラインスタイルの値を使用 */
+}
+
+/* 行間調整クラス */
+.line-height-10 { line-height: 1.0 !important; }
+.line-height-125 { line-height: 1.25 !important; }
+.line-height-15 { line-height: 1.5 !important; }
+.line-height-175 { line-height: 1.75 !important; }
+.line-height-20 { line-height: 2.0 !important; }
+.line-height-25 { line-height: 2.5 !important; }
+.line-height-30 { line-height: 3.0 !important; }
+
+/* 改行タグ用のクラス */
+.line-height-10 br, .line-height-10 { line-height: 1.0 !important; min-height: 1.0em !important; }
+.line-height-125 br, .line-height-125 { line-height: 1.25 !important; min-height: 1.25em !important; }
+.line-height-15 br, .line-height-15 { line-height: 1.5 !important; min-height: 1.5em !important; }
+.line-height-175 br, .line-height-175 { line-height: 1.75 !important; min-height: 1.75em !important; }
+.line-height-20 br, .line-height-20 { line-height: 2.0 !important; min-height: 2.0em !important; }
+.line-height-25 br, .line-height-25 { line-height: 2.5 !important; min-height: 2.5em !important; }
+.line-height-30 br, .line-height-30 { line-height: 3.0 !important; min-height: 3.0em !important; }
+
 /* Editor.js Core UI Colors - ダークモード */
 .dark .codex-editor,
 .dark .ce-paragraph,
@@ -23,6 +157,31 @@
 .dark .cdx-input,
 .dark .ce-inline-tool {
 	color: #f8fafc !important;
+	line-height: 2.2 !important;
+}
+
+/* Editor.js の段落とリスト - ダークモード */
+.dark .ce-paragraph,
+.dark .ce-block__content {
+	line-height: 2.2 !important;
+	padding: 0.5em 0 !important;
+}
+
+/* Editor.js のリストアイテム - ダークモード */
+.dark .ce-list__item {
+	line-height: 2.2 !important;
+	padding: 0.3em 0 !important;
+}
+
+/* 改行タグの行間 - ダークモード */
+.dark .ce-paragraph br,
+.dark .ce-block__content br,
+.dark p br,
+.dark div br {
+	line-height: 2.2 !important;
+	height: 2.2em !important;
+	display: inline-block !important;
+	width: 0 !important;
 }
 
 /* 文字のはみ出し防止 */
@@ -42,11 +201,21 @@
 .rich-editor {
 	color: #0f172a;
 	background: #ffffff;
+	line-height: 2.2 !important;
 }
 
+.rich-editor .ce-paragraph,
 .rich-editor p,
-.rich-editor li {
+.rich-editor li,
+.rich-editor div {
 	color: #0f172a !important;
+	line-height: 2.2 !important;
+	padding: 0.4em 0;
+}
+
+/* Editor.js のブロック要素 */
+.rich-editor .ce-block__content {
+	line-height: 2.2 !important;
 }
 
 .rich-editor h1,
@@ -56,27 +225,41 @@
 .rich-editor h5,
 .rich-editor h6 {
 	color: #0f172a !important;
+	line-height: 1.8 !important;
+	padding: 0.2em 0;
 }
 
 /* RichEditor ダークモード */
 .dark .rich-editor {
-	color: #0f172a;
-	background: #ffffff !important;
+	color: #f8fafc;
+	background: #1e293b !important;
+	line-height: 2.2 !important;
 }
 
+.dark .rich-editor .ce-paragraph,
 .dark .rich-editor p,
-.dark .rich-editor li {
-	color: #0f172a !important;
+.dark .rich-editor li,
+.dark .rich-editor div {
+	color: #f8fafc !important;
+	line-height: 2.2 !important;
+	padding: 0.4em 0;
 }
 
-/* エディタ内の見出しもダークモードで黒色のまま */
+/* Editor.js のブロック要素 */
+.dark .rich-editor .ce-block__content {
+	line-height: 2.2 !important;
+}
+
+/* エディタ内の見出しもダークモードで白色 */
 .dark .rich-editor h1,
 .dark .rich-editor h2,
 .dark .rich-editor h3,
 .dark .rich-editor h4,
 .dark .rich-editor h5,
 .dark .rich-editor h6 {
-	color: #0f172a !important;
+	color: #f8fafc !important;
+	line-height: 1.8 !important;
+	padding: 0.2em 0;
 }
 
 .dark .placeholder {
@@ -372,7 +555,7 @@ xy-color-picker {
 
 .tc-color-picker__item:hover,
 .color-cube:hover {
-	transform: scale(1.15) !important;
+	transform: scale(1.5) !important;
 	border-color: var(--psan-green) !important;
 	z-index: 2 !important;
 }
@@ -712,8 +895,9 @@ xy-color-picker {
 /* 公開ページの段落・リスト・コードなど */
 .prose p {
 	font-size: 1.125rem !important;
-	line-height: 1.75 !important;
+	line-height: 2.2 !important;
 	margin-bottom: 1.5rem !important;
+	padding: 0.4em 0 !important;
 	color: inherit !important;
 }
 
@@ -726,8 +910,9 @@ xy-color-picker {
 }
 
 .prose li {
-	margin-bottom: 0.5rem !important;
-	line-height: 1.7 !important;
+	margin-bottom: 0.75rem !important;
+	line-height: 2.2 !important;
+	padding: 0.2em 0 !important;
 	color: inherit !important;
 }
 
@@ -895,6 +1080,44 @@ xy-color-picker {
 /* ========================================
    新規追加：エディタ機能拡張スタイル
    ======================================== */
+
+/* 行間調整 - インラインスタイルを優先 */
+.rich-editor p[style*="line-height"],
+.rich-editor h1[style*="line-height"],
+.rich-editor h2[style*="line-height"],
+.rich-editor h3[style*="line-height"],
+.rich-editor h4[style*="line-height"],
+.rich-editor h5[style*="line-height"],
+.rich-editor h6[style*="line-height"],
+.rich-editor li[style*="line-height"],
+.rich-editor div[style*="line-height"] {
+	/* インラインスタイルの値を使用 */
+}
+
+.prose p[style*="line-height"],
+.prose h1[style*="line-height"],
+.prose h2[style*="line-height"],
+.prose h3[style*="line-height"],
+.prose h4[style*="line-height"],
+.prose h5[style*="line-height"],
+.prose h6[style*="line-height"],
+.prose li[style*="line-height"],
+.prose div[style*="line-height"] {
+	/* インラインスタイルの値を使用 */
+}
+
+/* デフォルトの行間設定は !important なしで設定 */
+.rich-editor p,
+.rich-editor h1,
+.rich-editor h2,
+.rich-editor h3,
+.rich-editor h4,
+.rich-editor h5,
+.rich-editor h6,
+.rich-editor li,
+.rich-editor div {
+	line-height: 1.75;
+}
 
 /* タスクリスト（チェックリスト） */
 .task-list-item {

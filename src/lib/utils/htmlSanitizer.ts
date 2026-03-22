@@ -81,8 +81,8 @@ export function sanitizeHtml(dirtyHtml: string): string {
 			'data-element-id'
 		],
 		// https, mailto, tel, ftp のみ許可。XSS 対策のため javascript: をブロック
-		ALLOWED_URI_REGEXP: /^(?:(?:https?|mailto|tel|ftp):|[^a-z]|[a-z+.-]+(?:[^a-z+.-]|$))/i,
-		ADD_ATTR: ['target'],
+		ALLOWED_URI_REGEXP: /^(?:(?:https?|mailto|tel|ftp|data):|[^a-z]|[a-z+.-]+(?:[^a-z+.-]|$))/i,
+		ADD_ATTR: ['target', 'rel'],
 		FORCE_BODY: true
 	});
 }

@@ -9,7 +9,8 @@
 		Bold, Italic, Underline, Strikethrough, Link as LinkIcon, Image as ImageIcon,
 		Undo, Redo, Move, List, ListOrdered, Quote, Code, Minus, Table as TableIcon,
 		AlignLeft, AlignCenter, AlignRight, AlignJustify, Type, Palette, Trash2,
-		Heading1, Heading2, Heading3, Video, Mic, ChevronDown, MoreHorizontal, Maximize, ListTodo
+		Heading1, Heading2, Heading3, Video, Mic, ChevronDown, MoreHorizontal, Maximize, ListTodo,
+		ChevronUp
 	} from 'lucide-svelte';
 
 	interface Props {
@@ -88,6 +89,7 @@
 	let linkUrl = $state('');
 	let linkTarget = $state('_blank');
 	let editingLink = $state<HTMLAnchorElement | null>(null);
+	let savedRange: Range | null = $state(null);
 
 	// Inline Toolbar State
 	let showInlineToolbar = $state(false);
@@ -98,6 +100,14 @@
 	let isItalic = $state(false);
 	let isUnderline = $state(false);
 	let isStrikethrough = $state(false);
+
+	// Line Height State
+	let currentLineHeight = $state('2.2');
+	let currentMarginTop = $state('0');
+	let currentMarginBottom = $state('0');
+	
+	// MutationObserver for line-height
+	let lineHeightObserver: MutationObserver | null = null;
 
 	// Image Alignment State
 	let imageAlignment = $state<'left' | 'center' | 'right'>('center');
@@ -112,6 +122,126 @@
 	let mediaType = $state<'video' | 'audio'>('video');
 	let mediaUrl = $state('');
 	let mediaPosition = $state({ x: 0, y: 0 });
+
+	// Markdown ペースト検出用
+	const MARKDOWN_PATTERNS = {
+		heading: /^(#{1,6})\s+(.+)$/m,
+		bold: /\*\*(.+?)\*\*/g,
+		italic: /\*(.+?)\*/g,
+		code: /```([\s\S]*?)```/g,
+		inlineCode: /`(.+?)`/g,
+		link: /\[(.+?)\]\((.+?)\)/g,
+		list: /^[\s]*[-*+]\s+(.+)$/m,
+		orderedList: /^[\s]*\d+\.\s+(.+)$/m,
+		quote: /^>\s+(.+)$/m,
+		hr: /^---$/m
+	};
+
+	function detectMarkdown(text: string): boolean {
+		// 短いテキストは Markdown とみなさない
+		if (text.length < 10) return false;
+		
+		// HTML タグが含まれている場合は Markdown とみなさない
+		if (/<[a-z][\s\S]*>/i.test(text)) return false;
+		
+		// Markdown パターンのいずれかに一致するか
+		return Object.values(MARKDOWN_PATTERNS).some(pattern => pattern.test(text));
+	}
+
+	function convertMarkdownToHtml(markdown: string): string {
+		let html = markdown;
+		
+		// 見出し
+		html = html.replace(/^(#{6})\s+(.+)$/gm, '<h6>$2</h6>');
+		html = html.replace(/^(#{5})\s+(.+)$/gm, '<h5>$2</h5>');
+		html = html.replace(/^(#{4})\s+(.+)$/gm, '<h4>$2</h4>');
+		html = html.replace(/^(#{3})\s+(.+)$/gm, '<h3>$2</h3>');
+		html = html.replace(/^(#{2})\s+(.+)$/gm, '<h2>$2</h2>');
+		html = html.replace(/^(#{1})\s+(.+)$/gm, '<h1>$2</h1>');
+		
+		// 太字
+		html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+		
+		// イタリック
+		html = html.replace(/\*(.+?)\*/g, '<em>$1</em>');
+		
+		// コードブロック
+		html = html.replace(/```(\w*)\n?([\s\S]*?)```/g, '<pre><code class="language-$1">$2</code></pre>');
+		
+		// インラインコード
+		html = html.replace(/`(.+?)`/g, '<code>$1</code>');
+		
+		// リンク
+		html = html.replace(/\[(.+?)\]\((.+?)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
+		
+		// 箇条書き
+		html = html.replace(/^[\s]*[-*+]\s+(.+)$/gm, '<li>$1</li>');
+		html = html.replace(/(<li>.*<\/li>\n?)+/g, '<ul>$&</ul>');
+		
+		// 番号付きリスト
+		html = html.replace(/^[\s]*\d+\.\s+(.+)$/gm, '<li>$1</li>');
+		html = html.replace(/(<li>.*<\/li>\n?)+/g, '<ol>$&</ol>');
+		
+		// 引用
+		html = html.replace(/^>\s+(.+)$/gm, '<blockquote>$1</blockquote>');
+		
+		// 水平線
+		html = html.replace(/^---$/gm, '<hr>');
+		
+		// 段落
+		html = html.replace(/\n\n/g, '</p><p>');
+		html = '<p>' + html + '</p>';
+		
+		// 不要な空の段落を削除
+		html = html.replace(/<p>\s*<\/p>/g, '');
+		html = html.replace(/<p>\s*(<h[1-6]>)/g, '$1');
+		html = html.replace(/(<\/h[1-6]>)\s*<\/p>/g, '$1');
+		html = html.replace(/<p>\s*(<ul>)/g, '$1');
+		html = html.replace(/(<\/ul>)\s*<\/p>/g, '$1');
+		html = html.replace(/<p>\s*(<ol>)/g, '$1');
+		html = html.replace(/(<\/ol>)\s*<\/p>/g, '$1');
+		html = html.replace(/<p>\s*(<blockquote>)/g, '$1');
+		html = html.replace(/(<\/blockquote>)\s*<\/p>/g, '$1');
+		html = html.replace(/<p>\s*(<pre>)/g, '$1');
+		html = html.replace(/(<\/pre>)\s*<\/p>/g, '$1');
+		html = html.replace(/<p>\s*(<hr>)\s*<\/p>/g, '$1');
+		
+		return html;
+	}
+
+	function handlePaste(e: ClipboardEvent) {
+		e.preventDefault();
+		
+		const clipboardData = e.clipboardData;
+		if (!clipboardData) return;
+		
+		const text = clipboardData.getData('text/plain');
+		const html = clipboardData.getData('text/html');
+		
+		console.log('[handlePaste] text:', text.substring(0, 100));
+		console.log('[handlePaste] html:', html.substring(0, 100));
+		
+		// HTML があればそれを優先
+		if (html && html.trim().length > 0) {
+			insertHtmlAtCursor(sanitizeHtml(html));
+			saveAndNotify();
+			return;
+		}
+		
+		// Markdown を検出
+		if (text && detectMarkdown(text)) {
+			console.log('[handlePaste] Detected Markdown!');
+			const convertedHtml = convertMarkdownToHtml(text);
+			console.log('[handlePaste] Converted HTML:', convertedHtml);
+			insertHtmlAtCursor(sanitizeHtml(convertedHtml));
+			saveAndNotify();
+			return;
+		}
+		
+		// プレーンテキストとして挿入
+		insertHtmlAtCursor(sanitizeHtml(text.replace(/\n/g, '<br>')));
+		saveAndNotify();
+	}
 
 	// Markdown Export State
 	let showMarkdownDialog = $state(false);
@@ -261,6 +391,21 @@
 
 	function handleGlobalClick(e: MouseEvent) {
 		const target = e.target as HTMLElement;
+		
+		// リンクをクリックした場合はデフォルト動作を許可
+		if (target.closest('a')) {
+			const link = target.closest('a') as HTMLAnchorElement;
+			if (link.href && link.href.startsWith('http')) {
+				// Ctrl/Cmd キーが押されていれば新規タブで開く
+				if (e.ctrlKey || e.metaKey) {
+					window.open(link.href, '_blank', 'noopener,noreferrer');
+					e.preventDefault();
+				}
+				// それ以外は通常通りリンク先へ遷移（デフォルト動作）
+				return;
+			}
+		}
+		
 		const resizableTags = ['IMG', 'PRE', 'BLOCKQUOTE', 'IFRAME', 'VIDEO', 'TABLE', 'HR'];
 		const draggableTags = ['IMG', 'PRE', 'BLOCKQUOTE', 'IFRAME', 'VIDEO', 'TABLE', 'HR', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'P', 'UL', 'OL', 'LI'];
 
@@ -494,7 +639,58 @@
 		window.addEventListener('resize', updateOverlayPos, { signal: controller.signal });
 		document.addEventListener('selectionchange', handleSelectionChange, { signal: controller.signal });
 		if (autoSaveId) autoSaveInterval = setInterval(() => editorRef && saveToLocalStorage(editorRef.innerHTML), AUTO_SAVE_INTERVAL);
-		return () => { controller.abort(); if (autoSaveInterval) clearInterval(autoSaveInterval); };
+		
+		// ペーストイベントをリッスン
+		if (editorRef) {
+			editorRef.addEventListener('paste', handlePaste, { signal: controller.signal });
+		}
+
+		// MutationObserver で line-height の変更を監視して復元
+		if (editorRef) {
+			lineHeightObserver = new MutationObserver((mutations) => {
+				mutations.forEach(mutation => {
+					if (mutation.type === 'attributes' && mutation.attributeName === 'style') {
+						const target = mutation.target as HTMLElement;
+						if (target && editorRef.contains(target)) {
+							// 行間クラスが付いている場合は、line-height を復元
+							const lineHeightClass = Array.from(target.classList).find(c => c.startsWith('line-height-'));
+							if (lineHeightClass) {
+								const valueMap: Record<string, string> = {
+									'line-height-10': '1.0',
+									'line-height-125': '1.25',
+									'line-height-15': '1.5',
+									'line-height-175': '1.75',
+									'line-height-20': '2.0',
+									'line-height-25': '2.5',
+									'line-height-30': '3.0'
+								};
+								const value = valueMap[lineHeightClass];
+								if (value) {
+									const currentStyle = target.getAttribute('style') || '';
+									if (!currentStyle.includes(`line-height: ${value}`)) {
+										const newStyle = currentStyle.replace(/line-height:\s*[^;]+;?/gi, '');
+										target.setAttribute('style', `${newStyle} line-height: ${value} !important;`.trim());
+										console.log('[MutationObserver] Restored line-height:', value);
+									}
+								}
+							}
+						}
+					}
+				});
+			});
+			
+			lineHeightObserver.observe(editorRef, {
+				attributes: true,
+				subtree: true,
+				attributeFilter: ['style']
+			});
+		}
+
+		return () => { 
+			controller.abort(); 
+			if (autoSaveInterval) clearInterval(autoSaveInterval);
+			if (lineHeightObserver) lineHeightObserver.disconnect();
+		};
 	});
 
 	async function handleImageUpload(e: Event) {
@@ -649,6 +845,57 @@
 				span.setAttribute('data-color-mode', 'auto');
 			}
 		}
+		
+		// URL のオートリンク検出
+		checkAndConvertUrlToLink(range);
+	}
+
+	function checkAndConvertUrlToLink(range: Range) {
+		const node = range.startContainer;
+		if (node.nodeType !== Node.TEXT_NODE) return;
+		
+		const text = node.textContent || '';
+		// URL パターン（http, https, www）
+		const urlPattern = /\b(?:https?:\/\/|www\.)[^\s<>"{}|\\^`\[\]]+/gi;
+		
+		const matches = Array.from(text.matchAll(urlPattern));
+		if (matches.length === 0) return;
+		
+		// 既にリンク内のテキストはスキップ
+		if (node.parentElement?.closest('a')) return;
+		
+		// Enter キーまたはスペースで確定
+		const lastChar = text[text.length - 1];
+		if (lastChar !== ' ' && lastChar !== '\n' && range.startOffset < text.length) return;
+		
+		matches.forEach(match => {
+			const url = match[0];
+			const index = match.index!;
+			
+			// URL の前後のテキストノードを分割
+			const beforeText = text.slice(0, index);
+			const afterText = text.slice(index + url.length);
+			
+			// リンク要素を作成
+			const link = document.createElement('a');
+			link.href = url.startsWith('www') ? `https://${url}` : url;
+			link.target = '_blank';
+			link.rel = 'noopener noreferrer';
+			link.textContent = url;
+			link.style.cssText = 'color: var(--psan-green); text-decoration: underline;';
+			
+			// テキストノードを置換
+			const fragment = document.createDocumentFragment();
+			if (beforeText) fragment.appendChild(document.createTextNode(beforeText));
+			fragment.appendChild(link);
+			if (afterText) fragment.appendChild(document.createTextNode(afterText));
+			
+			node.parentNode?.replaceChild(fragment, node);
+			
+			console.log('[AutoLink] Converted URL to link:', url);
+		});
+		
+		saveAndNotify();
 	}
 
 	function handleEnterKey(e: KeyboardEvent) {
@@ -799,8 +1046,20 @@
 
 	function openLinkDialog() {
 		const sel = window.getSelection();
-		if (!sel?.rangeCount) return;
-		const node = sel.getRangeAt(0).commonAncestorContainer as HTMLElement;
+		if (!sel?.rangeCount) {
+			// 選択範囲がない場合はリンク作成モード
+			editingLink = null;
+			linkUrl = '';
+			linkTarget = '_blank';
+			savedRange = null;
+			showLinkDialog = true;
+			return;
+		}
+
+		// 選択範囲を保存
+		savedRange = sel.getRangeAt(0);
+		
+		const node = savedRange.commonAncestorContainer as HTMLElement;
 		editingLink = (node.nodeType === Node.ELEMENT_NODE ? node : node.parentElement)?.closest('a') as HTMLAnchorElement;
 		linkUrl = editingLink?.href || '';
 		linkTarget = editingLink?.target || '_blank';
@@ -808,13 +1067,131 @@
 	}
 
 	function insertLink() {
-		if (!linkUrl) return;
-		if (editingLink) { editingLink.href = linkUrl; editingLink.target = linkTarget; }
-		else createLink(linkUrl, linkTarget);
-		saveAndNotify(); showLinkDialog = false;
+		if (!linkUrl) {
+			console.error('[insertLink] URL is empty');
+			return;
+		}
+
+		console.log('[insertLink] URL:', linkUrl, 'target:', linkTarget, 'editingLink:', editingLink);
+
+		if (editingLink) {
+			// 既存のリンクを編集
+			editingLink.href = linkUrl.startsWith('http') ? linkUrl : `https://${linkUrl}`;
+			editingLink.target = linkTarget;
+			editingLink.rel = linkTarget === '_blank' ? 'noopener noreferrer' : '';
+			console.log('[insertLink] Updated existing link');
+		} else {
+			// 保存した選択範囲を使用
+			if (!savedRange) {
+				console.error('[insertLink] No saved range found');
+				return;
+			}
+			
+			const range = savedRange;
+
+			// 選択範囲がなければリンクテキストを挿入
+			if (range.collapsed) {
+				// テキストノードを取得
+				const node = range.startContainer;
+				if (node.nodeType === Node.TEXT_NODE) {
+					const text = node.textContent || '';
+					const offset = range.startOffset;
+
+					// カーソル位置から単語の境界を見つける
+					let wordStart = offset;
+					let wordEnd = offset;
+
+					while (wordStart > 0 && !/[\s\n]/.test(text[wordStart - 1])) wordStart--;
+					while (wordEnd < text.length && !/[\s\n]/.test(text[wordEnd])) wordEnd++;
+
+					const word = text.slice(wordStart, wordEnd);
+
+					if (word && word.length > 0) {
+						const link = document.createElement('a');
+						link.href = linkUrl.startsWith('http') ? linkUrl : `https://${linkUrl}`;
+						link.target = linkTarget;
+						link.rel = linkTarget === '_blank' ? 'noopener noreferrer' : '';
+						link.textContent = word;
+						link.className = 'editor-link';
+
+						// テキストノードを分割してリンクを挿入
+						const beforeText = text.slice(0, wordStart);
+						const afterText = text.slice(wordEnd);
+
+						const fragment = document.createDocumentFragment();
+						if (beforeText) fragment.appendChild(document.createTextNode(beforeText));
+						fragment.appendChild(link);
+						if (afterText) fragment.appendChild(document.createTextNode(afterText));
+
+						node.parentNode?.replaceChild(fragment, node);
+
+						console.log('[insertLink] Created new link with word:', word);
+					}
+				}
+			} else {
+				// 選択範囲をリンクで囲む
+				const selectedText = range.toString();
+				console.log('[insertLink] Selected text:', selectedText);
+
+				if (selectedText.trim()) {
+					// 選択範囲の内容を取得
+					const contents = range.extractContents();
+					console.log('[insertLink] Extracted contents:', contents);
+
+					// リンク要素を作成
+					const link = document.createElement('a');
+					link.href = linkUrl.startsWith('http') ? linkUrl : `https://${linkUrl}`;
+					link.target = linkTarget;
+					link.rel = linkTarget === '_blank' ? 'noopener noreferrer' : '';
+					link.className = 'editor-link';
+
+					// 選択範囲の内容をリンク内に移動
+					link.appendChild(contents);
+
+					// リンクを挿入
+					range.insertNode(link);
+
+					console.log('[insertLink] Created link from selection:', selectedText);
+					console.log('[insertLink] Link element:', link.outerHTML);
+				} else {
+					console.error('[insertLink] Selected text is empty');
+				}
+			}
+			
+			// 選択範囲をクリア
+			savedRange = null;
+		}
+
+		// ダイアログを閉じてから保存
+		showLinkDialog = false;
+		
+		// エディタにフォーカスを戻して保存
+		requestAnimationFrame(() => {
+			if (editorRef) {
+				editorRef.focus();
+			}
+			saveAndNotify();
+		});
 	}
 
-	function unlink() { removeLink(); saveAndNotify(); showLinkDialog = false; }
+	function unlink() {
+		if (savedRange) {
+			const node = savedRange.commonAncestorContainer as HTMLElement;
+			const link = (node.nodeType === Node.ELEMENT_NODE ? node : node.parentElement)?.closest('a');
+			if (link) {
+				const parent = link.parentNode;
+				while (link.firstChild) {
+					parent?.insertBefore(link.firstChild, link);
+				}
+				link.remove();
+			}
+			savedRange = null;
+		} else {
+			removeLink();
+		}
+		saveAndNotify();
+		showLinkDialog = false;
+	}
 
 	function handleTableContextMenu(e: MouseEvent, cell: HTMLTableCellElement) {
 		e.preventDefault();
@@ -826,6 +1203,205 @@
 
 	function handleInlineFormat(cmd: string) { format(cmd); updateInlineToolbar(); }
 
+	function setLineHeight(value: string) {
+		if (!editorRef) {
+			console.error('[setLineHeight] editorRef not found');
+			return;
+		}
+		const sel = window.getSelection();
+		if (!sel || !sel.rangeCount) {
+			console.error('[setLineHeight] selection not found');
+			return;
+		}
+
+		const range = sel.getRangeAt(0);
+		let node = range.commonAncestorContainer;
+
+		// テキストノードの場合は親要素を取得
+		if (node.nodeType === Node.TEXT_NODE) {
+			node = node.parentElement;
+		}
+
+		console.log('[setLineHeight] Initial node:', node);
+		console.log('[setLineHeight] node tagName:', node?.tagName);
+		console.log('[setLineHeight] node className:', node?.className);
+
+		// Editor.js の ce-paragraph または ce-header を探す
+		let blockElement = node?.closest('.ce-paragraph, .ce-header, p, h1, h2, h3, h4, h5, h6, li, div, figure, pre, blockquote');
+		
+		console.log('[setLineHeight] blockElement:', blockElement);
+		console.log('[setLineHeight] blockElement tagName:', blockElement?.tagName);
+		console.log('[setLineHeight] blockElement className:', blockElement?.className);
+		console.log('[setLineHeight] value:', value);
+		
+		if (!blockElement) {
+			// 見つからない場合は現在のカーソル位置の親要素
+			blockElement = node;
+			console.log('[setLineHeight] Using fallback node:', blockElement);
+		}
+
+		if (blockElement && editorRef.contains(blockElement)) {
+			// 既存の line-height クラスをすべて削除
+			blockElement.classList.remove('line-height-10', 'line-height-125', 'line-height-15', 'line-height-175', 'line-height-20', 'line-height-25', 'line-height-30');
+			
+			// 値に対応するクラスを追加
+			const classMap: Record<string, string> = {
+				'1.0': 'line-height-10',
+				'1.25': 'line-height-125',
+				'1.5': 'line-height-15',
+				'1.75': 'line-height-175',
+				'2.0': 'line-height-20',
+				'2.5': 'line-height-25',
+				'3.0': 'line-height-30'
+			};
+			
+			const className = classMap[value];
+			if (className) {
+				blockElement.classList.add(className);
+				
+				// インラインスタイルを直接上書き（Editor.js の設定を無効化）
+				// Editor.js は style 属性で設定しているので、それを上書き
+				const currentStyle = blockElement.getAttribute('style') || '';
+				// 既存の line-height を削除
+				const newStyle = currentStyle.replace(/line-height:\s*[^;]+;?/gi, '');
+				// 新しい line-height を追加
+				blockElement.setAttribute('style', `${newStyle} line-height: ${value} !important;`.trim());
+				
+				currentLineHeight = value;
+				
+				console.log('[setLineHeight] Applied class:', className);
+				console.log('[setLineHeight] New style attribute:', blockElement.getAttribute('style'));
+				
+				// br タグの後ろにスペーサーを追加
+				const brElements = blockElement.querySelectorAll('br');
+				console.log('[setLineHeight] Found br elements:', brElements.length);
+				brElements.forEach(br => {
+					// 既にスペーサーがある場合は削除
+					const nextSibling = br.nextSibling;
+					if (nextSibling && (nextSibling as HTMLElement).classList?.contains('line-height-spacer')) {
+						nextSibling.remove();
+					}
+					// スペーサーを追加
+					const spacer = document.createElement('span');
+					spacer.className = 'line-height-spacer';
+					spacer.setAttribute('style', `display: inline-block !important; width: 0 !important; height: ${parseFloat(value) * 0.8}em !important; vertical-align: baseline !important;`);
+					br.parentNode?.insertBefore(spacer, br.nextSibling);
+				});
+				
+				// 即座に onchange を呼んで状態を更新
+				innerHTML = editorRef.innerHTML;
+				if (onchange) onchange(innerHTML);
+				saveToHistory(innerHTML);
+				
+				console.log('[setLineHeight] Done! currentLineHeight:', currentLineHeight);
+				console.log('[setLineHeight] Final outerHTML:', blockElement.outerHTML);
+			}
+		} else {
+			console.error('[setLineHeight] blockElement not in editorRef');
+		}
+	}
+
+	function setMarginTop(value: string) {
+		if (!editorRef) return;
+		const sel = window.getSelection();
+		if (!sel || !sel.rangeCount) return;
+
+		const range = sel.getRangeAt(0);
+		let node = range.commonAncestorContainer;
+		if (node.nodeType === Node.TEXT_NODE) node = node.parentElement;
+
+		let blockElement = node?.closest('.ce-paragraph, .ce-header, p, h1, h2, h3, h4, h5, h6, li, div, figure, pre, blockquote');
+		
+		if (!blockElement) {
+			blockElement = node;
+		}
+
+		if (blockElement && editorRef.contains(blockElement)) {
+			blockElement.style.setProperty('margin-top', value, 'important');
+			currentMarginTop = value;
+			innerHTML = editorRef.innerHTML;
+			if (onchange) onchange(innerHTML);
+			saveToHistory(innerHTML);
+		}
+	}
+
+	function setMarginBottom(value: string) {
+		if (!editorRef) return;
+		const sel = window.getSelection();
+		if (!sel || !sel.rangeCount) return;
+
+		const range = sel.getRangeAt(0);
+		let node = range.commonAncestorContainer;
+		if (node.nodeType === Node.TEXT_NODE) node = node.parentElement;
+
+		let blockElement = node?.closest('.ce-paragraph, .ce-header, p, h1, h2, h3, h4, h5, h6, li, div, figure, pre, blockquote');
+		
+		if (!blockElement) {
+			blockElement = node;
+		}
+
+		if (blockElement && editorRef.contains(blockElement)) {
+			blockElement.style.setProperty('margin-bottom', value, 'important');
+			currentMarginBottom = value;
+			innerHTML = editorRef.innerHTML;
+			if (onchange) onchange(innerHTML);
+			saveToHistory(innerHTML);
+		}
+	}
+
+	function updateSpacingState() {
+		const sel = window.getSelection();
+		if (!sel || !sel.rangeCount || !editorRef) return;
+
+		const range = sel.getRangeAt(0);
+		let node = range.commonAncestorContainer;
+		if (node.nodeType === Node.TEXT_NODE) node = node.parentElement;
+
+		// Editor.js のブロック要素を探す
+		let blockElement = node?.closest('.ce-paragraph, .ce-header, p, h1, h2, h3, h4, h5, h6, li, div, figure, pre, blockquote');
+
+		if (!blockElement) {
+			blockElement = node as HTMLElement;
+			while (blockElement && !['P', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'LI', 'DIV'].includes(blockElement.tagName)) {
+				blockElement = blockElement.parentElement as HTMLElement;
+				if (!blockElement || blockElement === editorRef) break;
+			}
+		}
+
+		if (blockElement && editorRef.contains(blockElement)) {
+			const style = window.getComputedStyle(blockElement);
+			
+			// CSS クラスから行間を取得（最優先）
+			if (blockElement.classList.contains('line-height-10')) currentLineHeight = '1.0';
+			else if (blockElement.classList.contains('line-height-125')) currentLineHeight = '1.25';
+			else if (blockElement.classList.contains('line-height-15')) currentLineHeight = '1.5';
+			else if (blockElement.classList.contains('line-height-175')) currentLineHeight = '1.75';
+			else if (blockElement.classList.contains('line-height-20')) currentLineHeight = '2.0';
+			else if (blockElement.classList.contains('line-height-25')) currentLineHeight = '2.5';
+			else if (blockElement.classList.contains('line-height-30')) currentLineHeight = '3.0';
+			else {
+				// インラインスタイルまたは計算済みスタイルから取得
+				const lineHeight = style.lineHeight;
+				if (lineHeight && lineHeight !== 'normal') {
+					if (lineHeight.includes('px')) {
+						const fontSize = parseFloat(style.fontSize);
+						const ratio = parseFloat(lineHeight) / fontSize;
+						currentLineHeight = ratio.toFixed(2);
+					} else {
+						currentLineHeight = lineHeight;
+					}
+				} else {
+					currentLineHeight = '2.2'; // デフォルト
+				}
+			}
+			
+			currentMarginTop = style.marginTop || '0';
+			currentMarginBottom = style.marginBottom || '0';
+			
+			console.log('[updateSpacingState] currentLineHeight:', currentLineHeight, 'blockElement:', blockElement);
+		}
+	}
+
 	function handleSelectionChange() {
 		const sel = window.getSelection();
 		if (!sel?.rangeCount || !editorRef?.contains(sel.getRangeAt(0).commonAncestorContainer)) {
@@ -835,6 +1411,10 @@
 		isItalic = hasInlineStyleInSelection('i') || hasInlineStyleInSelection('em');
 		isUnderline = hasInlineStyleInSelection('u');
 		isStrikethrough = hasInlineStyleInSelection('s');
+		
+		// 行間・マージン状態を更新
+		updateSpacingState();
+		
 		if (sel.isCollapsed) showInlineToolbar = false;
 		else updateInlineToolbar();
 	}
@@ -947,6 +1527,45 @@
 				}} title="文字色">
 					<Palette size={18} />
 				</button>
+			</div>
+
+			<div class="v-divider"></div>
+
+			<!-- 行間調整 -->
+			<div class="toolbar-group">
+				<div class="dropdown-wrapper">
+					<button type="button" class="toolbar-dropdown-btn" onmousedown={(e) => { e.preventDefault(); toggleDropdown('lineheight', e); }} title="行間・マージン">
+						<ChevronUp size={18} />
+						<span class="text-xs font-bold">{currentLineHeight}</span>
+						<ChevronDown size={14} />
+					</button>
+					{#if activeDropdown === 'lineheight'}
+						<div class="dropdown-menu">
+							<div class="dropdown-section-title">行間</div>
+							<button onmousedown={(e) => { e.preventDefault(); setLineHeight('1.0'); closeDropdowns(); }}>1.0 (狭)</button>
+							<button onmousedown={(e) => { e.preventDefault(); setLineHeight('1.25'); closeDropdowns(); }}>1.25</button>
+							<button onmousedown={(e) => { e.preventDefault(); setLineHeight('1.5'); closeDropdowns(); }}>1.5 (標準)</button>
+							<button onmousedown={(e) => { e.preventDefault(); setLineHeight('1.75'); closeDropdowns(); }}>1.75</button>
+							<button onmousedown={(e) => { e.preventDefault(); setLineHeight('2.0'); closeDropdowns(); }}>2.0 (広)</button>
+							<button onmousedown={(e) => { e.preventDefault(); setLineHeight('2.5'); closeDropdowns(); }}>2.5</button>
+							<button onmousedown={(e) => { e.preventDefault(); setLineHeight('3.0'); closeDropdowns(); }}>3.0 (最広)</button>
+							
+							<div class="dropdown-section-title">上マージン</div>
+							<button onmousedown={(e) => { e.preventDefault(); setMarginTop('0'); closeDropdowns(); }}>0px</button>
+							<button onmousedown={(e) => { e.preventDefault(); setMarginTop('8px'); closeDropdowns(); }}>8px</button>
+							<button onmousedown={(e) => { e.preventDefault(); setMarginTop('16px'); closeDropdowns(); }}>16px</button>
+							<button onmousedown={(e) => { e.preventDefault(); setMarginTop('24px'); closeDropdowns(); }}>24px</button>
+							<button onmousedown={(e) => { e.preventDefault(); setMarginTop('32px'); closeDropdowns(); }}>32px</button>
+							
+							<div class="dropdown-section-title">下マージン</div>
+							<button onmousedown={(e) => { e.preventDefault(); setMarginBottom('0'); closeDropdowns(); }}>0px</button>
+							<button onmousedown={(e) => { e.preventDefault(); setMarginBottom('8px'); closeDropdowns(); }}>8px</button>
+							<button onmousedown={(e) => { e.preventDefault(); setMarginBottom('16px'); closeDropdowns(); }}>16px</button>
+							<button onmousedown={(e) => { e.preventDefault(); setMarginBottom('24px'); closeDropdowns(); }}>24px</button>
+							<button onmousedown={(e) => { e.preventDefault(); setMarginBottom('32px'); closeDropdowns(); }}>32px</button>
+						</div>
+					{/if}
+				</div>
 			</div>
 
 			<div class="v-divider"></div>
@@ -1429,5 +2048,25 @@
 	:global(.rich-editor > ul:not(.image-align-left):not(.image-align-right):not([style*="float"]):not(.image-align-center)),
 	:global(.rich-editor > ol:not(.image-align-left):not(.image-align-right):not([style*="float"]):not(.image-align-center)) {
 		clear: both;
+	}
+
+	.dropdown-section-title {
+		font-size: 10px;
+		font-weight: 700;
+		color: #94a3b8;
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
+		padding: 8px 12px 4px;
+		margin-top: 8px;
+		border-top: 1px solid #e2e8f0;
+	}
+
+	.dropdown-section-title:first-child {
+		margin-top: 0;
+		border-top: none;
+	}
+	:global(.dark) .dropdown-section-title {
+		color: #64748b;
+		border-top-color: #334155;
 	}
 </style>
