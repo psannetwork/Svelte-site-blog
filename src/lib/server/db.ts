@@ -193,17 +193,31 @@ function createPreparedStatement(sql: string, dbInstance: any) {
 	const stmt = dbInstance.prepare(sql);
 	return {
 		run: (...params: any[]) => {
-			const args = params.length === 1 && Array.isArray(params[0]) ? params[0] : params;
-			return args.length > 0 ? stmt.run(args) : stmt.run();
+			// Properly handle array parameters to prevent SQL injection
+			if (params.length === 1 && Array.isArray(params[0])) {
+				return stmt.run(params[0]);
+			}
+			return params.length > 0 ? stmt.run(params) : stmt.run();
 		},
 		all: (...params: any[]) => {
-			const args = params.length === 1 && Array.isArray(params[0]) ? params[0] : params;
-			const result = args.length > 0 ? stmt.all(args) : stmt.all();
+			// Properly handle array parameters to prevent SQL injection
+			if (params.length === 1 && Array.isArray(params[0])) {
+				const result = stmt.all(params[0]);
+				return Array.isArray(result) ? result : result?.rows || [];
+			}
+			const result = params.length > 0 ? stmt.all(params) : stmt.all();
 			return Array.isArray(result) ? result : result?.rows || [];
 		},
 		get: (...params: any[]) => {
-			const args = params.length === 1 && Array.isArray(params[0]) ? params[0] : params;
-			const result = args.length > 0 ? stmt.get(args) : stmt.get();
+			// Properly handle array parameters to prevent SQL injection
+			if (params.length === 1 && Array.isArray(params[0])) {
+				const result = stmt.get(params[0]);
+				if (result && !Array.isArray(result) && result.rows && result.rows.length > 0) {
+					return result.rows[0];
+				}
+				return result;
+			}
+			const result = params.length > 0 ? stmt.get(params) : stmt.get();
 			if (result && !Array.isArray(result) && result.rows && result.rows.length > 0) {
 				return result.rows[0];
 			}

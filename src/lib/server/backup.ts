@@ -1,4 +1,4 @@
-import { mkdirSync, existsSync, readdirSync, unlinkSync, statSync, copyFileSync } from 'fs';
+import { mkdirSync, existsSync, readdirSync, unlinkSync, statSync, copyFileSync, renameSync } from 'fs';
 import { join } from 'path';
 import db, { resetDb } from './db';
 import { getSetting, setSetting } from './settings';
@@ -68,10 +68,96 @@ export function verifyDatabase(path: string): { success: boolean; error?: string
 }
 
 export async function performBackup() {
-	if (env.TURSO_DB_URL) {
-		setSetting('last_backup_at', Date.now().toString());
-		return { success: true, message: 'Managed by Turso' };
-	}
+if (env.TURSO_DB_URL) {
+setSetting('last_backup_at', Date.now().toString());
+return { success: true, message: 'Managed by Turso' };
+}
+
+if (!existsSync(BACKUP_DIR)) {
+mkdirSync(BACKUP_DIR, { recursive: true });
+}
+const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+const backupPath = join(BACKUP_DIR, `backup-${timestamp}.db`);
+const tempBackupPath = join(BACKUP_DIR, `backup-${timestamp}.tmp.db`);
+
+try {
+let backupSuccess = false;
+
+// 1. VACUUM INTO で一時的なバックアップファイルに出力 (推奨)
+try {
+db.prepare(`VACUUM INTO ?`).run(tempBackupPath);
+
+// 検証後に本番ファイルに移動
+const verification = verifyDatabase(tempBackupPath);
+if (!verification.success) {
+throw new Error(verification.error || 'Backup verification failed');
+}
+
+// 原子操作でリネーム
+renameSync(tempBackupPath, backupPath);
+
+backupSuccess = true;
+} catch (vErr) {
+console.warn('[BACKUP] VACUUM INTO failed, falling back to copy:', vErr);
+// 一時ファイルをクリーンアップ
+try { if (existsSync(tempBackupPath)) unlinkSync(tempBackupPath); } catch (e) {}
+}
+
+// 2. ドライバのバックアップ機能があるか確認 (better-sqlite3 等)
+if (!backupSuccess && typeof (db as any).backup === 'function') {
+try {
+await (db as any).backup(tempBackupPath);
+
+// 検証後に本番ファイルに移動
+const verification = verifyDatabase(tempBackupPath);
+if (!verification.success) {
+throw new Error(verification.error || 'Backup verification failed');
+}
+
+renameSync(tempBackupPath, backupPath);
+
+backupSuccess = true;
+} catch (err: any) {
+console.warn('[BACKUP] driver.backup failed:', err);
+try { if (existsSync(tempBackupPath)) unlinkSync(tempBackupPath); } catch (e) {}
+}
+}
+
+// 3. ファイルコピーによるバックアップ (最後の手段)
+if (!backupSuccess && existsSync(DB_PATH)) {
+// WAL モードの場合はチェックポイントを実行してデータをメインファイルに書き出す
+try {
+db.prepare('PRAGMA wal_checkpoint(FULL)').run();
+} catch (e) {}
+
+// 一時ファイルにコピー
+copyFileSync(DB_PATH, tempBackupPath);
+
+// 検証後に本番ファイルに移動
+const verification = verifyDatabase(tempBackupPath);
+if (!verification.success) {
+throw new Error(verification.error || 'Backup verification failed');
+}
+
+renameSync(tempBackupPath, backupPath);
+
+backupSuccess = true;
+}
+
+if (backupSuccess) {
+setSetting('last_backup_at', Date.now().toString());
+rotateBackups();
+return { success: true, path: backupPath };
+}
+
+return { success: false, error: 'Backup method not available' };
+} catch (e) {
+console.error('[BACKUP ERROR]', e);
+// 一時ファイルをクリーンアップ
+try { if (existsSync(tempBackupPath)) unlinkSync(tempBackupPath); } catch (e) {}
+return { success: false, error: String(e) };
+}
+}
 
 	if (!existsSync(BACKUP_DIR)) {
 		mkdirSync(BACKUP_DIR, { recursive: true });

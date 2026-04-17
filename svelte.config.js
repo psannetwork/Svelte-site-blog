@@ -1,5 +1,6 @@
 import adapter from '@sveltejs/adapter-node';
 import { vitePreprocess } from '@sveltejs/vite-plugin-svelte';
+import { env } from '$env/dynamic/private';
 
 /** @type {import('@sveltejs/kit').Config} */
 const config = {
@@ -12,7 +13,7 @@ const config = {
 			precompress: true
 		}),
 		csrf: {
-			// CSRF 保護を有効化
+			// CSRF protection with environment variable support
 			trustedOrigins: [
 				'localhost',
 				'127.0.0.1',
@@ -23,7 +24,8 @@ const config = {
 				'https://blog.psannetwork.net',
 				'https://blogtest.psannetwork.net',
 				'http://blog.psannetwork.net',
-				'http://blogtest.psannetwork.net'
+				'http://blogtest.psannetwork.net',
+				...(env.TRUSTED_ORIGINS ? env.TRUSTED_ORIGINS.split(',').map(origin => origin.trim()) : [])
 			]
 		}
 	}

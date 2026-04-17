@@ -1,45 +1,110 @@
-node_modules
+```
+# Dependencies
+node_modules/
+.pnpm-store/
 
-# Output
-.output
-.vercel
-.netlify
-.wrangler
-/.svelte-kit
-/build
+# Build outputs
+dist/
+build/
+.svelte-kit/
+.vercel/
 
-# OS
-.DS_Store
-Thumbs.db
-
-# Env
-.env
+# Environment variables
+.env.local
 .env.*
-!.env.example
-!.env.test
-
-# Vite
-vite.config.js.timestamp-*
-vite.config.ts.timestamp-*
 
 # Logs
 *.log
 
-# Database
-*.db
-*.db-journal
-*.db-shm
-*.db-wal
+# Temporary files
+*.tmp
+*.swp
 
-# Uploads
-static/uploads/*
-!static/uploads/.gitkeep
+# OS generated files
+.DS_Store
+Thumbs.db
 
-# Puppeteer
-puppeteer-profile/
+# Coverage
+coverage/
+htmlcov/
+.coverage
 
-qa_tools
+# IDE
+.vscode/
+.idea/
 
-*.zip
-
-.pnpm-store
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv/
+pip-log.txt
+pip-selfcheck.json
+*.so
+.pytest_cache/
+.mypy_cache/
+.tox/
+.coverage*
+nosetests.xml
+coverage.xml
+*.cover
+*.log
+.git*
+!/.gitignore
+*.sublime-workspace
+.project
+.pydevproject
+.idea/
+.vscode/
+.settings/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+.hg
+.svn
+.CVS
+.Rproj.user
+.Rhistory
+.RData
+.Rds
+.rds
+.Rbuildignore
+.Rinstignore
+.gitattributes
+.travis.yml
+.appveyor.yml
+.circleci/
+.jenkins.yml
+.drone.yml
+.gitlab-ci.yml
+.semaphore/
+.shuttle.yml
+.snapcraft.yaml
+.werckerignore
+.codeclimate.yml
+.codacy-coverage.json
+.coveralls.yml
+.dangerfile
+.dependabot/config.yml
+.github/CODEOWNERS
+.github/ISSUE_TEMPLATE.md
+.github/PULL_REQUEST_TEMPLATE.md
+.gitmodules
+.mergify.yml
+.reviewdog.yml
+.slather.yml
+.wercker/
+.yarn-integrity
+.yarn-metadata.json
+.yarn/
+.pnp.*
+.pnp.js
+.pnp.cjs
+.pnp.loader.mjs
+```

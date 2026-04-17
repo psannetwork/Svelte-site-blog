@@ -165,13 +165,17 @@ SvelteKit のセキュリティ機能（CSRF保護）が、リクエストの送
 
 ```javascript
 // svelte.config.js
+import { env } from '$env/dynamic/private';
+
 const config = {
 	kit: {
 		csrf: {
 			checkOrigin: true, // オリジンチェックを有効にする（デフォルト）
 			trustedOrigins: [
 				'https://blog.psannetwork.net',
-				'http://localhost:5892' // 必要に応じて追加
+				'http://localhost:5174', // 開発サーバーのデフォルトポート
+				'http://localhost:5892', // プレビューサーバーのデフォルトポート
+				...(env.TRUSTED_ORIGINS ? env.TRUSTED_ORIGINS.split(',') : [])
 			]
 		}
 	}
