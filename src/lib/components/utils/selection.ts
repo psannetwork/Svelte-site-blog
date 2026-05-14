@@ -525,31 +525,49 @@ export function insertTextAtCursor(text: string) {
 
 /**
  * Formats a block element (e.g., change P to H1).
- * 複数選択に対応：document.execCommand を使用してブラウザネイティブのフォーマットを適用
+ * Replaces the native execCommand with a manual implementation for better control.
  */
 export function formatBlock(newTagName: string) {
 	const selection = window.getSelection();
 	if (!selection || selection.rangeCount === 0) return null;
 
 	const range = selection.getRangeAt(0);
+	const node = range.commonAncestorContainer;
+	const block = getBlockElement(node.nodeType === Node.TEXT_NODE ? node.parentElement : (node as HTMLElement));
+
+	if (!block) {
+		const newBlock = document.createElement(newTagName);
+		newBlock.innerHTML = range.toString() || '<br>';
+		range.deleteContents();
+		range.insertNode(newBlock);
+		setCursorToEnd(newBlock);
+		return newBlock;
+	}
+
+	// 1. 中身をフラットなテキスト/インライン構造にする (pタグなどを抽出)
+	const tempContainer = document.createElement('div');
+	tempContainer.innerHTML = block.innerHTML;
 	
-	// execCommand を使用してブロックフォーマットを適用
-	// ブラウザが自動的に選択範囲内のすべてのブロック要素に適用してくれる
-	document.execCommand('formatBlock', false, newTagName.toUpperCase());
-	
-	// カーソル位置を調整
-	setTimeout(() => {
-		const newSelection = window.getSelection();
-		if (newSelection && newSelection.rangeCount > 0) {
-			const newRange = newSelection.getRangeAt(0);
-			// 選択範囲の終了位置にカーソルを移動
-			newRange.collapse(false);
-			newSelection.removeAllRanges();
-			newSelection.addRange(newRange);
+	// 子要素の P タグなどを除去して中身を抽出
+	const cleanContent = Array.from(tempContainer.childNodes).map(child => {
+		if (child.nodeName === 'P' || child.nodeName === 'DIV') {
+			return (child as HTMLElement).innerHTML;
 		}
-	}, 0);
+		return (child as HTMLElement).outerHTML || child.textContent;
+	}).join('');
+
+	// 2. 新しいタグを作成
+	const newBlock = document.createElement(newTagName);
+	newBlock.innerHTML = cleanContent;
 	
-	return null;
+	// id などの属性を引き継ぐ必要があるならここでコピー
+	if (block.hasAttribute('data-element-id')) {
+		newBlock.setAttribute('data-element-id', block.getAttribute('data-element-id')!);
+	}
+
+	block.replaceWith(newBlock);
+	setCursorToEnd(newBlock);
+	return newBlock;
 }
 
 /**

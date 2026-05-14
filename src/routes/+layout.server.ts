@@ -5,39 +5,44 @@ import type { LayoutServerLoad } from './$types';
 
 export const prerender = false;
 
+interface PageContent {
+    content: string | null;
+    raw_json: string | null;
+}
+
 export const load: LayoutServerLoad = async ({ locals, depends }) => {
-	depends('app:settings');
+    depends('app:settings');
 
-	const settings = getSettings();
+    const settings = getSettings();
 
-	// pages テーブルからエラーページを取得（DB 優先）
-	const error404Page = db.prepare("SELECT content, raw_json FROM pages WHERE id = 'error404'").get() as any;
-	const error500Page = db.prepare("SELECT content, raw_json FROM pages WHERE id = 'error500'").get() as any;
+    // データベースからエラーページを一括取得（SQLの最適化）
+    const pages = db.prepare("SELECT id, content, raw_json FROM pages WHERE id IN ('error404', 'error500')").all() as { id: string } & PageContent[];
+    
+    const pageMap = new Map(pages.map(p => [p.id, p]));
 
-	// content (HTML) があれば優先、なければ raw_json から変換
-	const getHtmlFromPage = (page: any, pageName: string): string => {
-		if (!page) return '';
-		if (page.content) return page.content;
-		if (page.raw_json) {
-			try {
-				const parsed = JSON.parse(page.raw_json);
-				if (parsed && parsed.blocks) {
-					return editorJsToHtml(parsed.blocks);
-				}
-			} catch (e) {
-				console.error(`[${pageName} LOAD ERROR] JSON parse failed:`, e);
-			}
-		}
-		return '';
-	};
+    const getHtmlFromPage = (id: string): string => {
+        const page = pageMap.get(id);
+        if (!page) return '';
+        
+        // 1. content があればそのまま返す
+        if (page.content) return page.content;
+        
+        // 2. raw_json があれば変換
+        if (page.raw_json) {
+            try {
+                const parsed = JSON.parse(page.raw_json);
+                return parsed?.blocks ? editorJsToHtml(parsed.blocks) : '';
+            } catch (e) {
+                console.error(`[${id} LOAD ERROR] JSON parse failed:`, e);
+            }
+        }
+        return '';
+    };
 
-	const error404Html = getHtmlFromPage(error404Page, 'ERROR404');
-	const error500Html = getHtmlFromPage(error500Page, 'ERROR500');
-
-	return {
-		user: locals.user,
-		settings,
-		error404Html,
-		error500Html
-	};
+    return {
+        user: locals.user,
+        settings,
+        error404Html: getHtmlFromPage('error404'),
+        error500Html: getHtmlFromPage('error500')
+    };
 };

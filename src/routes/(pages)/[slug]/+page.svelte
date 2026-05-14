@@ -6,11 +6,17 @@
 	import { t, type Language } from '$lib/i18n';
 	import { applyColors } from '$lib/utils/color';
 	import { onMount } from 'svelte';
+	import DOMPurify from 'isomorphic-dompurify';
 
 	let { data, form } = $props<{ data: PageData; form: ActionData }>();
 	const lang = $derived((data.settings?.site_language || 'ja') as Language);
 	let replyingTo = $state<string | null>(null);
 	let isPosting = $state(false);
+
+	// コメントのサニタイズ
+	function sanitizeComment(str: string): string {
+		return DOMPurify.sanitize(str);
+	}
 
 	// ハイブリッド配色の適用
 	onMount(() => {
@@ -46,12 +52,6 @@
 				});
 			});
 		});
-	}
-
-	// コメントの表示を 1000 文字に制限
-	function truncateComment(str: string, maxLength = 1000): string {
-		if (!str || str.length <= maxLength) return str;
-		return str.slice(0, maxLength) + '...';
 	}
 
 	// Turnstileを手動でレンダリングするアクション
@@ -262,7 +262,7 @@
 				style="word-break: break-word; overflow-wrap: break-word;"
 			>
 				<!-- eslint-disable-next-line svelte/no-at-html-tags -->
-				{@html truncateComment(comment.content)}
+				{@html sanitizeComment(comment.content)}
 			</div>
 
 			<div class="flex items-center gap-2 mt-3">

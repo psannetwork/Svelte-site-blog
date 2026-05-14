@@ -188,23 +188,17 @@
 		// 水平線
 		html = html.replace(/^---$/gm, '<hr>');
 		
-		// 段落
-		html = html.replace(/\n\n/g, '</p><p>');
-		html = '<p>' + html + '</p>';
+		// 段落処理: ブロック要素でないものだけを段落で囲む
+		const lines = html.split('\n\n');
+		html = lines.map(line => {
+			if (/^<(h[1-6]|ul|ol|blockquote|pre|hr)/i.test(line.trim())) {
+				return line;
+			}
+			return `<p>${line.trim().replace(/\n/g, '<br>')}</p>`;
+		}).join('');
 		
 		// 不要な空の段落を削除
 		html = html.replace(/<p>\s*<\/p>/g, '');
-		html = html.replace(/<p>\s*(<h[1-6]>)/g, '$1');
-		html = html.replace(/(<\/h[1-6]>)\s*<\/p>/g, '$1');
-		html = html.replace(/<p>\s*(<ul>)/g, '$1');
-		html = html.replace(/(<\/ul>)\s*<\/p>/g, '$1');
-		html = html.replace(/<p>\s*(<ol>)/g, '$1');
-		html = html.replace(/(<\/ol>)\s*<\/p>/g, '$1');
-		html = html.replace(/<p>\s*(<blockquote>)/g, '$1');
-		html = html.replace(/(<\/blockquote>)\s*<\/p>/g, '$1');
-		html = html.replace(/<p>\s*(<pre>)/g, '$1');
-		html = html.replace(/(<\/pre>)\s*<\/p>/g, '$1');
-		html = html.replace(/<p>\s*(<hr>)\s*<\/p>/g, '$1');
 		
 		return html;
 	}
@@ -302,6 +296,7 @@
 	}
 
 	onMount(async () => {
+		console.log('[DEBUG] RichEditor mounted with latest logic.');
 		abortController = new AbortController();
 		if (editorRef) {
 			const backup = loadFromLocalStorage();

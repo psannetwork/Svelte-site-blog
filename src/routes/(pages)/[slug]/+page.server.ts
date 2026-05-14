@@ -3,16 +3,6 @@ import { error, redirect, fail } from '@sveltejs/kit';
 import { getSetting } from '$lib/server/settings';
 import type { PageServerLoad, Actions } from './$types';
 
-// HTML エスケープ関数
-function escapeHtml(str: string): string {
-	return str
-		.replace(/&/g, '&amp;')
-		.replace(/</g, '&lt;')
-		.replace(/>/g, '&gt;')
-		.replace(/"/g, '&quot;')
-		.replace(/'/g, '&#039;');
-}
-
 export const load: PageServerLoad = async ({ params, locals }) => {
 	const { slug } = params;
 
@@ -163,8 +153,15 @@ export const actions: Actions = {
 			}
 		}
 
-		// XSS 対策：HTML エスケープ
-		content = escapeHtml(content);
+		// parent_id の検証
+		if (parent_id) {
+			const parentComment = db
+				.prepare('SELECT id FROM comment WHERE id = ? AND post_id = ?')
+				.get(parent_id, slug);
+			if (!parentComment) {
+				return fail(400, { message: '指定された親コメントは存在しません。' });
+			}
+		}
 
 		const userId = locals.user?.id || null;
 		const allowAnonymous = getSetting('allow_anonymous_comments', 'false') === 'true';
