@@ -75,8 +75,9 @@ export const actions: Actions = {
 		db.prepare(
 			`
 			UPDATE post
-			SET title = ?, summary = ?, content = ?, updated_at = ?, thumbnail_url = ?
+			SET title = ?, summary = ?, content = ?, updated_at = ?, thumbnail_url = ?, visibility = ?
 			WHERE id = ?
+
 		`
 		).run(
 			title,
@@ -84,6 +85,7 @@ export const actions: Actions = {
 			sanitizedHtml,
 			Date.now(),
 			thumbnailUrl || null,
+			visibility,
 			params.id
 		);
 
