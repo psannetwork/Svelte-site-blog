@@ -23,20 +23,13 @@ export const actions: Actions = {
 		const showInNav = formData.get('showInNav') === 'on' ? 1 : 0;
 		const showInFooter = formData.get('showInFooter') === 'on' ? 1 : 0;
 		
-		console.log('[DEBUG] Saving page:', params.id, { title, showInNav, showInFooter });
+		const sanitizedHtml = editorHtml ? sanitizeHtml(editorHtml) : '';
 
-		if (!editorHtml) return fail(400, { success: false, message: 'Content missing' });
-
-		const sanitizedHtml = sanitizeHtml(editorHtml);
-
-		const result = db.prepare(
+		db.prepare(
 			'UPDATE pages SET title = ?, content = ?, updated_at = ?, show_in_nav = ?, show_in_footer = ? WHERE id = ?'
 		).run(title, sanitizedHtml, Date.now(), showInNav, showInFooter, params.id);
-		
-		console.log('[DEBUG] DB Update result:', result);
 
 		const updatedPage = db.prepare('SELECT * FROM pages WHERE id = ?').get(params.id);
-		console.log('[DEBUG] Updated page:', updatedPage);
 
 		return { success: true, page: updatedPage };
 	}};
