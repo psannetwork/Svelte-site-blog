@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { page } from '$app/state';
 	import type { PageData } from './$types';
 	import { t, type Language } from '$lib/i18n';
 	let { data } = $props<{ data: PageData }>();
@@ -23,7 +24,8 @@
 					"author": {
 						"@type": "Person",
 						"name": post.author_name
-					}
+					},
+					"url": `${page.url.origin}/${post.id}`
 				}
 			}))
 		}
@@ -32,7 +34,7 @@
 
 <!-- 検索結果表示 -->
 {#if data.searchQuery}
-	<div class="bg-gradient-to-br from-psan-green/10 to-psan-pink/10 dark:from-slate-800 dark:to-slate-900 border-b border-slate-200 dark:border-slate-700 py-8 md:py-12">
+	<div class="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 py-8 md:py-12">
 		<div class="max-w-7xl mx-auto px-4">
 			<div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
 				<div>
@@ -128,6 +130,13 @@
 							>
 								<span class="shrink-0">{new Date(post.created_at).toLocaleDateString()}</span>
 								<span class="w-1 h-1 bg-psan-green rounded-full shrink-0"></span>
+								{#if post.is_pinned === 1}
+									<span class="text-psan-green font-black shrink-0 flex items-center gap-1">
+										<svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z"/></svg>
+										PINNED
+									</span>
+									<span class="w-1 h-1 bg-psan-green rounded-full shrink-0"></span>
+								{/if}
 								{#if post.visibility === 'vip'}
 									<span class="text-psan-pink font-black shrink-0">💎 VIP</span>
 								{:else if post.visibility === 'draft'}

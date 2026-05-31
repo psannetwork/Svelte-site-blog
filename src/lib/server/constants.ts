@@ -7,6 +7,7 @@ export const DEFAULT_SETTINGS: Record<string, string> = {
 	allow_anonymous_comments: 'false',
 	anonymous_name: 'Anonymous',
 	allow_account_deletion: 'true',
+	show_footer_auth: 'true',
 	require_email_verification: 'false',
 	enable_turnstile: 'false',
 	turnstile_site_key: '',

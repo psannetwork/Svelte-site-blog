@@ -55,6 +55,12 @@
 					</div>
 					<div class="flex-1 min-w-0">
 						<div class="flex items-center gap-3 mb-2">
+							{#if post.is_pinned === 1}
+								<span class="flex items-center gap-1 text-[10px] font-black text-psan-green bg-psan-green/10 px-3 py-1 rounded-full uppercase tracking-widest">
+									<svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z"/></svg>
+									Pinned
+								</span>
+							{/if}
 							<span
 								class="text-[10px] font-black tracking-widest px-3 py-1 rounded-full
 								{post.visibility === 'public'
@@ -129,6 +135,25 @@
 					</form>
 
 					<div class="flex items-center gap-2">
+						{#if data.user?.role === 'admin' || data.user?.role === 'editor'}
+							<form method="POST" action="?/togglePin" use:enhance>
+								<input type="hidden" name="id" value={post.id} />
+								<button
+									type="submit"
+									aria-label="Toggle Pin"
+									class="w-12 h-12 flex items-center justify-center bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-500 transition-all rounded-2xl group/pin shadow-sm {post.is_pinned === 1 ? 'text-psan-green border-psan-green bg-psan-green/10' : 'text-slate-400 hover:text-psan-green hover:border-psan-green'}"
+								>
+									<svg class="w-5 h-5" fill={post.is_pinned === 1 ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24"
+										><path
+											stroke-linecap="round"
+											stroke-linejoin="round"
+											stroke-width="2.5"
+											d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"
+										/></svg
+									>
+								</button>
+							</form>
+						{/if}
 						<a
 							href={canEdit ? `/dashboard/posts/${post.id}` : 'javascript:void(0)'}
 							aria-label={t(lang, 'edit')}

@@ -145,8 +145,8 @@
 	<!-- 記事固有の SEO メタタグ -->
 	<meta name="description" content={data.post.summary || `「${data.post.title}」の記事を読む`} />
 	<meta name="author" content={data.post.author_name || 'Unknown'} />
-	<meta name="article:published_time" content={new Date(data.post.created_at).toISOString()} />
-	{#if data.post.updated_at}
+	<meta name="article:published_time" content={data.post.created_at && !isNaN(new Date(data.post.created_at).getTime()) ? new Date(data.post.created_at).toISOString() : ''} />
+	{#if data.post.updated_at && !isNaN(new Date(data.post.updated_at).getTime())}
 		<meta name="article:modified_time" content={new Date(data.post.updated_at).toISOString()} />
 	{/if}
 	
@@ -189,10 +189,10 @@
 				"name": data.settings?.site_title || "Svelte Site Blog",
 				"logo": {
 					"@type": "ImageObject",
-					"url": data.settings?.site_icon_url || "https://blog.psannetwork.net/favicon.svg"
+					"url": data.settings?.site_icon_url || `${page.url.origin}/favicon.svg`
 				}
 			},
-			"url": `https://blog.psannetwork.net/${data.post.id}`
+			"url": `${page.url.origin}/${data.post.id}`
 		}
 	</script>
 </svelte:head>

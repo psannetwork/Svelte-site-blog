@@ -13,7 +13,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 		SELECT post.*, COALESCE(user.nickname, user.username) as author_name 
 		FROM post 
 		JOIN user ON post.author_id = user.id 
-		ORDER BY created_at DESC
+		ORDER BY is_pinned DESC, created_at DESC
 	`
 		)
 		.all() as any[];
@@ -71,6 +71,24 @@ export const actions: Actions = {
 		}
 
 		db.prepare('DELETE FROM post WHERE id = ?').run(id);
+		return { success: true };
+	},
+	togglePin: async ({ request, locals }) => {
+		if (!locals.user || !['admin', 'editor'].includes(locals.user.role)) return fail(403);
+
+		const formData = await request.formData();
+		const id = formData.get('id') as string;
+
+		const post = db.prepare('SELECT is_pinned FROM post WHERE id = ?').get(id) as any;
+		if (!post) return fail(404);
+
+		const newPinned = post.is_pinned === 1 ? 0 : 1;
+
+		db.prepare('UPDATE post SET is_pinned = ?, updated_at = ? WHERE id = ?').run(
+			newPinned,
+			Date.now(),
+			id
+		);
 		return { success: true };
 	}
 };

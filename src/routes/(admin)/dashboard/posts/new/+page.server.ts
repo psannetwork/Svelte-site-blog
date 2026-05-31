@@ -22,6 +22,7 @@ export const actions: Actions = {
 		const title = formData.get('title') as string;
 		const summary = formData.get('summary') as string;
 		let visibility = formData.get('visibility') as string;
+		const isPinned = formData.get('is_pinned') === 'on' ? 1 : 0;
 		const editorHtml = formData.get('editorHtml') as string;
 		let thumbnailUrl = formData.get('thumbnail_url') as string;
 
@@ -49,8 +50,8 @@ export const actions: Actions = {
 
 		db.prepare(
 			`
-			INSERT INTO post (id, title, summary, content, author_id, visibility, created_at, updated_at, thumbnail_url)
-			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+			INSERT INTO post (id, title, summary, content, author_id, visibility, is_pinned, created_at, updated_at, thumbnail_url)
+			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 		`
 		).run(
 			postId,
@@ -59,6 +60,7 @@ export const actions: Actions = {
 			sanitizedHtml,
 			locals.user.id,
 			visibility || 'draft',
+			isPinned,
 			now,
 			now,
 			thumbnailUrl || null

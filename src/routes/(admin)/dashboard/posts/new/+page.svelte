@@ -131,6 +131,17 @@
               <option value="vip">💎 {t(lang, 'vip')}</option>
             {/if}
           </select>
+
+          {#if data.user?.role === 'admin' || data.user?.role === 'editor'}
+            <label class="flex items-center gap-2 cursor-pointer bg-white dark:bg-slate-800 border border-slate-200 dark:border-none rounded-xl px-4 py-2 shadow-sm hover:ring-2 hover:ring-psan-green transition-all">
+              <input
+                type="checkbox"
+                name="is_pinned"
+                class="w-4 h-4 text-psan-green rounded focus:ring-psan-green"
+              />
+              <span class="text-[10px] font-black uppercase tracking-widest text-main">上位固定 (Pin)</span>
+            </label>
+          {/if}
         </div>
       </div>
       <div class="flex gap-3">

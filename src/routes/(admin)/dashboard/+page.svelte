@@ -67,7 +67,7 @@
 	{#if data.user?.role !== 'author'}
 		<!-- VIBRANT STATS -->
 		<div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-			<div class="card-stats-vibrant group bg-gradient-to-br from-psan-green to-emerald-600">
+			<div class="card-stats-vibrant group">
 				<div
 					class="absolute -right-6 -bottom-6 opacity-20 scale-125 rotate-12 transition-transform group-hover:rotate-0"
 				>
@@ -195,7 +195,7 @@
 					>
 						<defs>
 							<linearGradient id="chartGradient" x1="0" y1="0" x2="0" y2="1">
-								<stop offset="0%" stop-color="#00CC99" stop-opacity="0.4" />
+								<stop offset="0%" stop-color="#00CC99" stop-opacity="0.2" />
 								<stop offset="100%" stop-color="#00CC99" stop-opacity="0" />
 							</linearGradient>
 							<filter id="glow" x="-20%" y="-20%" width="140%" height="140%">

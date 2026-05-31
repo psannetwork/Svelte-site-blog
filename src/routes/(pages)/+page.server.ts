@@ -39,7 +39,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 				JOIN user ON post.author_id = user.id
 				WHERE post.visibility != 'draft'
 				AND (post.title LIKE ? OR post.summary LIKE ?)
-				ORDER BY created_at DESC
+				ORDER BY is_pinned DESC, created_at DESC
 			`
 				)
 				.all(searchTerm, searchTerm) as any[];
@@ -52,7 +52,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 				JOIN user ON post.author_id = user.id
 				WHERE post.visibility IN ('public', 'vip')
 				AND (post.title LIKE ? OR post.summary LIKE ?)
-				ORDER BY created_at DESC
+				ORDER BY is_pinned DESC, created_at DESC
 			`
 				)
 				.all(searchTerm, searchTerm) as any[];
@@ -65,7 +65,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 				JOIN user ON post.author_id = user.id
 				WHERE post.visibility = 'public'
 				AND (post.title LIKE ? OR post.summary LIKE ?)
-				ORDER BY created_at DESC
+				ORDER BY is_pinned DESC, created_at DESC
 			`
 				)
 				.all(searchTerm, searchTerm) as any[];
@@ -80,7 +80,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 				FROM post
 				JOIN user ON post.author_id = user.id
 				WHERE post.visibility != 'draft'
-				ORDER BY created_at DESC
+				ORDER BY is_pinned DESC, created_at DESC
 			`
 				)
 				.all() as any[];
@@ -92,7 +92,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 				FROM post
 				JOIN user ON post.author_id = user.id
 				WHERE post.visibility IN ('public', 'vip')
-				ORDER BY created_at DESC
+				ORDER BY is_pinned DESC, created_at DESC
 			`
 				)
 				.all() as any[];
@@ -104,7 +104,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 				FROM post
 				JOIN user ON post.author_id = user.id
 				WHERE post.visibility = 'public'
-				ORDER BY created_at DESC
+				ORDER BY is_pinned DESC, created_at DESC
 			`
 				)
 				.all() as any[];

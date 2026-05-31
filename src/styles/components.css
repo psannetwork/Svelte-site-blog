@@ -81,7 +81,7 @@
 }
 
 @utility card-stats-vibrant {
-	@apply relative overflow-hidden p-10 rounded-[48px] text-white shadow-2xl transition-all duration-500 hover:scale-[1.02] hover:shadow-psan-green/20;
+	@apply relative overflow-hidden p-10 rounded-[48px] text-white shadow-2xl transition-all duration-500 hover:scale-[1.02] hover:shadow-psan-green/20 bg-psan-green;
 }
 
 @utility animate-soft-float {

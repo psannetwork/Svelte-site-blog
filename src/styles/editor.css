@@ -18,13 +18,13 @@
 /* Editor.js の段落とリスト - デフォルト行間 */
 .ce-paragraph,
 .ce-block__content {
-	line-height: 2.2;
+	line-height: 1.8;
 	padding: 0.5em 0;
 }
 
 /* Editor.js のリストアイテム */
 .ce-list__item {
-	line-height: 2.2;
+	line-height: 1.8;
 	padding: 0.3em 0;
 }
 
@@ -33,8 +33,8 @@
 .ce-block__content br,
 p br,
 div br {
-	line-height: 2.2;
-	min-height: 2.2em;
+	line-height: 1.8;
+	min-height: 1.8em;
 	display: inline-block;
 	content: "";
 }

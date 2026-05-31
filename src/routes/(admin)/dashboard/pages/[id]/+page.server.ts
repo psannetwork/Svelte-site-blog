@@ -1,5 +1,5 @@
 import db from '$lib/server/db';
-import { error, redirect } from '@sveltejs/kit';
+import { error, redirect, fail } from '@sveltejs/kit';
 import { sanitizeHtml } from '$lib/utils/htmlSanitizer';
 import type { PageServerLoad, Actions } from './$types';
 
@@ -19,16 +19,24 @@ export const actions: Actions = {
 		const formData = await request.formData();
 		const title = formData.get('title') as string;
 		const editorHtml = formData.get('content') as string;
+		
+		const showInNav = formData.get('showInNav') === 'on' ? 1 : 0;
+		const showInFooter = formData.get('showInFooter') === 'on' ? 1 : 0;
+		
+		console.log('[DEBUG] Saving page:', params.id, { title, showInNav, showInFooter });
 
-		if (!editorHtml) return { success: false };
+		if (!editorHtml) return fail(400, { success: false, message: 'Content missing' });
 
-		// サニタイズを適用
 		const sanitizedHtml = sanitizeHtml(editorHtml);
 
-		db.prepare(
-			'UPDATE pages SET title = ?, content = ?, updated_at = ? WHERE id = ?'
-		).run(title, sanitizedHtml, Date.now(), params.id);
+		const result = db.prepare(
+			'UPDATE pages SET title = ?, content = ?, updated_at = ?, show_in_nav = ?, show_in_footer = ? WHERE id = ?'
+		).run(title, sanitizedHtml, Date.now(), showInNav, showInFooter, params.id);
+		
+		console.log('[DEBUG] DB Update result:', result);
 
-		return { success: true };
-	}
-};
+		const updatedPage = db.prepare('SELECT * FROM pages WHERE id = ?').get(params.id);
+		console.log('[DEBUG] Updated page:', updatedPage);
+
+		return { success: true, page: updatedPage };
+	}};

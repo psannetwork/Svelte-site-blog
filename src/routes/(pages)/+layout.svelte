@@ -34,12 +34,10 @@
 	});
 
 	// メニュー項目のパース（安全に）
-	let headerMenu = $state<{ label: string; url: string }[]>([]);
-	let footerMenu = $state<{ label: string; url: string }[]>([]);
-
-	$effect(() => {
+	let headerMenu = $derived.by(() => {
+		let menu: { label: string; url: string }[] = [];
 		try {
-			headerMenu = JSON.parse(
+			menu = JSON.parse(
 				data.settings?.header_menu ||
 					JSON.stringify([
 						{ label: 'Home', url: '/' },
@@ -47,13 +45,25 @@
 					])
 			);
 		} catch (e) {
-			headerMenu = [
+			menu = [
 				{ label: 'Home', url: '/' },
 				{ label: 'About', url: '/about' }
 			];
 		}
+		if (data.navFooterPages) {
+			data.navFooterPages.forEach((p: any) => {
+				if (Number(p.show_in_nav) === 1) {
+					menu.push({ label: p.title, url: `/${p.id}` });
+				}
+			});
+		}
+		return menu;
+	});
+
+	let footerMenu = $derived.by(() => {
+		let menu: { label: string; url: string }[] = [];
 		try {
-			footerMenu = JSON.parse(
+			menu = JSON.parse(
 				data.settings?.footer_menu ||
 					JSON.stringify([
 						{ label: 'Home', url: '/' },
@@ -62,12 +72,20 @@
 					])
 			);
 		} catch (e) {
-			footerMenu = [
+			menu = [
 				{ label: 'Home', url: '/' },
 				{ label: 'About', url: '/about' },
 				{ label: 'Privacy', url: '/privacy' }
 			];
 		}
+		if (data.navFooterPages) {
+			data.navFooterPages.forEach((p: any) => {
+				if (Number(p.show_in_footer) === 1) {
+					menu.push({ label: p.title, url: `/${p.id}` });
+				}
+			});
+		}
+		return menu;
 	});
 
 	function handleSearch(e: Event) {
@@ -241,26 +259,39 @@
 <!-- 検索モーダル (ヘッダーの外に配置) -->
 {#if isSearchOpen}
 	<div
+		role="presentation"
 		class="fixed inset-0 bg-black/30 dark:bg-black/70 backdrop-blur-md z-[200] flex items-center justify-center p-4 animate-in fade-in duration-200"
 		onclick={() => {
 			isSearchOpen = false;
 			searchQuery = '';
 			window.history.pushState({}, '', '/');
 		}}
+		onkeydown={(e) => {
+			if (e.key === 'Escape') {
+				isSearchOpen = false;
+				searchQuery = '';
+				window.history.pushState({}, '', '/');
+			}
+		}}
+		tabindex="0"
 	>
-		<form
-			onsubmit={(e) => {
-				e.preventDefault();
-				const query = searchQuery.trim();
-				if (query) {
-					isSearchOpen = false;
-					window.location.href = `/?search=${encodeURIComponent(query)}`;
-				}
-			}}
-			class="w-full max-w-3xl bg-[--bg-main] rounded-[2rem] shadow-2xl overflow-hidden transform transition-all translate-y-0"
+		<div
+			role="dialog"
+			aria-modal="true"
 			onclick={(e) => e.stopPropagation()}
+			class="w-full max-w-3xl bg-[--bg-main] rounded-[2rem] shadow-2xl overflow-hidden transform transition-all translate-y-0"
 		>
-			<div class="flex items-center justify-between gap-4 p-4 md:p-6 border-b border-[--border-color] bg-gradient-to-r from-psan-green/10 to-transparent dark:from-psan-green/5">
+			<form
+				onsubmit={(e) => {
+					e.preventDefault();
+					const query = searchQuery.trim();
+					if (query) {
+						isSearchOpen = false;
+						window.location.href = `/?search=${encodeURIComponent(query)}`;
+					}
+				}}
+				class="flex items-center justify-between gap-4 p-4 md:p-6 border-b border-[--border-color] bg-slate-50/50 dark:bg-slate-800/50"
+			>
 				<div class="flex items-center gap-4 flex-1">
 					<svg class="w-6 h-6 md:w-8 md:h-8 text-psan-green shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"
 						><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg
@@ -270,7 +301,6 @@
 						bind:value={searchQuery}
 						placeholder="記事を検索..."
 						class="flex-1 bg-transparent border-none text-lg md:text-xl font-bold focus:ring-0 p-0 text-main placeholder:text-muted/40 outline-none"
-						autoFocus
 					/>
 				</div>
 				<button
@@ -293,7 +323,7 @@
 						><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg
 					>
 				</button>
-			</div>
+			</form>
 			<div class="p-4 md:p-6 bg-slate-50 dark:bg-slate-900/50">
 				<div class="flex flex-wrap items-center gap-2">
 					<span class="text-[10px] font-black text-muted uppercase tracking-widest">🔥 人気タグ:</span>
@@ -304,7 +334,7 @@
 					<button type="button" onclick={() => { isSearchOpen = false; window.location.href = '/?search=UI'; }} class="px-3 py-1.5 bg-white dark:bg-slate-800 rounded-full text-xs font-bold hover:bg-psan-green hover:text-white transition-all shadow-sm">UI</button>
 				</div>
 			</div>
-		</form>
+		</div>
 	</div>
 {/if}
 
@@ -312,8 +342,8 @@
 	{@render children()}
 </main>
 
-<footer class="bg-[--bg-secondary] py-20 px-4 transition-colors">
-	<div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-12">
+<footer class="bg-[--bg-secondary] py-12 md:py-20 px-4 transition-colors">
+	<div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-8 md:gap-12">
 		<div class="space-y-4 text-center md:text-left">
 			<div class="flex items-center justify-center md:justify-start gap-2">
 				<div class="w-6 h-6 bg-psan-green rounded shadow-lg shadow-psan-green/20"></div>
@@ -338,6 +368,16 @@
 						: ''}">{item.label}</a
 				>
 			{/each}
+			
+			{#if String(data.settings?.show_footer_auth) === 'true'}
+				{#if data.user}
+					<form action="/auth/logout" method="POST" class="inline">
+						<button class="text-psan-pink hover:opacity-80 transition-colors uppercase">Logout</button>
+					</form>
+				{:else}
+					<a href="/auth/login" class="text-main hover:text-psan-green transition-colors">Login</a>
+				{/if}
+			{/if}
 		</div>
 	</div>
 </footer>

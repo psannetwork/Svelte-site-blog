@@ -65,6 +65,7 @@ function initSchema(db: any) {
 				raw_json TEXT, 
 				author_id TEXT NOT NULL, 
 				visibility TEXT NOT NULL DEFAULT 'public', 
+				is_pinned INTEGER DEFAULT 0,
 				created_at INTEGER NOT NULL, 
 				updated_at INTEGER NOT NULL, 
 				thumbnail_url TEXT,
@@ -74,7 +75,7 @@ function initSchema(db: any) {
 			CREATE TABLE IF NOT EXISTS site_settings (key TEXT PRIMARY KEY, value TEXT NOT NULL);
 			CREATE TABLE IF NOT EXISTS analytics (date TEXT PRIMARY KEY, hits INTEGER DEFAULT 0, unique_visitors INTEGER DEFAULT 0);
 			CREATE TABLE IF NOT EXISTS file_storage (id TEXT PRIMARY KEY, filename TEXT NOT NULL, mime_type TEXT NOT NULL, size INTEGER NOT NULL, data BLOB, path TEXT, storage_type TEXT NOT NULL, created_at INTEGER NOT NULL);
-			CREATE TABLE IF NOT EXISTS pages (id TEXT PRIMARY KEY, title TEXT NOT NULL, content TEXT NOT NULL, raw_json TEXT, updated_at INTEGER NOT NULL);
+			CREATE TABLE IF NOT EXISTS pages (id TEXT PRIMARY KEY, title TEXT NOT NULL, content TEXT NOT NULL, raw_json TEXT, updated_at INTEGER NOT NULL, show_in_nav INTEGER DEFAULT 1, show_in_footer INTEGER DEFAULT 1);
 			CREATE TABLE IF NOT EXISTS notification (id TEXT PRIMARY KEY, user_id TEXT NOT NULL, type TEXT NOT NULL, content TEXT NOT NULL, link TEXT, is_read INTEGER DEFAULT 0, created_at INTEGER NOT NULL, FOREIGN KEY (user_id) REFERENCES user(id) ON DELETE CASCADE);
 			
 			CREATE INDEX IF NOT EXISTS idx_post_author ON post(author_id);
@@ -82,6 +83,15 @@ function initSchema(db: any) {
 			CREATE INDEX IF NOT EXISTS idx_notification_user ON notification(user_id);
 		`);
 
+		try {
+			db.exec('ALTER TABLE pages ADD COLUMN show_in_nav INTEGER DEFAULT 1');
+		} catch (e) {}
+		try {
+			db.exec('ALTER TABLE pages ADD COLUMN show_in_footer INTEGER DEFAULT 1');
+		} catch (e) {}
+		try {
+			db.exec('ALTER TABLE post ADD COLUMN is_pinned INTEGER DEFAULT 0');
+		} catch (e) {}
 		try {
 			db.exec('ALTER TABLE user ADD COLUMN avatar_url TEXT');
 		} catch (e) {}

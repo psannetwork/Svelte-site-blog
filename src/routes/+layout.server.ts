@@ -12,12 +12,16 @@ interface PageContent {
 
 export const load: LayoutServerLoad = async ({ locals, depends }) => {
     depends('app:settings');
+    depends('app:navPages');
 
     const settings = getSettings();
 
     // データベースからエラーページを一括取得（SQLの最適化）
     const pages = db.prepare("SELECT id, content, raw_json FROM pages WHERE id IN ('error404', 'error500')").all() as { id: string } & PageContent[];
     
+    // ナビゲーションとフッター用のページを取得
+    const navFooterPages = db.prepare("SELECT id, title, show_in_nav, show_in_footer FROM pages WHERE show_in_nav = 1 OR show_in_footer = 1").all() as any[];
+
     const pageMap = new Map(pages.map(p => [p.id, p]));
 
     const getHtmlFromPage = (id: string): string => {
@@ -43,6 +47,7 @@ export const load: LayoutServerLoad = async ({ locals, depends }) => {
         user: locals.user,
         settings,
         error404Html: getHtmlFromPage('error404'),
-        error500Html: getHtmlFromPage('error500')
+        error500Html: getHtmlFromPage('error500'),
+        navFooterPages
     };
 };

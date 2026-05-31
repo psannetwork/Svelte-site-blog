@@ -53,6 +53,7 @@ export const actions: Actions = {
 		const title = formData.get('title') as string;
 		const summary = formData.get('summary') as string;
 		const visibility = formData.get('visibility') as string;
+		const isPinned = formData.get('is_pinned') === 'on' ? 1 : 0;
 		const editorHtml = formData.get('editorHtml') as string;
 		let thumbnailUrl = formData.get('thumbnail_url') as string;
 		const noRedirect = formData.get('no_redirect') as string;
@@ -75,7 +76,7 @@ export const actions: Actions = {
 		db.prepare(
 			`
 			UPDATE post
-			SET title = ?, summary = ?, content = ?, updated_at = ?, thumbnail_url = ?, visibility = ?
+			SET title = ?, summary = ?, content = ?, updated_at = ?, thumbnail_url = ?, visibility = ?, is_pinned = ?
 			WHERE id = ?
 
 		`
@@ -86,6 +87,7 @@ export const actions: Actions = {
 			Date.now(),
 			thumbnailUrl || null,
 			visibility,
+			isPinned,
 			params.id
 		);
 

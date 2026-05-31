@@ -58,4 +58,17 @@
 			font-size: 1.5rem;
 		}
 	}
+
+	/* prose の行間をエディタと統一 */
+	.prose {
+		line-height: 1.8 !important;
+	}
+	.prose p {
+		line-height: 1.8 !important;
+		margin-top: 1.25em;
+		margin-bottom: 1.25em;
+	}
+	.prose li {
+		line-height: 1.8 !important;
+	}
 }
